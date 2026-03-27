@@ -39,7 +39,7 @@ services:
 
 databases:
   - name: pg-stay-db
-    databaseName: pg_stay_production
-    user: pg_stay_user
+    databaseName: pgstay_prod
+    user: pgstay_user
     region: oregon
     plan: free
