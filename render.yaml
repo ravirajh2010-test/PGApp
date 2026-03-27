@@ -5,8 +5,7 @@ services:
     region: oregon
     plan: free
     rootDirectory: backend
-    buildCommand: npm install
-    startCommand: npm start
+    startCommand: node server.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -27,14 +26,12 @@ services:
       - key: RAZORPAY_KEY_SECRET
         sync: false
 
-  - type: web
+  - type: static_site
     name: pg-stay-frontend
     env: node
     region: oregon
-    plan: free
-    rootDirectory: frontend
-    buildCommand: npm install && npm run build
-    startCommand: npm run preview
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
     envVars:
       - key: VITE_API_URL
         value: https://pg-stay-backend.onrender.com/api
