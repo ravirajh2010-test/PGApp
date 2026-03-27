@@ -1,7 +1,7 @@
 const Tenant = require('../models/Tenant');
 const User = require('../models/User');
 const Bed = require('../models/Bed');
-const { sendTenantCredentials } = require('../services/emailService');
+const { sendTenantCredentials, sendPaymentReminder } = require('../services/emailService');
 const pool = require('../config/database');
 
 const getTenants = async (req, res) => {
@@ -403,4 +403,81 @@ const deleteBed = async (req, res) => {
   }
 };
 
-module.exports = { getTenants, createTenant, updateTenant, deleteTenant, processCheckouts, getOccupancy, getAvailableBeds, getBuildings, createBuilding, updateBuilding, deleteBuilding, getRooms, createRoom, updateRoom, deleteRoom, getBeds, createBed, updateBed, deleteBed };
+const getPaymentInfo = async (req, res) => {
+  try {
+    const now = new Date();
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonthName = prevMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
+    const monthStart = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1);
+    const monthEnd = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0, 23, 59, 59);
+
+    const query = `
+      SELECT t.id, t.email, t.rent, t.start_date, t.end_date, t.bed_id,
+             u.name,
+             b.bed_identifier, r.room_number, bl.name as building_name,
+             (
+               SELECT COUNT(*) FROM payments p
+               WHERE p.tenant_id = t.id
+                 AND p.status = 'completed'
+                 AND p.payment_date >= $1
+                 AND p.payment_date <= $2
+             ) as paid_count
+      FROM tenants t
+      JOIN users u ON t.user_id = u.id
+      JOIN beds b ON t.bed_id = b.id
+      JOIN rooms r ON b.room_id = r.id
+      JOIN buildings bl ON r.building_id = bl.id
+      ORDER BY bl.name, r.room_number, b.bed_identifier
+    `;
+    const result = await pool.query(query, [monthStart, monthEnd]);
+    const tenants = result.rows.map(row => ({
+      ...row,
+      payment_status: parseInt(row.paid_count) > 0 ? 'Paid' : 'Not Paid',
+      bed_info: `${row.building_name} - Room ${row.room_number} - ${row.bed_identifier || 'Bed'}`,
+      month_name: prevMonthName
+    }));
+    res.json({ tenants, monthName: prevMonthName });
+  } catch (error) {
+    console.error('Error fetching payment info:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const sendPaymentReminderEmail = async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    const now = new Date();
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonthName = prevMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    const query = `
+      SELECT t.id, t.email, t.rent,
+             u.name,
+             b.bed_identifier, r.room_number, bl.name as building_name
+      FROM tenants t
+      JOIN users u ON t.user_id = u.id
+      JOIN beds b ON t.bed_id = b.id
+      JOIN rooms r ON b.room_id = r.id
+      JOIN buildings bl ON r.building_id = bl.id
+      WHERE t.id = $1
+    `;
+    const result = await pool.query(query, [tenantId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Tenant not found' });
+    }
+    const tenant = result.rows[0];
+    const bedInfo = `${tenant.building_name} - Room ${tenant.room_number} - ${tenant.bed_identifier || 'Bed'}`;
+
+    const emailSent = await sendPaymentReminder(tenant.email, tenant.name, tenant.rent, bedInfo, prevMonthName);
+    if (emailSent) {
+      res.json({ message: `Payment reminder sent to ${tenant.email}` });
+    } else {
+      res.status(500).json({ message: 'Failed to send reminder email. Check email configuration.' });
+    }
+  } catch (error) {
+    console.error('Error sending payment reminder:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getTenants, createTenant, updateTenant, deleteTenant, processCheckouts, getOccupancy, getAvailableBeds, getBuildings, createBuilding, updateBuilding, deleteBuilding, getRooms, createRoom, updateRoom, deleteRoom, getBeds, createBed, updateBed, deleteBed, getPaymentInfo, sendPaymentReminderEmail };

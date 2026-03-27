@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import PropertyManagement from './pages/PropertyManagement';
+import PaymentInfo from './pages/PaymentInfo';
 import TenantDashboard from './pages/TenantDashboard';
 import GuestView from './pages/GuestView';
 import './App.css';
@@ -20,6 +21,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/property-management" element={<PropertyManagement />} />
+            <Route path="/payment-info" element={<PaymentInfo />} />
             <Route path="/tenant" element={<TenantDashboard />} />
           </Routes>
         </main>

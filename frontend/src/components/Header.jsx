@@ -33,6 +33,7 @@ const Header = () => {
             <>
               <span className="text-sm">Welcome, {user.name}</span>
               {user.role === 'admin' && <Link to="/admin" className="hover:bg-orange-600 px-4 py-2 rounded">Dashboard</Link>}
+              {user.role === 'admin' && <Link to="/payment-info" className="hover:bg-orange-600 px-4 py-2 rounded">Payment Info</Link>}
               {user.role === 'tenant' && <Link to="/tenant" className="hover:bg-orange-600 px-4 py-2 rounded">My Profile</Link>}
               <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded transition">Logout</button>
             </>

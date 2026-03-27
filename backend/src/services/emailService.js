@@ -211,4 +211,69 @@ const sendThankYouEmail = async (tenantEmail, tenantName, bedInfo, stayDuration)
   }
 };
 
-module.exports = { sendTenantCredentials, sendThankYouEmail };
+const sendPaymentReminder = async (tenantEmail, tenantName, rent, bedInfo, monthName) => {
+  try {
+    const mailer = getTransporter();
+    if (!mailer) {
+      console.error('❌ Email transporter not configured. Check EMAIL_USER and EMAIL_PASSWORD env vars.');
+      return false;
+    }
+    const htmlContent = `
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; border-radius: 8px; }
+            .header { background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+            .header h1 { margin: 0; font-size: 28px; }
+            .content { background: white; padding: 30px; border-radius: 0 0 8px 8px; }
+            .reminder-box { background: #fff3e0; border-left: 4px solid #ff6b35; padding: 20px; margin: 20px 0; border-radius: 4px; }
+            .amount { font-size: 24px; font-weight: bold; color: #ff6b35; }
+            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🏢 Bajrang Hostels and PG Pvt Ltd</h1>
+              <p>Payment Reminder</p>
+            </div>
+            <div class="content">
+              <p>Hello <strong>${tenantName}</strong>,</p>
+              <p>This is a friendly reminder that your rent payment for <strong>${monthName}</strong> is pending.</p>
+              <div class="reminder-box">
+                <h3 style="margin-top: 0; color: #ff6b35;">Payment Details</h3>
+                <p><strong>Month:</strong> ${monthName}</p>
+                <p><strong>Accommodation:</strong> ${bedInfo}</p>
+                <p><strong>Amount Due:</strong> <span class="amount">₹${rent}</span></p>
+              </div>
+              <p>Please make the payment at the earliest to avoid any inconvenience.</p>
+              <p>If you have already made the payment, please disregard this email.</p>
+              <p>Best regards,<br/><strong>Bajrang Hostels and PG Pvt Ltd Team</strong></p>
+            </div>
+            <div class="footer">
+              <p>&copy; 2024 Bajrang Hostels and PG Pvt Ltd. All rights reserved.</p>
+              <p>This is an automated email. Please do not reply directly.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: tenantEmail,
+      subject: `⚠️ Rent Payment Reminder for ${monthName} - Bajrang Hostels and PG Pvt Ltd`,
+      html: htmlContent,
+    };
+
+    await mailer.sendMail(mailOptions);
+    console.log(`✅ Payment reminder sent to ${tenantEmail}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error sending payment reminder:', error.message);
+    return false;
+  }
+};
+
+module.exports = { sendTenantCredentials, sendThankYouEmail, sendPaymentReminder };

@@ -4,7 +4,8 @@ const {
   getOccupancy, getAvailableBeds,
   getBuildings, createBuilding, updateBuilding, deleteBuilding,
   getRooms, createRoom, updateRoom, deleteRoom,
-  getBeds, createBed, updateBed, deleteBed
+  getBeds, createBed, updateBed, deleteBed,
+  getPaymentInfo, sendPaymentReminderEmail
 } = require('../controllers/adminController');
 const { authenticateToken, authorizeRole } = require('../middleware/auth');
 
@@ -43,5 +44,9 @@ router.get('/beds', getBeds);
 router.post('/beds', createBed);
 router.put('/beds/:id', updateBed);
 router.delete('/beds/:id', deleteBed);
+
+// Payment info routes
+router.get('/payment-info', getPaymentInfo);
+router.post('/payment-reminder/:tenantId', sendPaymentReminderEmail);
 
 module.exports = router;
