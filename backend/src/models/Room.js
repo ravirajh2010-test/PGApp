@@ -32,41 +32,51 @@ class Room {
   }
 
   static async delete(id) {
-    // Cascading delete: delete in correct order to avoid foreign key violations
-    // 1. Delete payments for all tenants in beds of this room
-    await pool.query(`
-      DELETE FROM payments WHERE tenant_id IN (
-        SELECT t.id FROM tenants t
-        WHERE t.bed_id IN (
-          SELECT b.id FROM beds WHERE room_id = $1
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // 1. Collect user_ids BEFORE deleting tenants (so the subquery still works)
+      const userIdsResult = await client.query(`
+        SELECT DISTINCT t.user_id FROM tenants t
+        WHERE t.bed_id IN (SELECT b.id FROM beds b WHERE b.room_id = $1)
+      `, [id]);
+      const userIds = userIdsResult.rows.map(r => r.user_id);
+
+      // 2. Delete payments for all tenants in beds of this room
+      await client.query(`
+        DELETE FROM payments WHERE tenant_id IN (
+          SELECT t.id FROM tenants t
+          WHERE t.bed_id IN (SELECT b.id FROM beds b WHERE b.room_id = $1)
         )
-      )
-    `, [id]);
+      `, [id]);
 
-    // 2. Delete tenants associated with beds in this room
-    await pool.query(`
-      DELETE FROM tenants WHERE bed_id IN (
-        SELECT id FROM beds WHERE room_id = $1
-      )
-    `, [id]);
-
-    // 3. Delete users associated with those tenants
-    await pool.query(`
-      DELETE FROM users WHERE id IN (
-        SELECT t.user_id FROM tenants t
-        WHERE t.bed_id IN (
-          SELECT b.id FROM beds WHERE room_id = $1
+      // 3. Delete tenants associated with beds in this room
+      await client.query(`
+        DELETE FROM tenants WHERE bed_id IN (
+          SELECT id FROM beds WHERE room_id = $1
         )
-      )
-    `, [id]);
+      `, [id]);
 
-    // 4. Delete all beds in this room
-    await pool.query('DELETE FROM beds WHERE room_id = $1', [id]);
+      // 4. Delete associated tenant users (now safe since tenants are removed)
+      if (userIds.length > 0) {
+        await client.query('DELETE FROM users WHERE id = ANY($1)', [userIds]);
+      }
 
-    // 5. Finally delete the room
-    const query = 'DELETE FROM rooms WHERE id = $1 RETURNING *';
-    const result = await pool.query(query, [id]);
-    return result.rows[0];
+      // 5. Delete all beds in this room
+      await client.query('DELETE FROM beds WHERE room_id = $1', [id]);
+
+      // 6. Finally delete the room
+      const result = await client.query('DELETE FROM rooms WHERE id = $1 RETURNING *', [id]);
+
+      await client.query('COMMIT');
+      return result.rows[0];
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 }
 

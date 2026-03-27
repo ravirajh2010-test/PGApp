@@ -159,7 +159,7 @@ const AdminDashboard = () => {
     e.preventDefault();
     setTenantError('');
     try {
-      await api.post('/admin/tenants', {
+      const res = await api.post('/admin/tenants', {
         name: formData.name,
         email: formData.email,
         password: formData.password,
@@ -174,6 +174,10 @@ const AdminDashboard = () => {
         email: formData.email,
         password: formData.password
       });
+
+      if (res.data.emailSent === false) {
+        setTenantError('Tenant created but email could not be sent. Please share credentials manually.');
+      }
 
       setFormData({
         name: '',
@@ -492,9 +496,9 @@ const AdminDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {buildings.map((building) => (
+                {buildings.map((building, idx) => (
                   <tr key={building.id} className="border-b hover:bg-gray-50">
-                    <td className="px-6 py-3 font-medium">{building.id}</td>
+                    <td className="px-6 py-3 font-medium">{idx + 1}</td>
                     <td className="px-6 py-3">{building.name}</td>
                     <td className="px-6 py-3">{building.location || '-'}</td>
                   </tr>
@@ -524,9 +528,9 @@ const AdminDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {rooms.map((room) => (
+                {rooms.map((room, idx) => (
                   <tr key={room.id} className="border-b hover:bg-gray-50">
-                    <td className="px-6 py-3 font-medium">{room.id}</td>
+                    <td className="px-6 py-3 font-medium">{idx + 1}</td>
                     <td className="px-6 py-3">{room.building_name}</td>
                     <td className="px-6 py-3">{room.room_number}</td>
                     <td className="px-6 py-3">{room.capacity}</td>
@@ -557,9 +561,9 @@ const AdminDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {beds.map((bed) => (
+                {beds.map((bed, idx) => (
                   <tr key={bed.id} className="border-b hover:bg-gray-50">
-                    <td className="px-6 py-3 font-medium">{bed.id}</td>
+                    <td className="px-6 py-3 font-medium">{idx + 1}</td>
                     <td className="px-6 py-3">{bed.building_name}</td>
                     <td className="px-6 py-3">Room {bed.room_number}</td>
                     <td className="px-6 py-3">

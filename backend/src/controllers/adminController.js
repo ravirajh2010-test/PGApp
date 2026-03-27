@@ -51,10 +51,13 @@ const createTenant = async (req, res) => {
       : 'Bed assigned';
     
     // Send email with credentials
-    await sendTenantCredentials(email, name, password, bedInfo);
+    const emailSent = await sendTenantCredentials(email, name, password, bedInfo);
     
     res.status(201).json({ 
-      message: 'Tenant created successfully and credentials sent to email',
+      message: emailSent 
+        ? 'Tenant created successfully and credentials sent to email'
+        : 'Tenant created successfully but email could not be sent. Please share credentials manually.',
+      emailSent,
       tenant: { 
         id: tenant.id, 
         name, 

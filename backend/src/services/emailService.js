@@ -1,15 +1,31 @@
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
+let transporter = null;
+
+const getTransporter = () => {
+  if (!transporter) {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      console.error('❌ EMAIL_USER or EMAIL_PASSWORD not set in environment variables');
+      return null;
+    }
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    });
+  }
+  return transporter;
+};
 
 const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo) => {
   try {
+    const mailer = getTransporter();
+    if (!mailer) {
+      console.error('❌ Email transporter not configured. Check EMAIL_USER and EMAIL_PASSWORD env vars.');
+      return false;
+    }
     const htmlContent = `
       <html>
         <head>
@@ -93,7 +109,7 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo)
       html: htmlContent,
     };
 
-    await transporter.sendMail(mailOptions);
+    await mailer.sendMail(mailOptions);
     console.log(`✅ Email sent successfully to ${tenantEmail}`);
     return true;
   } catch (error) {
@@ -104,6 +120,11 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo)
 
 const sendThankYouEmail = async (tenantEmail, tenantName, bedInfo, stayDuration) => {
   try {
+    const mailer = getTransporter();
+    if (!mailer) {
+      console.error('❌ Email transporter not configured. Check EMAIL_USER and EMAIL_PASSWORD env vars.');
+      return false;
+    }
     const htmlContent = `
       <html>
         <head>
@@ -181,7 +202,7 @@ const sendThankYouEmail = async (tenantEmail, tenantName, bedInfo, stayDuration)
       html: htmlContent,
     };
 
-    await transporter.sendMail(mailOptions);
+    await mailer.sendMail(mailOptions);
     console.log(`✅ Thank you email sent to ${tenantEmail}`);
     return true;
   } catch (error) {
