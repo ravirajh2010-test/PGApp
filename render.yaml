@@ -4,7 +4,7 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: cd backend && npm install
+    buildCommand: cd backend && npm ci --no-fund
     startCommand: cd backend && npm start
     envVars:
       - key: NODE_ENV
@@ -31,7 +31,7 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: cd frontend && npm install && npm run build
+    buildCommand: cd frontend && npm ci --no-fund && npm run build
     startCommand: cd frontend && npm run preview
     envVars:
       - key: VITE_API_URL
