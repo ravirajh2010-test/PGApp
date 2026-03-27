@@ -14,6 +14,7 @@ app.use(express.json());
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 // Initialize Razorpay only if keys are provided
@@ -64,4 +65,72 @@ app.use('/api/tenant', tenantRoutes);
 app.use('/api/guest', guestRoutes);
 
 const PORT = process.env.PORT || 5000;
+
+// Auto-initialize database tables on startup
+const initDatabase = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) NOT NULL CHECK (role IN ('admin', 'tenant', 'guest')),
+        is_first_login BOOLEAN DEFAULT TRUE
+      );
+      CREATE TABLE IF NOT EXISTS buildings (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        location VARCHAR(255)
+      );
+      CREATE TABLE IF NOT EXISTS rooms (
+        id SERIAL PRIMARY KEY,
+        building_id INTEGER REFERENCES buildings(id),
+        room_number VARCHAR(50) NOT NULL,
+        capacity INTEGER NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS beds (
+        id SERIAL PRIMARY KEY,
+        room_id INTEGER REFERENCES rooms(id),
+        bed_identifier VARCHAR(50),
+        status VARCHAR(50) DEFAULT 'vacant' CHECK (status IN ('occupied', 'vacant'))
+      );
+      CREATE TABLE IF NOT EXISTS tenants (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        email VARCHAR(255) NOT NULL,
+        bed_id INTEGER REFERENCES beds(id),
+        start_date DATE NOT NULL,
+        end_date DATE,
+        rent DECIMAL(10,2) NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS payments (
+        id SERIAL PRIMARY KEY,
+        tenant_id INTEGER REFERENCES tenants(id),
+        amount DECIMAL(10,2) NOT NULL,
+        status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),
+        payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        razorpay_payment_id VARCHAR(255)
+      );
+    `);
+    console.log('Database tables initialized successfully');
+
+    // Create default admin user if none exists
+    const bcrypt = require('bcryptjs');
+    const adminCheck = await pool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
+    if (adminCheck.rows.length === 0) {
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      await pool.query(
+        "INSERT INTO users (name, email, password, role, is_first_login) VALUES ($1, $2, $3, $4, $5)",
+        ['Admin', 'admin@pgstay.com', hashedPassword, 'admin', false]
+      );
+      console.log('Default admin user created (admin@pgstay.com / admin123)');
+    }
+  } catch (error) {
+    console.error('Database initialization error:', error.message);
+  }
+};
+
+initDatabase();
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
