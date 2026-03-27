@@ -33,7 +33,7 @@ services:
     plan: free
     rootDirectory: frontend
     buildCommand: npm install && npm run build
-    startCommand: npm run preview -- --host 0.0.0.0 --port $PORT
+    startCommand: npx serve -s dist -l $PORT
     envVars:
       - key: VITE_API_URL
         value: https://pg-stay-backend.onrender.com/api
