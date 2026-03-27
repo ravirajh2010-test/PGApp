@@ -5,7 +5,7 @@ const {
   getBuildings, createBuilding, updateBuilding, deleteBuilding,
   getRooms, createRoom, updateRoom, deleteRoom,
   getBeds, createBed, updateBed, deleteBed,
-  getPaymentInfo, sendPaymentReminderEmail
+  getPaymentInfo, sendPaymentReminderEmail, markOfflinePay
 } = require('../controllers/adminController');
 const { authenticateToken, authorizeRole } = require('../middleware/auth');
 
@@ -48,5 +48,6 @@ router.delete('/beds/:id', deleteBed);
 // Payment info routes
 router.get('/payment-info', getPaymentInfo);
 router.post('/payment-reminder/:tenantId', sendPaymentReminderEmail);
+router.post('/mark-offline-pay/:tenantId', markOfflinePay);
 
 module.exports = router;

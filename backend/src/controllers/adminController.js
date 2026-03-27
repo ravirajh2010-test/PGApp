@@ -480,4 +480,42 @@ const sendPaymentReminderEmail = async (req, res) => {
   }
 };
 
-module.exports = { getTenants, createTenant, updateTenant, deleteTenant, processCheckouts, getOccupancy, getAvailableBeds, getBuildings, createBuilding, updateBuilding, deleteBuilding, getRooms, createRoom, updateRoom, deleteRoom, getBeds, createBed, updateBed, deleteBed, getPaymentInfo, sendPaymentReminderEmail };
+const markOfflinePay = async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    const now = new Date();
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const monthStart = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1);
+    const monthEnd = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0, 23, 59, 59);
+
+    // Check if already paid for this month
+    const existingPayment = await pool.query(
+      `SELECT id FROM payments WHERE tenant_id = $1 AND status = 'completed' AND payment_date >= $2 AND payment_date <= $3`,
+      [tenantId, monthStart, monthEnd]
+    );
+    if (existingPayment.rows.length > 0) {
+      return res.status(400).json({ message: 'Payment already recorded for this month' });
+    }
+
+    // Get tenant rent
+    const tenantResult = await pool.query('SELECT rent FROM tenants WHERE id = $1', [tenantId]);
+    if (tenantResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Tenant not found' });
+    }
+    const rent = tenantResult.rows[0].rent;
+
+    // Create offline payment record within the previous month
+    const paymentDate = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 15);
+    await pool.query(
+      `INSERT INTO payments (tenant_id, amount, status, payment_date, razorpay_payment_id) VALUES ($1, $2, 'completed', $3, $4)`,
+      [tenantId, rent, paymentDate, 'OFFLINE_' + Date.now()]
+    );
+
+    res.json({ message: 'Offline payment marked successfully' });
+  } catch (error) {
+    console.error('Error marking offline payment:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getTenants, createTenant, updateTenant, deleteTenant, processCheckouts, getOccupancy, getAvailableBeds, getBuildings, createBuilding, updateBuilding, deleteBuilding, getRooms, createRoom, updateRoom, deleteRoom, getBeds, createBed, updateBed, deleteBed, getPaymentInfo, sendPaymentReminderEmail, markOfflinePay };
