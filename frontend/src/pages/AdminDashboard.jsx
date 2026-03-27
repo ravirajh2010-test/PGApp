@@ -60,9 +60,9 @@ const AdminDashboard = () => {
   const fetchTenants = async () => {
     try {
       const res = await api.get('/admin/tenants');
-      setTenants(res.data || []);
+      if (res.data) setTenants(res.data);
     } catch (error) {
-      console.error('Error fetching tenants');
+      console.error('Error fetching tenants:', error.response?.status, error.message);
     } finally {
       setLoading(false);
     }
@@ -71,45 +71,45 @@ const AdminDashboard = () => {
   const fetchBuildings = async () => {
     try {
       const res = await api.get('/admin/buildings');
-      setBuildings(res.data || []);
+      if (res.data) setBuildings(res.data);
     } catch (error) {
-      console.error('Error fetching buildings');
+      console.error('Error fetching buildings:', error.response?.status, error.message);
     }
   };
 
   const fetchRooms = async () => {
     try {
       const res = await api.get('/admin/rooms');
-      setRooms(res.data || []);
+      if (res.data) setRooms(res.data);
     } catch (error) {
-      console.error('Error fetching rooms');
+      console.error('Error fetching rooms:', error.response?.status, error.message);
     }
   };
 
   const fetchBeds = async () => {
     try {
       const res = await api.get('/admin/beds');
-      setBeds(res.data || []);
+      if (res.data) setBeds(res.data);
     } catch (error) {
-      console.error('Error fetching beds');
+      console.error('Error fetching beds:', error.response?.status, error.message);
     }
   };
 
   const fetchOccupancy = async () => {
     try {
       const res = await api.get('/admin/occupancy');
-      setOccupancy(res.data || {});
+      if (res.data) setOccupancy(res.data);
     } catch (error) {
-      console.error('Error fetching occupancy');
+      console.error('Error fetching occupancy:', error.response?.status, error.message);
     }
   };
 
   const fetchAvailableBeds = async () => {
     try {
       const res = await api.get('/admin/available-beds');
-      setAvailableBeds(res.data || []);
+      if (res.data) setAvailableBeds(res.data);
     } catch (error) {
-      console.error('Error fetching available beds');
+      console.error('Error fetching available beds:', error.response?.status, error.message);
     }
   };
 
