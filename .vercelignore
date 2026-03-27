@@ -1,0 +1,9 @@
+backend
+database
+node_modules
+.env
+.env.local
+.git
+render.yaml
+.gitignore
+README.md
