@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FormattedMessage } from 'react-intl';
 import api from '../services/api';
 
 const PropertyManagement = () => {
@@ -265,8 +266,8 @@ const PropertyManagement = () => {
   return (
     <div className="space-y-8">
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-2">⚙️ Property Management</h1>
-        <p className="text-gray-600">Manage buildings, rooms, and beds</p>
+        <h1 className="text-4xl font-bold text-gray-800 mb-2">⚙️ <FormattedMessage id="property.propertyManagement" defaultMessage="Property Management" /></h1>
+        <p className="text-gray-600"><FormattedMessage id="property.manageBuildings" defaultMessage="Manage buildings, rooms, and beds" /></p>
       </div>
 
       {/* Debug Info */}
@@ -278,7 +279,7 @@ const PropertyManagement = () => {
           onClick={() => navigate('/admin')}
           className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition"
         >
-          ← Back to Admin Dashboard
+          <FormattedMessage id="property.backToDashboard" defaultMessage="← Back to Admin Dashboard" />
         </button>
         
         <button
@@ -307,7 +308,7 @@ const PropertyManagement = () => {
       {/* Buildings Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="px-6 py-4 bg-blue-50 border-b-2 border-blue-500 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-800">🏢 Buildings</h2>
+          <h2 className="text-2xl font-bold text-gray-800">🏢 <FormattedMessage id="property.buildings" defaultMessage="Buildings" /></h2>
           <div className="flex gap-2">
             <button
               onClick={() => {
@@ -409,7 +410,7 @@ const PropertyManagement = () => {
       {/* Rooms Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="px-6 py-4 bg-purple-50 border-b-2 border-purple-500 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-800">🚪 Rooms</h2>
+          <h2 className="text-2xl font-bold text-gray-800">🚪 <FormattedMessage id="property.rooms" defaultMessage="Rooms" /></h2>
           <div className="flex gap-2">
             <button
               onClick={() => {
@@ -523,7 +524,7 @@ const PropertyManagement = () => {
       {/* Beds Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="px-6 py-4 bg-green-50 border-b-2 border-green-500 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-800">🛏️ Beds</h2>
+          <h2 className="text-2xl font-bold text-gray-800">🛏️ <FormattedMessage id="property.beds" defaultMessage="Beds" /></h2>
           <div className="flex gap-2">
             <button
               onClick={() => {

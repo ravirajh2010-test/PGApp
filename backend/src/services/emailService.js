@@ -276,4 +276,127 @@ const sendPaymentReminder = async (tenantEmail, tenantName, rent, bedInfo, month
   }
 };
 
-module.exports = { sendTenantCredentials, sendThankYouEmail, sendPaymentReminder };
+const sendRentReceipt = async (tenantEmail, tenantName, rent, bedInfo, monthName, paymentDate) => {
+  try {
+    const mailer = getTransporter();
+    if (!mailer) {
+      console.error('❌ Email transporter not configured. Check EMAIL_USER and EMAIL_PASSWORD env vars.');
+      return false;
+    }
+    
+    // Format payment date
+    const formattedDate = new Date(paymentDate).toLocaleDateString('en-IN', { 
+      day: '2-digit', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+    
+    // Generate receipt number using timestamp
+    const receiptNumber = `RCP-${Math.floor(Date.now() / 1000)}`;
+    
+    const htmlContent = `
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; border-radius: 8px; }
+            .header { background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+            .header h1 { margin: 0; font-size: 28px; }
+            .header p { margin: 5px 0 0 0; font-size: 14px; }
+            .content { background: white; padding: 30px; border-radius: 0 0 8px 8px; }
+            .receipt-number { background: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px; margin: 20px 0; border-radius: 4px; }
+            .receipt-number strong { color: #2e7d32; }
+            .receipt-box { background: #f5f5f5; border: 1px solid #ddd; padding: 20px; margin: 20px 0; border-radius: 4px; }
+            .receipt-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
+            .receipt-row:last-child { border-bottom: none; }
+            .receipt-label { font-weight: bold; color: #666; }
+            .receipt-value { color: #333; }
+            .amount-box { background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border-left: 4px solid #4caf50; padding: 20px; margin: 20px 0; border-radius: 4px; text-align: center; }
+            .amount-label { font-size: 14px; color: #666; }
+            .amount { font-size: 32px; font-weight: bold; color: #2e7d32; margin: 10px 0; }
+            .info-box { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin: 20px 0; border-radius: 4px; font-size: 13px; }
+            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 15px; }
+            .verified { color: #4caf50; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>💰 Rent Payment Receipt</h1>
+              <p>Bajrang Hostels and PG Pvt Ltd</p>
+            </div>
+            
+            <div class="content">
+              <p>Hello <strong>${tenantName}</strong>,</p>
+              <p>Your rent payment has been successfully recorded. Please find your receipt details below:</p>
+              
+              <div class="receipt-number">
+                <strong>✓ Receipt Number:</strong> ${receiptNumber}
+              </div>
+              
+              <div class="receipt-box">
+                <div class="receipt-row">
+                  <span class="receipt-label">Tenant Name:</span>
+                  <span class="receipt-value">${tenantName}</span>
+                </div>
+                <div class="receipt-row">
+                  <span class="receipt-label">Accommodation:</span>
+                  <span class="receipt-value">${bedInfo}</span>
+                </div>
+                <div class="receipt-row">
+                  <span class="receipt-label">Payment For:</span>
+                  <span class="receipt-value">${monthName}</span>
+                </div>
+                <div class="receipt-row">
+                  <span class="receipt-label">Payment Date:</span>
+                  <span class="receipt-value">${formattedDate}</span>
+                </div>
+              </div>
+              
+              <div class="amount-box">
+                <div class="amount-label">Amount Paid</div>
+                <div class="amount">₹${rent}</div>
+                <div class="verified">✓ Payment Verified</div>
+              </div>
+              
+              <div class="info-box">
+                <strong>📌 Information:</strong>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                  <li>This receipt serves as proof of your rent payment for ${monthName}</li>
+                  <li>Please keep this receipt for your records</li>
+                  <li>If you have any questions about this transaction, please contact us immediately</li>
+                </ul>
+              </div>
+              
+              <p>Thank you for your timely payment. We appreciate your cooperation!</p>
+              
+              <p>Best regards,<br/>
+              <strong>Bajrang Hostels and PG Pvt Ltd Team</strong></p>
+            </div>
+            
+            <div class="footer">
+              <p>&copy; 2024 Bajrang Hostels and PG Pvt Ltd. All rights reserved.</p>
+              <p>This is an automated email. Please do not reply directly.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: tenantEmail,
+      subject: `💰 Rent Receipt - ${monthName} - Bajrang Hostels and PG Pvt Ltd`,
+      html: htmlContent,
+    };
+
+    await mailer.sendMail(mailOptions);
+    console.log(`✅ Rent receipt sent to ${tenantEmail}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error sending rent receipt:', error.message);
+    return false;
+  }
+};
+
+module.exports = { sendTenantCredentials, sendThankYouEmail, sendPaymentReminder, sendRentReceipt };

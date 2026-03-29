@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FormattedMessage } from 'react-intl';
 import api from '../services/api';
 
 const PaymentInfo = () => {
@@ -10,6 +11,16 @@ const PaymentInfo = () => {
   const [sendingReminder, setSendingReminder] = useState({});
   const [showOfflineModal, setShowOfflineModal] = useState(false);
   const [markingPaid, setMarkingPaid] = useState({});
+  const [reminderDropdown, setReminderDropdown] = useState(null); // tenantId of open dropdown
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setReminderDropdown(null);
+    if (reminderDropdown) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [reminderDropdown]);
 
   useEffect(() => {
     fetchPaymentInfo();
@@ -31,16 +42,20 @@ const PaymentInfo = () => {
     }
   };
 
-  const handleSendReminder = async (tenantId, tenantName) => {
-    if (!window.confirm(`Send payment reminder to ${tenantName}?`)) return;
-    setSendingReminder(prev => ({ ...prev, [tenantId]: true }));
+  const handleSendReminder = async (tenantId, tenantName, method) => {
+    setReminderDropdown(null);
+    setSendingReminder(prev => ({ ...prev, [tenantId]: method }));
     try {
-      const res = await api.post(`/admin/payment-reminder/${tenantId}`);
-      alert(res.data.message || 'Reminder sent successfully!');
+      const res = await api.post(`/admin/payment-reminder/${tenantId}?method=${method}`);
+      if (method === 'whatsapp' && res.data.whatsappUrl) {
+        window.open(res.data.whatsappUrl, '_blank');
+      } else {
+        alert(res.data.message || 'Reminder sent successfully!');
+      }
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to send reminder');
     } finally {
-      setSendingReminder(prev => ({ ...prev, [tenantId]: false }));
+      setSendingReminder(prev => ({ ...prev, [tenantId]: null }));
     }
   };
 
@@ -73,7 +88,7 @@ const PaymentInfo = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">💰 Payment Info</h1>
+          <h1 className="text-3xl font-bold text-gray-800">💰 <FormattedMessage id="payment.paymentInfo" defaultMessage="Payment Info" /></h1>
           <p className="text-gray-600 mt-1">
             Payment status for <span className="font-semibold text-orange-600">{monthName}</span>
           </p>
@@ -82,22 +97,22 @@ const PaymentInfo = () => {
           onClick={() => navigate('/admin')}
           className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition"
         >
-          ← Back to Dashboard
+          <FormattedMessage id="property.backToDashboard" defaultMessage="← Back to Dashboard" />
         </button>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-blue-500">
-          <h3 className="text-sm font-semibold text-gray-600 uppercase">Total Tenants</h3>
+          <h3 className="text-sm font-semibold text-gray-600 uppercase"><FormattedMessage id="dashboard.tenantsSection" defaultMessage="Total Tenants" /></h3>
           <p className="text-3xl font-bold text-blue-600">{tenants.length}</p>
         </div>
         <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-green-500">
-          <h3 className="text-sm font-semibold text-gray-600 uppercase">Paid</h3>
+          <h3 className="text-sm font-semibold text-gray-600 uppercase"><FormattedMessage id="payment.paid" defaultMessage="Paid" /></h3>
           <p className="text-3xl font-bold text-green-600">{paidCount}</p>
         </div>
         <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-red-500">
-          <h3 className="text-sm font-semibold text-gray-600 uppercase">Not Paid</h3>
+          <h3 className="text-sm font-semibold text-gray-600 uppercase"><FormattedMessage id="payment.unpaid" defaultMessage="Not Paid" /></h3>
           <p className="text-3xl font-bold text-red-600">{unpaidCount}</p>
         </div>
       </div>
@@ -111,7 +126,7 @@ const PaymentInfo = () => {
               onClick={() => setShowOfflineModal(true)}
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition"
             >
-              💵 Mark Offline Pay
+            <FormattedMessage id="payment.markOfflinePayment" defaultMessage="💵 Mark Offline Pay" />
             </button>
             <button
               onClick={fetchPaymentInfo}
@@ -162,17 +177,38 @@ const PaymentInfo = () => {
                     </td>
                     <td className="px-6 py-3 text-center">
                       {tenant.payment_status === 'Not Paid' && (
-                        <button
-                          onClick={() => handleSendReminder(tenant.id, tenant.name)}
-                          disabled={sendingReminder[tenant.id]}
-                          className={`${
-                            sendingReminder[tenant.id]
-                              ? 'bg-gray-400 cursor-not-allowed'
-                              : 'bg-orange-500 hover:bg-orange-600'
-                          } text-white px-4 py-2 rounded-lg text-sm font-semibold transition`}
-                        >
-                          {sendingReminder[tenant.id] ? '⏳ Sending...' : '📧 Remind'}
-                        </button>
+                        <div className="relative inline-block">
+                          {sendingReminder[tenant.id] ? (
+                            <span className="bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+                              ⏳ Sending...
+                            </span>
+                          ) : (
+                            <>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setReminderDropdown(reminderDropdown === tenant.id ? null : tenant.id); }}
+                                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
+                              >
+                                🔔 Remind ▾
+                              </button>
+                              {reminderDropdown === tenant.id && (
+                                <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-xl border z-50">
+                                  <button
+                                    onClick={() => handleSendReminder(tenant.id, tenant.name, 'email')}
+                                    className="w-full text-left px-4 py-3 hover:bg-orange-50 text-gray-700 font-medium rounded-t-lg transition flex items-center gap-2"
+                                  >
+                                    📧 Email Reminder
+                                  </button>
+                                  <button
+                                    onClick={() => handleSendReminder(tenant.id, tenant.name, 'whatsapp')}
+                                    className="w-full text-left px-4 py-3 hover:bg-green-50 text-gray-700 font-medium rounded-b-lg transition flex items-center gap-2 border-t"
+                                  >
+                                    💬 WhatsApp Reminder
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
                       )}
                     </td>
                   </tr>

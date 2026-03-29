@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import api from '../services/api';
+import api, { getOrganization } from '../services/api';
 
-const AvailabilityModal = ({ isOpen, onClose }) => {
+const AvailabilityModal = ({ isOpen, onClose, orgSlug }) => {
   const [occupancy, setOccupancy] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -14,7 +14,12 @@ const AvailabilityModal = ({ isOpen, onClose }) => {
   const fetchOccupancy = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/guest/occupancy');
+      const slug = orgSlug || getOrganization()?.slug;
+      if (!slug) {
+        setLoading(false);
+        return;
+      }
+      const response = await api.get(`/guest/${slug}/occupancy`);
       setOccupancy(response.data);
     } catch (error) {
       console.error('Error fetching occupancy:', error);

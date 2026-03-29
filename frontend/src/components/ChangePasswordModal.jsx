@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FormattedMessage } from 'react-intl';
 import api from '../services/api';
 
 const ChangePasswordModal = ({ user, onClose, onSuccess }) => {
@@ -57,7 +58,7 @@ const ChangePasswordModal = ({ user, onClose, onSuccess }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Change Your Password</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2"><FormattedMessage id="changePassword.title" defaultMessage="Change Your Password" /></h2>
         <p className="text-gray-600 mb-6">This is your first login. Please change your password by verifying your email address.</p>
 
         {error && (
@@ -80,7 +81,7 @@ const ChangePasswordModal = ({ user, onClose, onSuccess }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">New Password</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2"><FormattedMessage id="changePassword.newPassword" defaultMessage="New Password" /></label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -102,7 +103,7 @@ const ChangePasswordModal = ({ user, onClose, onSuccess }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Confirm Password</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2"><FormattedMessage id="changePassword.confirmPassword" defaultMessage="Confirm Password" /></label>
             <input
               type={showPassword ? 'text' : 'password'}
               value={confirmPassword}
@@ -118,7 +119,7 @@ const ChangePasswordModal = ({ user, onClose, onSuccess }) => {
             disabled={loading}
             className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold transition"
           >
-            {loading ? 'Changing Password...' : 'Change Password'}
+            {loading ? 'Changing Password...' : <FormattedMessage id="changePassword.changePassword" defaultMessage="Change Password" />}
           </button>
         </form>
 

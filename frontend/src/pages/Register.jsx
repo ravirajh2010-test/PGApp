@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FormattedMessage } from 'react-intl';
 import api from '../services/api';
 
 const Register = () => {
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', orgSlug: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,13 +15,18 @@ const Register = () => {
     setSuccess('');
     setLoading(true);
     try {
-      await api.post('/auth/register', form);
+      await api.post('/auth/register', {
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        orgSlug: form.orgSlug,
+      });
       setSuccess('Registration successful! Redirecting to login...');
       setTimeout(() => {
         window.location.href = '/login';
       }, 2000);
     } catch (error) {
-      setError('Registration failed. Please try again.');
+      setError(error.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -30,8 +36,8 @@ const Register = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-gray-100">
       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-orange-500 mb-2">🏢 Bajrang Hostels and PG Pvt Ltd</h1>
-          <h2 className="text-2xl font-bold text-gray-800">Register</h2>
+          <h1 className="text-4xl font-bold text-orange-500 mb-2">🏢 PG Stay</h1>
+          <h2 className="text-2xl font-bold text-gray-800"><FormattedMessage id="auth.register" defaultMessage="Register" /></h2>
         </div>
         
         {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>}
@@ -39,7 +45,19 @@ const Register = () => {
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1"><FormattedMessage id="auth.orgSlug" defaultMessage="Organization Slug" /></label>
+            <input
+              type="text"
+              placeholder="e.g. bajrang-hostels"
+              value={form.orgSlug}
+              onChange={(e) => setForm({ ...form, orgSlug: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">Ask your PG admin for this ID</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1"><FormattedMessage id="auth.name" defaultMessage="Full Name" /></label>
             <input
               type="text"
               placeholder="John Doe"
@@ -50,7 +68,7 @@ const Register = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1"><FormattedMessage id="auth.email" defaultMessage="Email" /></label>
             <input
               type="email"
               placeholder="you@example.com"
@@ -61,7 +79,7 @@ const Register = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1"><FormattedMessage id="auth.password" defaultMessage="Password" /></label>
             <input
               type="password"
               placeholder="••••••••"
@@ -76,12 +94,13 @@ const Register = () => {
             disabled={loading}
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition disabled:opacity-50"
           >
-            {loading ? 'Registering...' : 'Register'}
+            {loading ? <FormattedMessage id="common.loading" defaultMessage="Loading..." /> : <FormattedMessage id="auth.register" defaultMessage="Register" />}
           </button>
         </form>
         
-        <div className="mt-6 text-center">
-          <p className="text-gray-600">Already have an account? <Link to="/login" className="text-orange-500 hover:text-orange-600 font-bold">Login here</Link></p>
+        <div className="mt-6 text-center space-y-2">
+          <p className="text-gray-600"><FormattedMessage id="auth.alreadyHaveAccount" defaultMessage="Already have an account?" /> <Link to="/login" className="text-orange-500 hover:text-orange-600 font-bold"><FormattedMessage id="auth.login" defaultMessage="Login" /></Link></p>
+          <p className="text-gray-600">Want to list your PG? <Link to="/onboarding" className="text-orange-500 hover:text-orange-600 font-bold">Register your business</Link></p>
         </div>
       </div>
     </div>

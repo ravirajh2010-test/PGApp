@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { FormattedMessage } from 'react-intl';
 import api from '../services/api';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 
@@ -88,20 +89,20 @@ const TenantDashboard = () => {
       )}
 
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-2">👤 Tenant Dashboard</h1>
-        <p className="text-gray-600">Manage your stay and payments</p>
+        <h1 className="text-4xl font-bold text-gray-800 mb-2">👤 <FormattedMessage id="tenant.tenantDashboard" defaultMessage="Tenant Dashboard" /></h1>
+        <p className="text-gray-600"><FormattedMessage id="tenant.stayDetails" defaultMessage="Manage your stay and payments" /></p>
       </div>
 
       {/* Profile Section */}
       <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Profile Information</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4"><FormattedMessage id="tenant.myProfile" defaultMessage="Profile Information" /></h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <p className="text-sm text-gray-600">Name</p>
+            <p className="text-sm text-gray-600"><FormattedMessage id="tenant.name" defaultMessage="Name" /></p>
             <p className="text-lg font-semibold text-gray-800">{profile.name || 'N/A'}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-600">Email</p>
+            <p className="text-sm text-gray-600"><FormattedMessage id="tenant.email" defaultMessage="Email" /></p>
             <p className="text-lg font-semibold text-gray-800">{profile.email || 'N/A'}</p>
           </div>
         </div>
@@ -109,18 +110,18 @@ const TenantDashboard = () => {
 
       {/* Stay Details Section */}
       <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Stay Details</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4"><FormattedMessage id="tenant.stayDetails" defaultMessage="Stay Details" /></h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <p className="text-sm text-gray-600">Check-in Date</p>
+            <p className="text-sm text-gray-600"><FormattedMessage id="tenant.checkInDate" defaultMessage="Check-in Date" /></p>
             <p className="text-lg font-semibold text-gray-800">{stay.start_date ? new Date(stay.start_date).toLocaleDateString() : 'N/A'}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-600">Check-out Date</p>
+            <p className="text-sm text-gray-600"><FormattedMessage id="tenant.checkOutDate" defaultMessage="Check-out Date" /></p>
             <p className="text-lg font-semibold text-gray-800">{stay.end_date ? new Date(stay.end_date).toLocaleDateString() : 'N/A'}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-600">Monthly Rent</p>
+            <p className="text-sm text-gray-600"><FormattedMessage id="tenant.monthlyRent" defaultMessage="Monthly Rent" /></p>
             <p className="text-2xl font-bold text-green-600">₹{stay.rent || 'N/A'}</p>
           </div>
         </div>
@@ -129,12 +130,12 @@ const TenantDashboard = () => {
       {/* Payments Section */}
       <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-800">Payment History</h2>
+          <h2 className="text-2xl font-bold text-gray-800"><FormattedMessage id="tenant.paymentHistory" defaultMessage="Payment History" /></h2>
           <button 
             onClick={handlePay} 
             className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg transition"
           >
-            💳 Pay Rent
+            💳 <FormattedMessage id="tenant.payRent" defaultMessage="Pay Rent" />
           </button>
         </div>
         <div className="overflow-x-auto">
@@ -142,9 +143,9 @@ const TenantDashboard = () => {
             <table className="w-full">
               <thead className="bg-gray-100 border-b">
                 <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Amount</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="tenant.date" defaultMessage="Date" /></th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="tenant.amount" defaultMessage="Amount" /></th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="tenant.status" defaultMessage="Status" /></th>
                 </tr>
               </thead>
               <tbody>
@@ -164,7 +165,7 @@ const TenantDashboard = () => {
               </tbody>
             </table>
           ) : (
-            <p className="text-gray-500 text-center py-4">No payments yet</p>
+            <p className="text-gray-500 text-center py-4"><FormattedMessage id="tenant.noPayments" defaultMessage="No payments yet" /></p>
           )}
         </div>
       </div>

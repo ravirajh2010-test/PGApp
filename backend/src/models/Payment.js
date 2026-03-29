@@ -1,9 +1,9 @@
 const pool = require('../config/database');
 
 class Payment {
-  static async create(tenantId, amount, status, razorpayPaymentId) {
-    const query = 'INSERT INTO payments (tenant_id, amount, status, razorpay_payment_id) VALUES ($1, $2, $3, $4) RETURNING *';
-    const values = [tenantId, amount, status, razorpayPaymentId];
+  static async create(tenantId, amount, status, razorpayPaymentId, orgId) {
+    const query = 'INSERT INTO payments (tenant_id, amount, status, razorpay_payment_id, org_id) VALUES ($1, $2, $3, $4, $5) RETURNING *';
+    const values = [tenantId, amount, status, razorpayPaymentId, orgId];
     const result = await pool.query(query, values);
     return result.rows[0];
   }
@@ -11,6 +11,12 @@ class Payment {
   static async findByTenantId(tenantId) {
     const query = 'SELECT * FROM payments WHERE tenant_id = $1 ORDER BY payment_date DESC';
     const result = await pool.query(query, [tenantId]);
+    return result.rows;
+  }
+
+  static async findByOrgId(orgId) {
+    const query = 'SELECT * FROM payments WHERE org_id = $1 ORDER BY payment_date DESC';
+    const result = await pool.query(query, [orgId]);
     return result.rows;
   }
 

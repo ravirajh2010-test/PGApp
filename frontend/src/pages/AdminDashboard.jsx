@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FormattedMessage } from 'react-intl';
 import api from '../services/api';
 
 const AdminDashboard = () => {
@@ -12,6 +13,9 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [layoutView, setLayoutView] = useState('rooms'); // 'floors' or 'rooms'
+  const [floors, setFloors] = useState([]);
+  const [selectedBuildingForFloors, setSelectedBuildingForFloors] = useState(null);
 
   // Tenant form state
   const [showTenantForm, setShowTenantForm] = useState(false);
@@ -23,6 +27,7 @@ const AdminDashboard = () => {
     name: '',
     email: '',
     password: '',
+    phone: '',
     roomId: '',
     bedId: '',
     startDate: '',
@@ -55,6 +60,26 @@ const AdminDashboard = () => {
     }, 30000);
     return () => clearInterval(interval);
   }, [autoRefresh]);
+
+  // Get readable floor label
+  const getFloorLabel = (floorNumber) => {
+    if (floorNumber === 0) return 'Ground Floor';
+    if (floorNumber === 1) return '1st Floor';
+    if (floorNumber === 2) return '2nd Floor';
+    if (floorNumber === 3) return '3rd Floor';
+    return `${floorNumber}th Floor`;
+  };
+
+  // Fetch floor layout
+  const fetchFloorLayout = async (buildingId) => {
+    try {
+      const res = await api.get(`/admin/floor-layout?buildingId=${buildingId}`);
+      setFloors(res.data);
+      setSelectedBuildingForFloors(buildingId);
+    } catch (error) {
+      console.error('Error fetching floor layout:', error);
+    }
+  };
 
   // Fetch functions
   const fetchTenants = async () => {
@@ -163,6 +188,7 @@ const AdminDashboard = () => {
         name: formData.name,
         email: formData.email,
         password: formData.password,
+        phone: formData.phone,
         bedId: parseInt(formData.bedId),
         startDate: formData.startDate,
         endDate: formData.endDate || null,
@@ -183,6 +209,7 @@ const AdminDashboard = () => {
         name: '',
         email: '',
         password: '',
+        phone: '',
         roomId: '',
         bedId: '',
         startDate: '',
@@ -212,22 +239,22 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-8">
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-2">📊 Admin Dashboard</h1>
-        <p className="text-gray-600">Manage tenants and view property overview</p>
+        <h1 className="text-4xl font-bold text-gray-800 mb-2">📊 <FormattedMessage id="dashboard.adminDashboard" defaultMessage="Admin Dashboard" /></h1>
+        <p className="text-gray-600"><FormattedMessage id="dashboard.subtitle" defaultMessage="Manage tenants and view property overview" /></p>
       </div>
 
       {/* Occupancy Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
-          <h3 className="text-sm font-semibold text-gray-600 uppercase">Total Beds</h3>
+          <h3 className="text-sm font-semibold text-gray-600 uppercase"><FormattedMessage id="dashboard.totalBeds" defaultMessage="Total Beds" /></h3>
           <p className="text-3xl font-bold text-orange-500">{occupancy.total || 0}</p>
         </div>
         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
-          <h3 className="text-sm font-semibold text-gray-600 uppercase">Occupied</h3>
+          <h3 className="text-sm font-semibold text-gray-600 uppercase"><FormattedMessage id="dashboard.occupied" defaultMessage="Occupied" /></h3>
           <p className="text-3xl font-bold text-green-500">{occupancy.occupied || 0}</p>
         </div>
         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
-          <h3 className="text-sm font-semibold text-gray-600 uppercase">Vacant</h3>
+          <h3 className="text-sm font-semibold text-gray-600 uppercase"><FormattedMessage id="dashboard.vacant" defaultMessage="Vacant" /></h3>
           <p className="text-3xl font-bold text-blue-500">{(occupancy.total || 0) - (occupancy.occupied || 0)}</p>
         </div>
       </div>
@@ -244,6 +271,7 @@ const AdminDashboard = () => {
                   name: '',
                   email: '',
                   password: '',
+                  phone: '',
                   roomId: '',
                   bedId: '',
                   startDate: '',
@@ -255,19 +283,19 @@ const AdminDashboard = () => {
             }}
             className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition"
           >
-            {showTenantForm ? '✕ Close' : '➕ Add New Tenant'}
+            {showTenantForm ? '✕ Close' : <><FormattedMessage id="dashboard.addNewTenant" defaultMessage="+ Add New Tenant" /></>}
           </button>
           <button
             onClick={refreshAllData}
             className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold transition"
           >
-            🔄 Refresh
+            <FormattedMessage id="dashboard.refresh" defaultMessage="🔄 Refresh" />
           </button>
           <button
             onClick={() => navigate('/property-management')}
             className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold transition"
           >
-            ⚙️ Modify Properties
+            <FormattedMessage id="dashboard.modifyProperties" defaultMessage="⚙️ Modify Properties" />
           </button>
         </div>
         
@@ -279,7 +307,7 @@ const AdminDashboard = () => {
               onChange={(e) => setAutoRefresh(e.target.checked)}
               className="w-4 h-4"
             />
-            <span className="text-sm font-semibold text-gray-700">Auto-refresh (30s)</span>
+            <span className="text-sm font-semibold text-gray-700"><FormattedMessage id="dashboard.autoRefresh" defaultMessage="Auto Refresh" /> (30s)</span>
           </label>
           {lastRefreshTime && (
             <span className="text-xs text-gray-500">Last: {lastRefreshTime}</span>
@@ -290,7 +318,7 @@ const AdminDashboard = () => {
       {/* Add Tenant Form */}
       {showTenantForm && (
         <div className="bg-white rounded-lg shadow-md p-6 border-2 border-orange-300">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Add New Tenant</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6"><FormattedMessage id="tenants.addNewTenant" defaultMessage="Add New Tenant" /></h2>
           
           {tenantError && (
             <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
@@ -299,11 +327,11 @@ const AdminDashboard = () => {
           )}
 
           <form onSubmit={handleCreateTenant} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <input
                 type="text"
                 name="name"
-                placeholder="Full Name"
+                placeholder="Full Name" // DB field
                 value={formData.name}
                 onChange={handleInputChange}
                 required
@@ -318,11 +346,19 @@ const AdminDashboard = () => {
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
               />
+              <input
+                type="tel"
+                name="phone"
+                placeholder="Phone (WhatsApp)"
+                value={formData.phone}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2"><FormattedMessage id="tenants.password" defaultMessage="Password" /></label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -338,7 +374,7 @@ const AdminDashboard = () => {
                     onClick={generatePassword}
                     className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition"
                   >
-                    Generate
+                    <FormattedMessage id="tenants.generatePassword" defaultMessage="Generate" />
                   </button>
                 </div>
               </div>
@@ -349,7 +385,7 @@ const AdminDashboard = () => {
                 required
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
               >
-                <option value="">Select Room</option>
+                <option value=""><FormattedMessage id="tenants.selectRoom" defaultMessage="Select Room" /></option>
                 {rooms.map((room) => (
                   <option key={room.id} value={room.id}>
                     {room.building_name} - Room {room.room_number} (Capacity: {room.capacity})
@@ -364,7 +400,7 @@ const AdminDashboard = () => {
                 disabled={!formData.roomId}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
-                <option value="">Select Bed</option>
+                <option value=""><FormattedMessage id="tenants.selectBed" defaultMessage="Select Bed" /></option>
                 {selectedRoomBeds.map((bed) => (
                   <option key={bed.id} value={bed.id}>
                     Bed {bed.bed_identifier}
@@ -392,7 +428,7 @@ const AdminDashboard = () => {
               <input
                 type="number"
                 name="rent"
-                placeholder="Monthly Rent"
+                placeholder="Monthly Rent" // number field
                 value={formData.rent}
                 onChange={handleInputChange}
                 required
@@ -405,7 +441,7 @@ const AdminDashboard = () => {
               type="submit"
               className="w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition"
             >
-              Create Tenant
+              <FormattedMessage id="tenants.create" defaultMessage="Create Tenant" />
             </button>
           </form>
         </div>
@@ -414,13 +450,13 @@ const AdminDashboard = () => {
       {/* Created Credentials Display */}
       {createdCredentials && (
         <div className="bg-green-50 border-2 border-green-500 rounded-lg p-6">
-          <h3 className="text-lg font-bold text-green-800 mb-4">✓ Tenant Created Successfully</h3>
+          <h3 className="text-lg font-bold text-green-800 mb-4">✓ <FormattedMessage id="tenants.tenantCreated" defaultMessage="Tenant Created Successfully" /></h3>
           <div className="bg-white rounded p-4 space-y-2 font-mono text-sm">
             <p><span className="font-bold text-gray-700">Name:</span> {createdCredentials.name}</p>
             <p><span className="font-bold text-gray-700">Email:</span> {createdCredentials.email}</p>
             <p><span className="font-bold text-gray-700">Password:</span> {createdCredentials.password}</p>
           </div>
-          <p className="text-sm text-green-700 mt-4">Share these credentials with the tenant. They will be prompted to change their password on first login.</p>
+          <p className="text-sm text-green-700 mt-4"><FormattedMessage id="tenants.shareCredentials" defaultMessage="Share these credentials with the tenant. They will be prompted to change their password on first login." /></p>
           <button
             onClick={() => setCreatedCredentials(null)}
             className="mt-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition"
@@ -433,7 +469,7 @@ const AdminDashboard = () => {
       {/* Tenants Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="px-6 py-4 bg-orange-50 border-b-2 border-orange-500">
-          <h2 className="text-2xl font-bold text-gray-800">👥 Tenants</h2>
+          <h2 className="text-2xl font-bold text-gray-800">👥 <FormattedMessage id="dashboard.tenantsSection" defaultMessage="Tenants" /></h2>
         </div>
         <div className="overflow-x-auto">
           {loading ? (
@@ -442,12 +478,12 @@ const AdminDashboard = () => {
             <table className="w-full">
               <thead className="bg-gray-100 border-b">
                 <tr>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Name</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Email</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Bed Assigned</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Rent</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Check-in</th>
-                  <th className="px-6 py-3 text-center font-semibold text-gray-700">Action</th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.name" defaultMessage="Name" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.email" defaultMessage="Email" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.bedAssigned" defaultMessage="Bed Assigned" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.rent" defaultMessage="Rent" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.checkIn" defaultMessage="Check-in" /></th>
+                  <th className="px-6 py-3 text-center font-semibold text-gray-700"><FormattedMessage id="dashboard.action" defaultMessage="Action" /></th>
                 </tr>
               </thead>
               <tbody>
@@ -467,7 +503,7 @@ const AdminDashboard = () => {
                         onClick={() => handleDeleteTenant(tenant.id)} 
                         className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition"
                       >
-                        Delete
+                        <FormattedMessage id="common.delete" defaultMessage="Delete" />
                       </button>
                     </td>
                   </tr>
@@ -475,7 +511,7 @@ const AdminDashboard = () => {
               </tbody>
             </table>
           ) : (
-            <p className="p-6 text-center text-gray-500">No tenants found</p>
+            <p className="p-6 text-center text-gray-500"><FormattedMessage id="dashboard.noTenantsFound" defaultMessage="No tenants found" /></p>
           )}
         </div>
       </div>
@@ -483,16 +519,16 @@ const AdminDashboard = () => {
       {/* Buildings Overview (Read-Only) */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="px-6 py-4 bg-blue-50 border-b-2 border-blue-500">
-          <h2 className="text-2xl font-bold text-gray-800">🏢 Buildings Overview</h2>
+          <h2 className="text-2xl font-bold text-gray-800">🏢 <FormattedMessage id="dashboard.buildingsOverview" defaultMessage="Buildings Overview" /></h2>
         </div>
         <div className="overflow-x-auto">
           {buildings.length > 0 ? (
             <table className="w-full">
               <thead className="bg-gray-100 border-b">
                 <tr>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">ID</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Name</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Location</th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.id" defaultMessage="ID" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.name" defaultMessage="Name" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.location" defaultMessage="Location" /></th>
                 </tr>
               </thead>
               <tbody>
@@ -506,25 +542,59 @@ const AdminDashboard = () => {
               </tbody>
             </table>
           ) : (
-            <p className="p-6 text-center text-gray-500">No buildings found</p>
+            <p className="p-6 text-center text-gray-500"><FormattedMessage id="dashboard.noBuildingsFound" defaultMessage="No buildings found" /></p>
           )}
         </div>
       </div>
 
+      {/* Layout View Toggle */}
+      <div className="bg-white rounded-lg shadow-md p-4 flex items-center gap-4">
+        <label className="font-semibold text-gray-700"><FormattedMessage id="dashboard.viewLayout" defaultMessage="View Layout:" /></label>
+        <select 
+          value={layoutView} 
+          onChange={(e) => {
+            setLayoutView(e.target.value);
+            if (e.target.value === 'floors' && buildings.length > 0) {
+              fetchFloorLayout(buildings[0].id);
+            }
+          }}
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+        >
+          <option value="rooms"><FormattedMessage id="dashboard.rooms" defaultMessage="Rooms" /></option>
+          <option value="floors"><FormattedMessage id="dashboard.floors" defaultMessage="Floors" /></option>
+        </select>
+        {layoutView === 'floors' && buildings.length > 0 && (
+          <>
+            <label className="font-semibold text-gray-700"><FormattedMessage id="dashboard.selectBuilding" defaultMessage="Select Building:" /></label>
+            <select 
+              value={selectedBuildingForFloors || ''} 
+              onChange={(e) => fetchFloorLayout(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value=""><FormattedMessage id="dashboard.chooseBuilding" defaultMessage="Choose a building..." /></option>
+              {buildings.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+          </>
+        )}
+      </div>
+
       {/* Rooms Overview (Read-Only) */}
+      {layoutView === 'rooms' && (
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="px-6 py-4 bg-purple-50 border-b-2 border-purple-500">
-          <h2 className="text-2xl font-bold text-gray-800">🚪 Rooms Overview</h2>
+          <h2 className="text-2xl font-bold text-gray-800"><FormattedMessage id="dashboard.roomsOverview" defaultMessage="🚪 Rooms Overview" /></h2>
         </div>
         <div className="overflow-x-auto">
           {rooms.length > 0 ? (
             <table className="w-full">
               <thead className="bg-gray-100 border-b">
                 <tr>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">ID</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Building</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Room Number</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Capacity</th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.id" defaultMessage="ID" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.building" defaultMessage="Building" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.roomNumber" defaultMessage="Room Number" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.capacity" defaultMessage="Capacity" /></th>
                 </tr>
               </thead>
               <tbody>
@@ -539,25 +609,72 @@ const AdminDashboard = () => {
               </tbody>
             </table>
           ) : (
-            <p className="p-6 text-center text-gray-500">No rooms found</p>
+            <p className="p-6 text-center text-gray-500"><FormattedMessage id="dashboard.noRoomsFound" defaultMessage="No rooms found" /></p>
           )}
         </div>
       </div>
+      )}
+
+      {/* Floor Layout View */}
+      {layoutView === 'floors' && (
+      <div className="space-y-4">
+        {floors.map((floor) => (
+          <div key={floor.floor_number} className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="px-6 py-4 bg-indigo-50 border-b-2 border-indigo-500">
+              <h3 className="text-xl font-bold text-gray-800">{getFloorLabel(floor.floor_number)}</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-100 border-b">
+                  <tr>
+                    <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.room" defaultMessage="Room" /></th>
+                    <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.capacity" defaultMessage="Capacity" /></th>
+                    <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.totalBeds" defaultMessage="Total Beds" /></th>
+                    <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.occupiedBeds" defaultMessage="Occupied" /></th>
+                    <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.vacantBeds" defaultMessage="Vacant" /></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {floor.rooms.map((room) => (
+                    <tr key={room.id} className="border-b hover:bg-gray-50">
+                      <td className="px-6 py-3 font-medium">Room {room.room_number}</td>
+                      <td className="px-6 py-3">{room.capacity}</td>
+                      <td className="px-6 py-3">{room.total_beds}</td>
+                      <td className="px-6 py-3">
+                        <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm">
+                          {room.occupied_beds}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3">
+                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+                          {room.vacant_beds}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
+      </div>
+      )}
 
       {/* Beds Overview (Read-Only) */}
+      {layoutView === 'rooms' && (
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="px-6 py-4 bg-green-50 border-b-2 border-green-500">
-          <h2 className="text-2xl font-bold text-gray-800">🛏️ Beds Overview</h2>
+          <h2 className="text-2xl font-bold text-gray-800"><FormattedMessage id="dashboard.bedsOverview" defaultMessage="🛏️ Beds Overview" /></h2>
         </div>
         <div className="overflow-x-auto">
           {beds.length > 0 ? (
             <table className="w-full">
               <thead className="bg-gray-100 border-b">
                 <tr>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">ID</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Building</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Room</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Status</th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.id" defaultMessage="ID" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.building" defaultMessage="Building" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.room" defaultMessage="Room" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.status" defaultMessage="Status" /></th>
                 </tr>
               </thead>
               <tbody>
@@ -568,7 +685,7 @@ const AdminDashboard = () => {
                     <td className="px-6 py-3">Room {bed.room_number}</td>
                     <td className="px-6 py-3">
                       <span className={`px-3 py-1 rounded-full text-sm font-semibold ${bed.status === 'occupied' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                        {bed.status === 'occupied' ? '🔴 Occupied' : '🟢 Vacant'}
+                        {bed.status === 'occupied' ? <><FormattedMessage id="dashboard.occupiedStatus" defaultMessage="Occupied" /> 🔴</> : <><FormattedMessage id="dashboard.vacantStatus" defaultMessage="Vacant" /> 🟢</>}
                       </span>
                     </td>
                   </tr>
@@ -576,10 +693,11 @@ const AdminDashboard = () => {
               </tbody>
             </table>
           ) : (
-            <p className="p-6 text-center text-gray-500">No beds found</p>
+            <p className="p-6 text-center text-gray-500"><FormattedMessage id="dashboard.noBedsFound" defaultMessage="No beds found" /></p>
           )}
         </div>
       </div>
+      )}
     </div>
   );
 };

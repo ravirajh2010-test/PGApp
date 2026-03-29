@@ -1,39 +1,42 @@
 const pool = require('../config/database');
 
 class Bed {
-  static async findAll() {
-    const query = 'SELECT * FROM beds ORDER BY id';
-    const result = await pool.query(query);
+  static async findAll(orgId) {
+    const query = 'SELECT * FROM beds WHERE org_id = $1 ORDER BY id';
+    const result = await pool.query(query, [orgId]);
     return result.rows;
   }
 
-  static async findByRoom(roomId) {
-    const query = 'SELECT * FROM beds WHERE room_id = $1 ORDER BY id';
-    const result = await pool.query(query, [roomId]);
+  static async findByRoom(roomId, orgId) {
+    const query = 'SELECT * FROM beds WHERE room_id = $1 AND org_id = $2 ORDER BY id';
+    const result = await pool.query(query, [roomId, orgId]);
     return result.rows;
   }
 
-  static async findById(id) {
-    const query = 'SELECT * FROM beds WHERE id = $1';
-    const result = await pool.query(query, [id]);
+  static async findById(id, orgId) {
+    const query = orgId 
+      ? 'SELECT * FROM beds WHERE id = $1 AND org_id = $2'
+      : 'SELECT * FROM beds WHERE id = $1';
+    const params = orgId ? [id, orgId] : [id];
+    const result = await pool.query(query, params);
     return result.rows[0];
   }
 
-  static async findVacantByRoom(roomId) {
-    const query = 'SELECT * FROM beds WHERE room_id = $1 AND status = $2';
-    const result = await pool.query(query, [roomId, 'vacant']);
+  static async findVacantByRoom(roomId, orgId) {
+    const query = 'SELECT * FROM beds WHERE room_id = $1 AND status = $2 AND org_id = $3';
+    const result = await pool.query(query, [roomId, 'vacant', orgId]);
     return result.rows;
   }
 
-  static async create(roomId, bedIdentifier, status = 'vacant') {
-    const query = 'INSERT INTO beds (room_id, bed_identifier, status) VALUES ($1, $2, $3) RETURNING *';
-    const result = await pool.query(query, [roomId, bedIdentifier, status]);
+  static async create(roomId, bedIdentifier, status = 'vacant', orgId) {
+    const query = 'INSERT INTO beds (room_id, bed_identifier, status, org_id) VALUES ($1, $2, $3, $4) RETURNING *';
+    const result = await pool.query(query, [roomId, bedIdentifier, status, orgId]);
     return result.rows[0];
   }
 
-  static async update(id, roomId, bedIdentifier, status) {
-    const query = 'UPDATE beds SET room_id = $1, bed_identifier = $2, status = $3 WHERE id = $4 RETURNING *';
-    const result = await pool.query(query, [roomId, bedIdentifier, status, id]);
+  static async update(id, roomId, bedIdentifier, status, orgId) {
+    const query = 'UPDATE beds SET room_id = $1, bed_identifier = $2, status = $3 WHERE id = $4 AND org_id = $5 RETURNING *';
+    const result = await pool.query(query, [roomId, bedIdentifier, status, id, orgId]);
     return result.rows[0];
   }
 
@@ -43,27 +46,25 @@ class Bed {
     return result.rows[0];
   }
 
-  static async delete(id) {
-    // Cascading delete: delete in correct order to avoid foreign key violations
-    // 1. Get tenants in this bed
+  static async delete(id, orgId) {
+    // Verify ownership
+    const check = await pool.query('SELECT id FROM beds WHERE id = $1 AND org_id = $2', [id, orgId]);
+    if (check.rows.length === 0) return null;
+
     const tenantResult = await pool.query('SELECT id, user_id FROM tenants WHERE bed_id = $1', [id]);
     
-    // 2. Delete payments for these tenants first
     for (const tenant of tenantResult.rows) {
       await pool.query('DELETE FROM payments WHERE tenant_id = $1', [tenant.id]);
     }
     
-    // 3. Delete tenants
     await pool.query('DELETE FROM tenants WHERE bed_id = $1', [id]);
 
-    // 4. Delete associated users
     for (const tenant of tenantResult.rows) {
-      await pool.query('DELETE FROM users WHERE id = $1', [tenant.user_id]);
+      await pool.query("DELETE FROM users WHERE id = $1 AND role = 'tenant'", [tenant.user_id]);
     }
 
-    // 5. Finally delete the bed
-    const query = 'DELETE FROM beds WHERE id = $1 RETURNING *';
-    const result = await pool.query(query, [id]);
+    const query = 'DELETE FROM beds WHERE id = $1 AND org_id = $2 RETURNING *';
+    const result = await pool.query(query, [id, orgId]);
     return result.rows[0];
   }
 }

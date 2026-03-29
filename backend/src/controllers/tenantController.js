@@ -2,7 +2,6 @@ const Tenant = require('../models/Tenant');
 const Payment = require('../models/Payment');
 const Razorpay = require('razorpay');
 
-// Initialize Razorpay only if keys are provided
 let razorpay = null;
 if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
   razorpay = new Razorpay({
@@ -42,8 +41,9 @@ const getPayments = async (req, res) => {
 
 const createPaymentOrder = async (req, res) => {
   try {
+    if (!razorpay) return res.status(503).json({ message: 'Payment gateway not configured for this plan' });
     const tenant = await Tenant.findByUserId(req.user.id);
-    const amount = tenant.rent * 100; // in paisa
+    const amount = tenant.rent * 100;
     const options = {
       amount,
       currency: 'INR',
@@ -60,7 +60,7 @@ const verifyPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
     const tenant = await Tenant.findByUserId(req.user.id);
-    const payment = await Payment.create(tenant.id, tenant.rent, 'completed', razorpay_payment_id);
+    const payment = await Payment.create(tenant.id, tenant.rent, 'completed', razorpay_payment_id, req.orgId);
     res.json({ message: 'Payment verified', payment });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
