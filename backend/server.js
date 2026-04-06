@@ -207,3 +207,9 @@ app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 initDatabase().catch(error => {
   console.error('Background database initialization failed:', error.message);
 });
+
+// Initialize organization databases asynchronously
+const OrgDatabaseInitializer = require('./src/services/OrgDatabaseInitializer');
+OrgDatabaseInitializer.initialize().catch(error => {
+  console.error('Organization database initialization failed:', error.message);
+});
