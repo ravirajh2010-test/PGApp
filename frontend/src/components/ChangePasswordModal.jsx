@@ -88,7 +88,7 @@ const ChangePasswordModal = ({ user, onClose, onSuccess }) => {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter new password"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
                 required
               />
               <button
@@ -109,7 +109,7 @@ const ChangePasswordModal = ({ user, onClose, onSuccess }) => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm new password"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
               required
             />
           </div>
@@ -117,7 +117,7 @@ const ChangePasswordModal = ({ user, onClose, onSuccess }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold transition"
+            className="w-full bg-brand-500 hover:bg-brand-600 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold transition"
           >
             {loading ? 'Changing Password...' : <FormattedMessage id="changePassword.changePassword" defaultMessage="Change Password" />}
           </button>

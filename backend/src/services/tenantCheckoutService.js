@@ -1,11 +1,10 @@
-const pool = require('../config/database');
 const Tenant = require('../models/Tenant');
 const Bed = require('../models/Bed');
 const { sendThankYouEmail } = require('./emailService');
 
-const processTenantCheckouts = async () => {
+const processTenantCheckouts = async (orgPool, orgId) => {
   try {
-    console.log('[CHECKOUT] Processing tenant checkouts...');
+    console.log(`[CHECKOUT] Processing tenant checkouts for org ${orgId || 'unknown'}...`);
     
     // Find all tenants whose end_date is today
     const today = new Date().toISOString().split('T')[0]; // Get date in YYYY-MM-DD format
@@ -23,7 +22,7 @@ const processTenantCheckouts = async () => {
       ORDER BY bl.name, r.room_number
     `;
     
-    const result = await pool.query(query, [today]);
+    const result = await orgPool.query(query, [today]);
     const tenantsToCheckout = result.rows;
     
     if (tenantsToCheckout.length === 0) {
@@ -61,21 +60,12 @@ const processTenantCheckouts = async () => {
         
         // Step 2: Update bed status to vacant
         console.log(`[CHECKOUT] Updating bed ${tenant.bed_identifier} to vacant...`);
-        await Bed.updateStatus(tenant.bed_id, 'vacant');
+        await Bed.updateStatus(orgPool, tenant.bed_id, 'vacant');
         
-        // Step 3: Delete tenant
+        // Step 3: Delete payments and tenant
         console.log(`[CHECKOUT] Deleting tenant record for ${tenant.name}...`);
-        
-        // Delete payments first (due to foreign key constraint)
-        await pool.query('DELETE FROM payments WHERE tenant_id = $1', [tenant.id]);
-        
-        // Delete tenant
-        await Tenant.delete(tenant.id);
-        
-        // Delete user associated with tenant
-        const userResult = await pool.query('SELECT user_id FROM tenants WHERE id = $1', [tenant.id]);
-        // User should be deleted in a cascade or we do it explicitly
-        // For now, we'll leave it as the tenant record is deleted
+        await orgPool.query('DELETE FROM payments WHERE tenant_id = $1', [tenant.id]);
+        await Tenant.delete(orgPool, tenant.id);
         
         console.log(`[CHECKOUT] ✅ Successfully checked out ${tenant.name}`);
         successCount++;

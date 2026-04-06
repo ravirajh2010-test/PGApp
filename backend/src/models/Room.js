@@ -1,21 +1,20 @@
-const pool = require('../config/database');
-
+/**
+ * Room model - all methods accept org pool as first parameter.
+ * No org_id filtering needed since each org has its own database.
+ */
 class Room {
-  static async findAll(orgId) {
-    const query = 'SELECT * FROM rooms WHERE org_id = $1 ORDER BY id';
-    const result = await pool.query(query, [orgId]);
+  static async findAll(pool) {
+    const result = await pool.query('SELECT * FROM rooms ORDER BY id');
     return result.rows;
   }
 
-  static async findByBuilding(buildingId, orgId) {
-    const query = 'SELECT * FROM rooms WHERE building_id = $1 AND org_id = $2 ORDER BY room_number';
-    const result = await pool.query(query, [buildingId, orgId]);
+  static async findByBuilding(pool, buildingId) {
+    const result = await pool.query('SELECT * FROM rooms WHERE building_id = $1 ORDER BY room_number', [buildingId]);
     return result.rows;
   }
 
-  static async findById(id, orgId) {
-    const query = 'SELECT * FROM rooms WHERE id = $1 AND org_id = $2';
-    const result = await pool.query(query, [id, orgId]);
+  static async findById(pool, id) {
+    const result = await pool.query('SELECT * FROM rooms WHERE id = $1', [id]);
     return result.rows[0];
   }
 
@@ -25,27 +24,30 @@ class Room {
     return firstDigit === 0 ? 0 : firstDigit;
   }
 
-  static async create(buildingId, roomNumber, capacity, orgId, floorNumber = null) {
+  static async create(pool, buildingId, roomNumber, capacity, floorNumber = null) {
     const floor = floorNumber !== null ? floorNumber : this.extractFloorFromRoomNumber(roomNumber);
-    const query = 'INSERT INTO rooms (building_id, room_number, capacity, org_id, floor_number) VALUES ($1, $2, $3, $4, $5) RETURNING *';
-    const result = await pool.query(query, [buildingId, roomNumber, capacity, orgId, floor]);
+    const result = await pool.query(
+      'INSERT INTO rooms (building_id, room_number, capacity, floor_number) VALUES ($1, $2, $3, $4) RETURNING *',
+      [buildingId, roomNumber, capacity, floor]
+    );
     return result.rows[0];
   }
 
-  static async update(id, buildingId, roomNumber, capacity, orgId, floorNumber = null) {
+  static async update(pool, id, buildingId, roomNumber, capacity, floorNumber = null) {
     const floor = floorNumber !== null ? floorNumber : this.extractFloorFromRoomNumber(roomNumber);
-    const query = 'UPDATE rooms SET building_id = $1, room_number = $2, capacity = $3, floor_number = $4 WHERE id = $5 AND org_id = $6 RETURNING *';
-    const result = await pool.query(query, [buildingId, roomNumber, capacity, floor, id, orgId]);
+    const result = await pool.query(
+      'UPDATE rooms SET building_id = $1, room_number = $2, capacity = $3, floor_number = $4 WHERE id = $5 RETURNING *',
+      [buildingId, roomNumber, capacity, floor, id]
+    );
     return result.rows[0];
   }
 
-  static async delete(id, orgId) {
+  static async delete(pool, id) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
-      // Verify ownership
-      const check = await client.query('SELECT id FROM rooms WHERE id = $1 AND org_id = $2', [id, orgId]);
+      const check = await client.query('SELECT id FROM rooms WHERE id = $1', [id]);
       if (check.rows.length === 0) {
         await client.query('ROLLBACK');
         return null;
@@ -76,7 +78,7 @@ class Room {
 
       await client.query('DELETE FROM beds WHERE room_id = $1', [id]);
 
-      const result = await client.query('DELETE FROM rooms WHERE id = $1 AND org_id = $2 RETURNING *', [id, orgId]);
+      const result = await client.query('DELETE FROM rooms WHERE id = $1 RETURNING *', [id]);
 
       await client.query('COMMIT');
       return result.rows[0];
@@ -88,7 +90,7 @@ class Room {
     }
   }
 
-  static async getFloorLayout(buildingId, orgId) {
+  static async getFloorLayout(pool, buildingId) {
     const query = `
       SELECT 
         r.floor_number,
@@ -100,13 +102,12 @@ class Room {
         COUNT(CASE WHEN b.status = 'vacant' THEN 1 END) as vacant_beds
       FROM rooms r
       LEFT JOIN beds b ON r.id = b.room_id
-      WHERE r.building_id = $1 AND r.org_id = $2
+      WHERE r.building_id = $1
       GROUP BY r.floor_number, r.id, r.room_number, r.capacity
       ORDER BY r.floor_number ASC, r.room_number ASC
     `;
-    const result = await pool.query(query, [buildingId, orgId]);
+    const result = await pool.query(query, [buildingId]);
     
-    // Group by floor
     const floorMap = {};
     result.rows.forEach(room => {
       const floor = room.floor_number;
@@ -116,11 +117,60 @@ class Room {
       floorMap[floor].push(room);
     });
     
-    // Convert to array format
     return Object.entries(floorMap).map(([floor, rooms]) => ({
       floor_number: parseInt(floor),
       rooms
     }));
+  }
+
+  static async getFloorLayoutWithBeds(pool, buildingId) {
+    const query = `
+      SELECT 
+        r.floor_number,
+        r.id as room_id,
+        r.room_number,
+        r.capacity,
+        b.id as bed_id,
+        b.bed_identifier,
+        b.status as bed_status,
+        u.name as tenant_name
+      FROM rooms r
+      LEFT JOIN beds b ON r.id = b.room_id
+      LEFT JOIN tenants t ON b.id = t.bed_id
+      LEFT JOIN users u ON t.user_id = u.id
+      WHERE r.building_id = $1
+      ORDER BY r.floor_number ASC, r.room_number ASC, b.bed_identifier ASC
+    `;
+    const result = await pool.query(query, [buildingId]);
+
+    const floorMap = {};
+    result.rows.forEach(row => {
+      const floor = row.floor_number;
+      if (!floorMap[floor]) floorMap[floor] = {};
+      if (!floorMap[floor][row.room_id]) {
+        floorMap[floor][row.room_id] = {
+          room_id: row.room_id,
+          room_number: row.room_number,
+          capacity: row.capacity,
+          beds: []
+        };
+      }
+      if (row.bed_id) {
+        floorMap[floor][row.room_id].beds.push({
+          id: row.bed_id,
+          bed_identifier: row.bed_identifier,
+          status: row.bed_status,
+          tenant_name: row.tenant_name
+        });
+      }
+    });
+
+    return Object.entries(floorMap)
+      .sort(([a], [b]) => parseInt(a) - parseInt(b))
+      .map(([floor, roomsObj]) => ({
+        floor_number: parseInt(floor),
+        rooms: Object.values(roomsObj)
+      }));
   }
 }
 

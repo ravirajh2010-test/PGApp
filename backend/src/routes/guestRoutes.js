@@ -1,6 +1,7 @@
 const express = require('express');
 const { getBuildings, getRooms, getVacancies, getOccupancy } = require('../controllers/guestController');
 const pool = require('../config/database');
+const dbManager = require('../services/DatabaseManager');
 
 const router = express.Router();
 
@@ -14,6 +15,7 @@ const resolveOrgFromSlug = async (req, res, next) => {
     if (result.rows.length === 0) return res.status(404).json({ message: 'Organization not found' });
     if (result.rows[0].status !== 'active') return res.status(403).json({ message: 'Organization is not active' });
     req.orgId = result.rows[0].id;
+    req.pool = await dbManager.getOrgPool(req.orgId);
     next();
   } catch (error) {
     res.status(500).json({ message: 'Server error' });

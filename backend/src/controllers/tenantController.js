@@ -12,7 +12,7 @@ if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
 
 const getProfile = async (req, res) => {
   try {
-    const user = await require('../models/User').findById(req.user.id);
+    const user = await require('../models/User').findById(req.pool, req.user.id);
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -21,7 +21,7 @@ const getProfile = async (req, res) => {
 
 const getStayDetails = async (req, res) => {
   try {
-    const tenant = await Tenant.findByUserId(req.user.id);
+    const tenant = await Tenant.findByUserId(req.pool, req.user.id);
     res.json(tenant);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -30,9 +30,9 @@ const getStayDetails = async (req, res) => {
 
 const getPayments = async (req, res) => {
   try {
-    const tenant = await Tenant.findByUserId(req.user.id);
+    const tenant = await Tenant.findByUserId(req.pool, req.user.id);
     if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
-    const payments = await Payment.findByTenantId(tenant.id);
+    const payments = await Payment.findByTenantId(req.pool, tenant.id);
     res.json(payments);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -42,7 +42,7 @@ const getPayments = async (req, res) => {
 const createPaymentOrder = async (req, res) => {
   try {
     if (!razorpay) return res.status(503).json({ message: 'Payment gateway not configured for this plan' });
-    const tenant = await Tenant.findByUserId(req.user.id);
+    const tenant = await Tenant.findByUserId(req.pool, req.user.id);
     const amount = tenant.rent * 100;
     const options = {
       amount,
@@ -59,8 +59,29 @@ const createPaymentOrder = async (req, res) => {
 const verifyPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-    const tenant = await Tenant.findByUserId(req.user.id);
-    const payment = await Payment.create(tenant.id, tenant.rent, 'completed', razorpay_payment_id, req.orgId);
+    const tenant = await Tenant.findByUserId(req.pool, req.user.id);
+    const user = await require('../models/User').findById(req.pool, req.user.id);
+    
+    // Payment is for the previous month by default
+    const now = new Date();
+    let payMonth = now.getMonth() - 1;
+    let payYear = now.getFullYear();
+    if (payMonth < 0) { payMonth = 11; payYear -= 1; }
+    
+    // DB stores 1-based months (1=Jan, 2=Feb, ..., 12=Dec)
+    const dbMonth = payMonth + 1;
+    
+    const payment = await Payment.create(req.pool, {
+      tenantId: tenant.id,
+      tenantName: user.name,
+      email: tenant.email,
+      phone: tenant.phone || null,
+      amount: tenant.rent,
+      status: 'completed',
+      paymentMonth: dbMonth,
+      paymentYear: payYear,
+      razorpayPaymentId: razorpay_payment_id
+    });
     res.json({ message: 'Payment verified', payment });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });

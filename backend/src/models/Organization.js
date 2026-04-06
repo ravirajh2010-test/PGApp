@@ -1,5 +1,10 @@
 const pool = require('../config/database');
+const dbManager = require('../services/DatabaseManager');
 
+/**
+ * Organization model - uses master pool since organizations table lives in master DB.
+ * getStats uses org-specific pools via DatabaseManager.
+ */
 class Organization {
   static async create(name, slug, email, phone, address, plan = 'free') {
     const query = `INSERT INTO organizations (name, slug, email, phone, address, plan) 
@@ -9,20 +14,17 @@ class Organization {
   }
 
   static async findById(id) {
-    const query = 'SELECT * FROM organizations WHERE id = $1';
-    const result = await pool.query(query, [id]);
+    const result = await pool.query('SELECT * FROM organizations WHERE id = $1', [id]);
     return result.rows[0];
   }
 
   static async findBySlug(slug) {
-    const query = 'SELECT * FROM organizations WHERE slug = $1';
-    const result = await pool.query(query, [slug]);
+    const result = await pool.query('SELECT * FROM organizations WHERE slug = $1', [slug]);
     return result.rows[0];
   }
 
   static async findAll() {
-    const query = 'SELECT * FROM organizations ORDER BY created_at DESC';
-    const result = await pool.query(query);
+    const result = await pool.query('SELECT * FROM organizations ORDER BY created_at DESC');
     return result.rows;
   }
 
@@ -47,44 +49,55 @@ class Organization {
   }
 
   static async updateStatus(id, status) {
-    const query = 'UPDATE organizations SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *';
-    const result = await pool.query(query, [status, id]);
+    const result = await pool.query('UPDATE organizations SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *', [status, id]);
     return result.rows[0];
   }
 
   static async delete(id) {
-    const query = 'DELETE FROM organizations WHERE id = $1 RETURNING *';
-    const result = await pool.query(query, [id]);
+    const result = await pool.query('DELETE FROM organizations WHERE id = $1 RETURNING *', [id]);
     return result.rows[0];
   }
 
   static async getStats(id) {
     const stats = {};
-    const buildingCount = await pool.query('SELECT COUNT(*) as count FROM buildings WHERE org_id = $1', [id]);
-    const bedCount = await pool.query('SELECT COUNT(*) as count FROM beds WHERE org_id = $1', [id]);
-    const occupiedCount = await pool.query("SELECT COUNT(*) as count FROM beds WHERE org_id = $1 AND status = 'occupied'", [id]);
-    const userCount = await pool.query('SELECT COUNT(*) as count FROM users WHERE org_id = $1', [id]);
-    const tenantCount = await pool.query('SELECT COUNT(*) as count FROM tenants WHERE org_id = $1', [id]);
+    try {
+      const orgPool = await dbManager.getOrgPool(id);
+      const buildingCount = await orgPool.query('SELECT COUNT(*) as count FROM buildings');
+      const bedCount = await orgPool.query('SELECT COUNT(*) as count FROM beds');
+      const occupiedCount = await orgPool.query("SELECT COUNT(*) as count FROM beds WHERE status = 'occupied'");
+      const roomCount = await orgPool.query('SELECT COUNT(*) as count FROM rooms');
+      const userCount = await orgPool.query('SELECT COUNT(*) as count FROM users');
+      const tenantCount = await orgPool.query('SELECT COUNT(*) as count FROM tenants');
 
-    stats.buildings = parseInt(buildingCount.rows[0].count);
-    stats.totalBeds = parseInt(bedCount.rows[0].count);
-    stats.occupiedBeds = parseInt(occupiedCount.rows[0].count);
-    stats.vacantBeds = stats.totalBeds - stats.occupiedBeds;
-    stats.users = parseInt(userCount.rows[0].count);
-    stats.tenants = parseInt(tenantCount.rows[0].count);
-    stats.occupancyRate = stats.totalBeds > 0 ? Math.round((stats.occupiedBeds / stats.totalBeds) * 100) : 0;
+      stats.buildings = parseInt(buildingCount.rows[0].count);
+      stats.rooms = parseInt(roomCount.rows[0].count);
+      stats.totalBeds = parseInt(bedCount.rows[0].count);
+      stats.occupiedBeds = parseInt(occupiedCount.rows[0].count);
+      stats.vacantBeds = stats.totalBeds - stats.occupiedBeds;
+      stats.users = parseInt(userCount.rows[0].count);
+      stats.tenants = parseInt(tenantCount.rows[0].count);
+      stats.occupancyRate = stats.totalBeds > 0 ? Math.round((stats.occupiedBeds / stats.totalBeds) * 100) : 0;
+    } catch (err) {
+      console.error(`[ORG] Failed to get stats for org ${id}:`, err.message);
+      stats.buildings = 0;
+      stats.rooms = 0;
+      stats.totalBeds = 0;
+      stats.occupiedBeds = 0;
+      stats.vacantBeds = 0;
+      stats.users = 0;
+      stats.tenants = 0;
+      stats.occupancyRate = 0;
+    }
     return stats;
   }
 
   static async getPlanLimits(plan) {
-    const query = 'SELECT * FROM plan_limits WHERE plan = $1';
-    const result = await pool.query(query, [plan]);
+    const result = await pool.query('SELECT * FROM plan_limits WHERE plan = $1', [plan]);
     return result.rows[0];
   }
 
   static async getAllPlanLimits() {
-    const query = 'SELECT * FROM plan_limits ORDER BY price_monthly';
-    const result = await pool.query(query);
+    const result = await pool.query('SELECT * FROM plan_limits ORDER BY price_monthly');
     return result.rows;
   }
 }

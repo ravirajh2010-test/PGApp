@@ -11,6 +11,7 @@ import GuestView from './pages/GuestView';
 import Onboarding from './pages/Onboarding';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import OrgSettings from './pages/OrgSettings';
+import TenantPaymentSearch from './pages/TenantPaymentSearch';
 import './App.css';
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/property-management" element={<PropertyManagement />} />
               <Route path="/payment-info" element={<PaymentInfo />} />
+              <Route path="/tenant-payment-search" element={<TenantPaymentSearch />} />
               <Route path="/tenant" element={<TenantDashboard />} />
               <Route path="/super_admin" element={<SuperAdminDashboard />} />
               <Route path="/org-settings" element={<OrgSettings />} />

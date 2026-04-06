@@ -39,9 +39,9 @@ const AvailabilityModal = ({ isOpen, onClose, orgSlug }) => {
           <p className="text-center text-gray-500">Loading...</p>
         ) : occupancy ? (
           <div className="space-y-4">
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-6 border-2 border-orange-500">
-              <p className="text-sm font-semibold text-orange-700 mb-1">TOTAL BEDS</p>
-              <p className="text-4xl font-bold text-orange-600">{occupancy.total || 0}</p>
+            <div className="bg-gradient-to-br from-brand-50 to-brand-100 rounded-lg p-6 border-2 border-brand-500">
+              <p className="text-sm font-semibold text-brand-700 mb-1">TOTAL BEDS</p>
+              <p className="text-4xl font-bold text-brand-600">{occupancy.total || 0}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -68,7 +68,7 @@ const AvailabilityModal = ({ isOpen, onClose, orgSlug }) => {
 
         <button
           onClick={onClose}
-          className="w-full mt-6 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-lg transition"
+          className="w-full mt-6 bg-brand-500 hover:bg-brand-600 text-white font-semibold px-6 py-3 rounded-lg transition"
         >
           Close
         </button>

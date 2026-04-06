@@ -1,5 +1,5 @@
 {
-  "app.title": "PG Stay - मल्टी-टेनेंट संपत्ति प्रबंधन",
+  "app.title": "Aupl8 Stay - मल्टी-टेनेंट संपत्ति प्रबंधन",
   "app.listYourPG": "अपना PG सूचीबद्ध करें",
 
   "auth.login": "लॉगिन",
@@ -121,7 +121,7 @@
   "superAdmin.noOrganizations": "कोई संगठन नहीं मिला",
 
   "onboarding.registerBusiness": "अपना PG व्यापार पंजीकृत करें",
-  "onboarding.setupOrg": "कुछ मिनटों में PG Stay पर अपना संगठन स्थापित करें",
+  "onboarding.setupOrg": "कुछ मिनटों में Aupl8 Stay पर अपना संगठन स्थापित करें",
   "onboarding.choosePlan": "अपनी योजना चुनें",
   "onboarding.orgDetails": "संगठन विवरण",
   "onboarding.createAdmin": "प्रशासक खाता बनाएं",
@@ -151,7 +151,7 @@
   "onboarding.fillRequired": "कृपया सभी आवश्यक फ़ील्ड भरें",
   "onboarding.enterAddress": "अपना व्यापार पता दर्ज करें",
 
-  "guest.pageTitle": "PG Stay",
+  "guest.pageTitle": "Aupl8 Stay",
   "guest.tagline": "अपने PG और हॉस्टल व्यवसाय को प्रबंधित करने का सबसे आसान तरीका",
   "guest.taglineSub": "PG मालिकों और हॉस्टल प्रबंधकों के लिए मल्टी-टेनेंट SaaS प्लेटफॉर्म",
   "guest.propertyMgmt": "संपत्ति प्रबंधन",

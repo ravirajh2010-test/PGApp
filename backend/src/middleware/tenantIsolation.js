@@ -1,8 +1,9 @@
 const pool = require('../config/database');
+const dbManager = require('../services/DatabaseManager');
 
 /**
- * Middleware to extract and verify org_id from the authenticated user's JWT.
- * Attaches req.orgId for use in all downstream queries.
+ * Middleware to extract org context and inject the org-specific database pool.
+ * Sets req.orgId, req.orgPlan, and req.pool (org database pool).
  */
 const tenantIsolation = async (req, res, next) => {
   try {
@@ -10,14 +11,17 @@ const tenantIsolation = async (req, res, next) => {
     if (req.user && req.user.role === 'super_admin') {
       const targetOrgId = req.headers['x-org-id'];
       if (targetOrgId) {
-        // Verify org exists
-        const orgResult = await pool.query('SELECT id, status FROM organizations WHERE id = $1', [parseInt(targetOrgId)]);
+        const orgResult = await pool.query('SELECT id, status, database_name FROM organizations WHERE id = $1', [parseInt(targetOrgId)]);
         if (orgResult.rows.length === 0) {
           return res.status(404).json({ message: 'Organization not found' });
         }
         req.orgId = parseInt(targetOrgId);
+        try {
+          req.pool = await dbManager.getOrgPool(req.orgId);
+        } catch (err) {
+          return res.status(500).json({ message: 'Organization database not available' });
+        }
       }
-      // super_admin without x-org-id can access platform-level routes
       return next();
     }
 
@@ -27,7 +31,7 @@ const tenantIsolation = async (req, res, next) => {
     }
 
     // Verify org is active
-    const orgResult = await pool.query('SELECT id, status, plan FROM organizations WHERE id = $1', [req.user.orgId]);
+    const orgResult = await pool.query('SELECT id, status, plan, database_name FROM organizations WHERE id = $1', [req.user.orgId]);
     if (orgResult.rows.length === 0) {
       return res.status(404).json({ message: 'Organization not found' });
     }
@@ -39,6 +43,15 @@ const tenantIsolation = async (req, res, next) => {
 
     req.orgId = req.user.orgId;
     req.orgPlan = org.plan;
+
+    // Inject org-specific database pool
+    try {
+      req.pool = await dbManager.getOrgPool(req.orgId);
+    } catch (err) {
+      console.error('Failed to get org pool:', err.message);
+      return res.status(500).json({ message: 'Organization database not available' });
+    }
+
     next();
   } catch (error) {
     console.error('Tenant isolation error:', error);
@@ -48,10 +61,11 @@ const tenantIsolation = async (req, res, next) => {
 
 /**
  * Middleware to check plan limits before creating resources.
+ * Uses req.pool (org database) for counting resources.
  */
 const checkPlanLimits = (resourceType) => async (req, res, next) => {
   try {
-    if (!req.orgId) return next(); // super_admin without org context
+    if (!req.orgId) return next();
 
     const limitsResult = await pool.query(
       `SELECT pl.* FROM plan_limits pl 
@@ -66,19 +80,22 @@ const checkPlanLimits = (resourceType) => async (req, res, next) => {
     let currentCount = 0;
     let maxAllowed = 0;
 
+    // Query org-specific database (no org_id filter needed)
+    const orgPool = req.pool;
+
     switch (resourceType) {
       case 'building':
-        const buildingCount = await pool.query('SELECT COUNT(*) as count FROM buildings WHERE org_id = $1', [req.orgId]);
+        const buildingCount = await orgPool.query('SELECT COUNT(*) as count FROM buildings');
         currentCount = parseInt(buildingCount.rows[0].count);
         maxAllowed = limits.max_properties;
         break;
       case 'bed':
-        const bedCount = await pool.query('SELECT COUNT(*) as count FROM beds WHERE org_id = $1', [req.orgId]);
+        const bedCount = await orgPool.query('SELECT COUNT(*) as count FROM beds');
         currentCount = parseInt(bedCount.rows[0].count);
         maxAllowed = limits.max_beds;
         break;
       case 'user':
-        const userCount = await pool.query('SELECT COUNT(*) as count FROM users WHERE org_id = $1', [req.orgId]);
+        const userCount = await orgPool.query('SELECT COUNT(*) as count FROM users');
         currentCount = parseInt(userCount.rows[0].count);
         maxAllowed = limits.max_users;
         break;
@@ -86,7 +103,6 @@ const checkPlanLimits = (resourceType) => async (req, res, next) => {
         return next();
     }
 
-    // -1 means unlimited (enterprise)
     if (maxAllowed !== -1 && currentCount >= maxAllowed) {
       return res.status(403).json({
         message: `Plan limit reached. Your ${req.orgPlan} plan allows ${maxAllowed} ${resourceType}s. Please upgrade your plan.`,

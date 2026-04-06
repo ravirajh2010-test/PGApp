@@ -16,19 +16,20 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-orange-500 text-white shadow-lg sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+    <header className="bg-gradient-to-r from-dark-900 to-brand-950 text-white shadow-lg sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
         <Link to="/" className="flex items-center gap-2">
-          <span className="text-2xl font-bold">🏢 {org ? org.name : 'PG Stay'}</span>
+          <img src="/images/aupl8-logo.svg" alt="Aupl8" className="h-9 w-9" />
+          <span className="text-xl font-extrabold">{org ? org.name : <span>Aupl8 <span className="text-brand-400">Stay</span></span>}</span>
         </Link>
         <div className="flex items-center gap-6">
           <nav className="flex items-center gap-4">
             {!user ? (
               <>
-                <Link to="/login" className="hover:bg-orange-600 px-4 py-2 rounded transition">
+                <Link to="/login" className="hover:bg-white/10 px-4 py-2 rounded-lg transition">
                   <FormattedMessage id="auth.login" defaultMessage="Login" />
                 </Link>
-                <Link to="/onboarding" className="bg-white text-orange-500 hover:bg-orange-50 px-4 py-2 rounded transition font-medium">
+                <Link to="/onboarding" className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg transition font-medium shadow-md shadow-brand-500/20">
                   <FormattedMessage id="app.listYourPG" defaultMessage="List Your PG" />
                 </Link>
               </>
@@ -39,25 +40,25 @@ const Header = () => {
                   {org && <span className="opacity-75 ml-1">({org.name})</span>}
                 </span>
                 {user.role === 'super_admin' && (
-                  <Link to="/super_admin" className="hover:bg-orange-600 px-4 py-2 rounded">
+                  <Link to="/super_admin" className="hover:bg-white/10 px-4 py-2 rounded-lg">
                     <FormattedMessage id="header.superAdmin" defaultMessage="Super Admin" />
                   </Link>
                 )}
                 {user.role === 'admin' && (
                   <>
-                    <Link to="/admin" className="hover:bg-orange-600 px-4 py-2 rounded">
+                    <Link to="/admin" className="hover:bg-white/10 px-4 py-2 rounded-lg">
                       <FormattedMessage id="dashboard.adminDashboard" defaultMessage="Dashboard" />
                     </Link>
-                    <Link to="/payment-info" className="hover:bg-orange-600 px-4 py-2 rounded">
+                    <Link to="/payment-info" className="hover:bg-white/10 px-4 py-2 rounded-lg">
                       <FormattedMessage id="header.payments" defaultMessage="Payments" />
                     </Link>
-                    <Link to="/org-settings" className="hover:bg-orange-600 px-4 py-2 rounded">
+                    <Link to="/org-settings" className="hover:bg-white/10 px-4 py-2 rounded-lg">
                       <FormattedMessage id="header.settings" defaultMessage="Settings" />
                     </Link>
                   </>
                 )}
-                {user.role === 'tenant' && <Link to="/tenant" className="hover:bg-orange-600 px-4 py-2 rounded"><FormattedMessage id="header.myProfile" defaultMessage="My Profile" /></Link>}
-                <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded transition">
+                {user.role === 'tenant' && <Link to="/tenant" className="hover:bg-white/10 px-4 py-2 rounded-lg"><FormattedMessage id="header.myProfile" defaultMessage="My Profile" /></Link>}
+                <button onClick={handleLogout} className="bg-red-500/80 hover:bg-red-500 px-4 py-2 rounded-lg transition">
                   <FormattedMessage id="header.logout" defaultMessage="Logout" />
                 </button>
               </>

@@ -3,6 +3,8 @@ const Organization = require('../models/Organization');
 const Subscription = require('../models/Subscription');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const dbManager = require('../services/DatabaseManager');
+const { sendOrgWelcomeEmail } = require('../services/emailService');
 
 const register = async (req, res) => {
   try {
@@ -12,10 +14,15 @@ const register = async (req, res) => {
     const org = await Organization.findBySlug(orgSlug);
     if (!org) return res.status(404).json({ message: 'Organization not found' });
     
-    const existingUser = await User.findByEmail(email, org.id);
+    const orgPool = await dbManager.getOrgPool(org.id);
+    const existingUser = await User.findByEmail(orgPool, email);
     if (existingUser) return res.status(400).json({ message: 'User already exists in this organization' });
 
-    const user = await User.create(name, email, password, 'tenant', org.id);
+    const user = await User.create(orgPool, name, email, password, 'tenant');
+    
+    // Add org mapping for cross-org login
+    await User.addOrgMapping(email, org.id, user.id, 'tenant');
+    
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -27,29 +34,61 @@ const login = async (req, res) => {
     const { email, password, orgSlug } = req.body;
     
     let user;
+    let orgId = null;
+    
     if (orgSlug) {
       // Login within a specific org
       const org = await Organization.findBySlug(orgSlug);
       if (!org) return res.status(404).json({ message: 'Organization not found' });
-      user = await User.findByEmail(email, org.id);
+      
+      const orgPool = await dbManager.getOrgPool(org.id);
+      user = await User.findByEmail(orgPool, email);
+      orgId = org.id;
     } else {
-      // Try super_admin login or find user across orgs
-      const users = await User.findByEmailGlobal(email);
-      if (users.length === 0) {
-        return res.status(400).json({ message: 'Invalid credentials' });
-      }
-      // If super_admin (no org), use that
-      const superAdmin = users.find(u => u.role === 'super_admin');
+      // Try super_admin login first
+      const superAdmin = await User.findSuperAdminByEmail(email);
       if (superAdmin) {
         user = superAdmin;
-      } else if (users.length === 1) {
-        user = users[0];
       } else {
-        // Multiple orgs found - return org list for user to choose
-        return res.status(300).json({
-          message: 'Multiple organizations found. Please select one.',
-          organizations: users.map(u => ({ id: u.org_id, name: u.org_name, slug: u.org_slug }))
-        });
+        // Check user_org_map for which orgs this email belongs to
+        const orgMappings = await User.findOrgsByEmail(email);
+        
+        if (orgMappings.length === 0) {
+          return res.status(400).json({ message: 'Invalid credentials' });
+        } else if (orgMappings.length === 1) {
+          // Single org - auto-resolve
+          const mapping = orgMappings[0];
+          orgId = mapping.org_id;
+          const orgPool = await dbManager.getOrgPool(orgId);
+          user = await User.findByEmail(orgPool, email);
+        } else {
+          // Multiple orgs - verify password against first available, then return org list
+          let passwordValid = false;
+          for (const mapping of orgMappings) {
+            try {
+              const orgPool = await dbManager.getOrgPool(mapping.org_id);
+              const userInOrg = await User.findByEmail(orgPool, email);
+              if (userInOrg) {
+                const isMatch = await bcrypt.compare(password, userInOrg.password);
+                if (isMatch) {
+                  passwordValid = true;
+                  break;
+                }
+              }
+            } catch (e) {
+              continue;
+            }
+          }
+          
+          if (!passwordValid) {
+            return res.status(400).json({ message: 'Invalid credentials' });
+          }
+          
+          return res.status(300).json({
+            message: 'Multiple organizations found. Please select one.',
+            organizations: orgMappings.map(m => ({ id: m.org_id, name: m.org_name, slug: m.org_slug }))
+          });
+        }
       }
     }
 
@@ -63,14 +102,14 @@ const login = async (req, res) => {
     }
 
     const tokenPayload = { id: user.id, role: user.role };
-    if (user.org_id) tokenPayload.orgId = user.org_id;
+    if (orgId) tokenPayload.orgId = orgId;
     
     const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '8h' });
     
     // Get org info if applicable
     let orgInfo = null;
-    if (user.org_id) {
-      orgInfo = await Organization.findById(user.org_id);
+    if (orgId) {
+      orgInfo = await Organization.findById(orgId);
     }
 
     res.json({ 
@@ -80,7 +119,7 @@ const login = async (req, res) => {
         name: user.name, 
         email: user.email, 
         role: user.role,
-        orgId: user.org_id,
+        orgId: orgId,
         is_first_login: user.is_first_login
       },
       organization: orgInfo ? {
@@ -126,17 +165,27 @@ const registerOrganization = async (req, res) => {
       return res.status(400).json({ message: 'Organization slug is already taken' });
     }
 
-    // Create organization
+    // Create organization in master DB
     const org = await Organization.create(orgName, orgSlug, orgEmail, orgPhone, orgAddress, plan);
     
-    // Create subscription based on plan
-    const Subscription = require('../models/Subscription');
+    // Create subscription in master DB
     await Subscription.create(org.id, plan, 0, 'monthly');
 
-    // Create admin user for this org
-    const user = await User.create(adminName, adminEmail, adminPassword, 'admin', org.id);
+    // Provision org database (named after business name: pg_stay_<orgname>)
+    const orgPool = await dbManager.createOrgDatabase(org.id, orgName);
+
+    // Create admin user in org database
+    const user = await User.create(orgPool, adminName, adminEmail, adminPassword, 'admin');
+    
+    // Add org mapping for cross-org login
+    await User.addOrgMapping(adminEmail, org.id, user.id, 'admin');
     
     const token = jwt.sign({ id: user.id, role: user.role, orgId: org.id }, process.env.JWT_SECRET, { expiresIn: '8h' });
+    
+    // Send welcome email to the business email
+    const welcomeEmail = orgEmail || adminEmail;
+    sendOrgWelcomeEmail(welcomeEmail, orgName, adminName, adminEmail, plan)
+      .catch(err => console.error('Failed to send welcome email:', err.message));
     
     res.status(201).json({
       message: 'Organization created successfully',
@@ -172,12 +221,20 @@ const changePassword = async (req, res) => {
       return res.status(400).json({ message: 'Email and new password are required' });
     }
 
-    const user = await User.findById(userId);
+    // Determine which pool to use based on user role
+    let userPool;
+    if (req.user.role === 'super_admin') {
+      userPool = require('../config/database'); // master pool
+    } else {
+      userPool = req.pool; // org pool (set by tenantIsolation middleware)
+    }
+
+    const user = await User.findById(userPool, userId);
     if (!user || user.email !== email) {
       return res.status(400).json({ message: 'Email does not match your account' });
     }
 
-    const updatedUser = await User.changePassword(userId, newPassword);
+    const updatedUser = await User.changePassword(userPool, userId, newPassword);
     res.json({ 
       message: 'Password changed successfully',
       user: {
@@ -185,7 +242,7 @@ const changePassword = async (req, res) => {
         name: updatedUser.name,
         email: updatedUser.email,
         role: updatedUser.role,
-        orgId: updatedUser.org_id,
+        orgId: req.user.orgId || null,
         is_first_login: updatedUser.is_first_login
       }
     });

@@ -1,36 +1,32 @@
-const pool = require('../config/database');
-
+/**
+ * Building model - all methods accept org pool as first parameter.
+ * No org_id filtering needed since each org has its own database.
+ */
 class Building {
-  static async findAll(orgId) {
-    const query = 'SELECT * FROM buildings WHERE org_id = $1 ORDER BY id';
-    const result = await pool.query(query, [orgId]);
+  static async findAll(pool) {
+    const result = await pool.query('SELECT * FROM buildings ORDER BY id');
     return result.rows;
   }
 
-  static async findById(id, orgId) {
-    const query = 'SELECT * FROM buildings WHERE id = $1 AND org_id = $2';
-    const result = await pool.query(query, [id, orgId]);
+  static async findById(pool, id) {
+    const result = await pool.query('SELECT * FROM buildings WHERE id = $1', [id]);
     return result.rows[0];
   }
 
-  static async create(name, location, orgId) {
-    const query = 'INSERT INTO buildings (name, location, org_id) VALUES ($1, $2, $3) RETURNING *';
-    const result = await pool.query(query, [name, location, orgId]);
+  static async create(pool, name, location) {
+    const result = await pool.query('INSERT INTO buildings (name, location) VALUES ($1, $2) RETURNING *', [name, location]);
     return result.rows[0];
   }
 
-  static async update(id, name, location, orgId) {
-    const query = 'UPDATE buildings SET name = $1, location = $2 WHERE id = $3 AND org_id = $4 RETURNING *';
-    const result = await pool.query(query, [name, location, id, orgId]);
+  static async update(pool, id, name, location) {
+    const result = await pool.query('UPDATE buildings SET name = $1, location = $2 WHERE id = $3 RETURNING *', [name, location, id]);
     return result.rows[0];
   }
 
-  static async delete(id, orgId) {
-    // Verify ownership
-    const check = await pool.query('SELECT id FROM buildings WHERE id = $1 AND org_id = $2', [id, orgId]);
+  static async delete(pool, id) {
+    const check = await pool.query('SELECT id FROM buildings WHERE id = $1', [id]);
     if (check.rows.length === 0) return null;
 
-    // Cascading delete: delete in correct order to avoid foreign key violations
     await pool.query(`
       DELETE FROM payments WHERE tenant_id IN (
         SELECT t.id FROM tenants t
@@ -69,8 +65,7 @@ class Building {
 
     await pool.query('DELETE FROM rooms WHERE building_id = $1', [id]);
 
-    const query = 'DELETE FROM buildings WHERE id = $1 AND org_id = $2 RETURNING *';
-    const result = await pool.query(query, [id, orgId]);
+    const result = await pool.query('DELETE FROM buildings WHERE id = $1 RETURNING *', [id]);
     return result.rows[0];
   }
 }

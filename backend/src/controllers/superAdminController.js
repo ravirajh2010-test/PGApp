@@ -4,6 +4,7 @@ const Invoice = require('../models/Invoice');
 const AuditLog = require('../models/AuditLog');
 const User = require('../models/User');
 const pool = require('../config/database');
+const dbManager = require('../services/DatabaseManager');
 
 // Organization management
 const getOrganizations = async (req, res) => {
@@ -12,7 +13,18 @@ const getOrganizations = async (req, res) => {
     // Get stats for each org
     const orgsWithStats = await Promise.all(orgs.map(async (org) => {
       const stats = await Organization.getStats(org.id);
-      return { ...org, stats };
+      return {
+        ...org,
+        stats,
+        building_count: stats.buildings,
+        bed_count: stats.totalBeds,
+        room_count: stats.rooms || 0,
+        user_count: stats.users,
+        tenant_count: stats.tenants,
+        occupied_beds: stats.occupiedBeds,
+        vacant_beds: stats.vacantBeds,
+        occupancy_rate: stats.occupancyRate,
+      };
     }));
     res.json(orgsWithStats);
   } catch (error) {
@@ -104,9 +116,22 @@ const getPlatformStats = async (req, res) => {
   try {
     const orgCount = await pool.query('SELECT COUNT(*) as count FROM organizations');
     const activeOrgCount = await pool.query("SELECT COUNT(*) as count FROM organizations WHERE status = 'active'");
-    const totalUsers = await pool.query('SELECT COUNT(*) as count FROM users');
-    const totalBeds = await pool.query('SELECT COUNT(*) as count FROM beds');
-    const occupiedBeds = await pool.query("SELECT COUNT(*) as count FROM beds WHERE status = 'occupied'");
+    
+    // Aggregate user/bed counts across all org databases
+    let totalUsers = 0, totalBeds = 0, occupiedBeds = 0;
+    try {
+      const orgPools = await dbManager.getAllOrgPools();
+      for (const { pool: orgPool } of orgPools) {
+        const u = await orgPool.query('SELECT COUNT(*) as count FROM users');
+        const b = await orgPool.query('SELECT COUNT(*) as count FROM beds');
+        const o = await orgPool.query("SELECT COUNT(*) as count FROM beds WHERE status = 'occupied'");
+        totalUsers += parseInt(u.rows[0].count);
+        totalBeds += parseInt(b.rows[0].count);
+        occupiedBeds += parseInt(o.rows[0].count);
+      }
+    } catch (err) {
+      console.error('Error aggregating org stats:', err.message);
+    }
     
     const planDistribution = await pool.query(
       'SELECT plan, COUNT(*) as count FROM organizations GROUP BY plan ORDER BY plan'
@@ -126,9 +151,9 @@ const getPlatformStats = async (req, res) => {
     res.json({
       total_organizations: parseInt(orgCount.rows[0].count),
       active_organizations: parseInt(activeOrgCount.rows[0].count),
-      total_users: parseInt(totalUsers.rows[0].count),
-      total_beds: parseInt(totalBeds.rows[0].count),
-      occupied_beds: parseInt(occupiedBeds.rows[0].count),
+      total_users: totalUsers,
+      total_beds: totalBeds,
+      occupied_beds: occupiedBeds,
       plan_distribution: planDistribution.rows,
       recent_organizations: recentOrgs.rows,
       monthly_revenue: parseFloat(monthlyRevenue.rows[0].revenue)
@@ -192,16 +217,14 @@ const getAuditLogs = async (req, res) => {
     const { orgId } = req.query;
     let logs;
     if (orgId) {
-      logs = await AuditLog.findByOrgId(orgId);
+      try {
+        const orgPool = await dbManager.getOrgPool(parseInt(orgId));
+        logs = await AuditLog.findAll(orgPool);
+      } catch (e) {
+        logs = [];
+      }
     } else {
-      const result = await pool.query(
-        `SELECT al.*, u.name as user_name, o.name as org_name 
-         FROM audit_logs al 
-         LEFT JOIN users u ON al.user_id = u.id 
-         LEFT JOIN organizations o ON al.org_id = o.id 
-         ORDER BY al.created_at DESC LIMIT 100`
-      );
-      logs = result.rows;
+      logs = [];
     }
     res.json(logs);
   } catch (error) {

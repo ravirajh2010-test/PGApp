@@ -1,11 +1,12 @@
 const express = require('express');
 const { 
   getTenants, createTenant, updateTenant, deleteTenant, processCheckouts,
-  getOccupancy, getAvailableBeds, getFloorLayout,
+  getOccupancy, getAvailableBeds, getFloorLayout, getFloorLayoutWithBeds,
   getBuildings, createBuilding, updateBuilding, deleteBuilding,
   getRooms, createRoom, updateRoom, deleteRoom,
   getBeds, createBed, updateBed, deleteBed,
-  getPaymentInfo, sendPaymentReminderEmail, markOfflinePay
+  getPaymentInfo, sendPaymentReminderEmail, markOfflinePay,
+  searchTenants, getTenantPaymentHistory
 } = require('../controllers/adminController');
 const { checkTenantsDatabaseConsistency } = require('../controllers/debugController');
 const { authenticateToken, authorizeRole } = require('../middleware/auth');
@@ -28,6 +29,7 @@ router.post('/process-checkouts', processCheckouts);
 router.get('/occupancy', getOccupancy);
 router.get('/available-beds', getAvailableBeds);
 router.get('/floor-layout', getFloorLayout);
+router.get('/floor-layout-beds', getFloorLayoutWithBeds);
 
 // Buildings routes
 router.get('/buildings', getBuildings);
@@ -51,6 +53,8 @@ router.delete('/beds/:id', deleteBed);
 router.get('/payment-info', getPaymentInfo);
 router.post('/payment-reminder/:tenantId', sendPaymentReminderEmail);
 router.post('/mark-offline-pay/:tenantId', markOfflinePay);
+router.get('/search-tenants', searchTenants);
+router.get('/tenant-payment-history/:tenantId', getTenantPaymentHistory);
 
 // Debug/Verification routes
 router.get('/debug/tenants-consistency', checkTenantsDatabaseConsistency);

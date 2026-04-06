@@ -193,9 +193,9 @@ const AdminDashboard = () => {
 
       {/* Occupancy Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
+        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-brand-500">
           <h3 className="text-sm font-semibold text-gray-600 uppercase">Total Beds</h3>
-          <p className="text-3xl font-bold text-orange-500">{occupancy.total || 0}</p>
+          <p className="text-3xl font-bold text-brand-500">{occupancy.total || 0}</p>
         </div>
         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
           <h3 className="text-sm font-semibold text-gray-600 uppercase">Occupied</h3>
@@ -212,7 +212,7 @@ const AdminDashboard = () => {
         <div className="flex flex-wrap gap-3">
           <button
             onClick={() => setShowForm(!showForm)}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition"
+            className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-2 rounded-lg font-semibold transition"
           >
             {showForm ? '✕ Close' : '➕ Add New Tenant'}
           </button>
@@ -242,7 +242,7 @@ const AdminDashboard = () => {
 
       {/* Add Tenant Form */}
       {showForm && (
-        <div className="bg-white rounded-lg shadow-md p-6 border-2 border-orange-300">
+        <div className="bg-white rounded-lg shadow-md p-6 border-2 border-brand-300">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Add New Tenant</h2>
           
           {/* Error Message Display */}
@@ -261,7 +261,7 @@ const AdminDashboard = () => {
                 value={formData.name}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
               />
               <input
                 type="email"
@@ -270,7 +270,7 @@ const AdminDashboard = () => {
                 value={formData.email}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
               />
             </div>
 
@@ -285,7 +285,7 @@ const AdminDashboard = () => {
                     value={formData.password}
                     onChange={handleInputChange}
                     required
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
                   />
                   <button
                     type="button"
@@ -301,7 +301,7 @@ const AdminDashboard = () => {
                 value={formData.bedId}
                 onChange={handleInputChange}
                 required
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
               >
                 <option value="">Select Bed</option>
                 {availableBeds.map((bed) => (
@@ -319,14 +319,14 @@ const AdminDashboard = () => {
                 value={formData.startDate}
                 onChange={handleInputChange}
                 required
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
               />
               <input
                 type="date"
                 name="endDate"
                 value={formData.endDate}
                 onChange={handleInputChange}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
               />
               <input
                 type="number"
@@ -336,7 +336,7 @@ const AdminDashboard = () => {
                 onChange={handleInputChange}
                 required
                 step="0.01"
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
               />
             </div>
 
@@ -371,7 +371,7 @@ const AdminDashboard = () => {
 
       {/* Tenants Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="px-6 py-4 bg-orange-50 border-b-2 border-orange-500">
+        <div className="px-6 py-4 bg-brand-50 border-b-2 border-brand-500">
           <h2 className="text-2xl font-bold text-gray-800">👥 Tenants</h2>
         </div>
         <div className="overflow-x-auto">

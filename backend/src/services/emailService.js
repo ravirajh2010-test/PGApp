@@ -399,4 +399,101 @@ const sendRentReceipt = async (tenantEmail, tenantName, rent, bedInfo, monthName
   }
 };
 
-module.exports = { sendTenantCredentials, sendThankYouEmail, sendPaymentReminder, sendRentReceipt };
+const sendOrgWelcomeEmail = async (orgEmail, orgName, adminName, adminEmail, plan) => {
+  try {
+    const mailer = getTransporter();
+    if (!mailer) {
+      console.error('❌ Email transporter not configured. Check EMAIL_USER and EMAIL_PASSWORD env vars.');
+      return false;
+    }
+    const htmlContent = `
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; border-radius: 8px; }
+            .header { background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+            .header h1 { margin: 0; font-size: 28px; }
+            .content { background: white; padding: 30px; border-radius: 0 0 8px 8px; }
+            .welcome-box { background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border-left: 4px solid #4caf50; padding: 20px; margin: 20px 0; border-radius: 4px; text-align: center; }
+            .welcome-box h2 { color: #2e7d32; margin: 0 0 10px 0; }
+            .details-box { background: #f0f7ff; border-left: 4px solid #ff6b35; padding: 15px; margin: 20px 0; border-radius: 4px; }
+            .detail-item { margin: 10px 0; }
+            .detail-label { font-weight: bold; color: #ff6b35; }
+            .plan-badge { display: inline-block; background: #ff6b35; color: white; padding: 4px 12px; border-radius: 12px; font-size: 14px; text-transform: capitalize; }
+            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🏢 PG Stay</h1>
+              <p>Welcome to PG Stay Platform</p>
+            </div>
+            
+            <div class="content">
+              <p>Hello <strong>${adminName}</strong>,</p>
+              
+              <div class="welcome-box">
+                <h2>🎉 Congratulations!</h2>
+                <p>Your PG <strong>${orgName}</strong> has been successfully registered on PG Stay!</p>
+              </div>
+              
+              <p>We are excited to have you onboard. Your organization is now set up and ready to manage your PG operations seamlessly.</p>
+              
+              <div class="details-box">
+                <h3 style="margin-top: 0; color: #ff6b35;">Registration Details</h3>
+                <div class="detail-item">
+                  <span class="detail-label">Organization Name:</span> ${orgName}
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Business Email:</span> ${orgEmail}
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Admin Email:</span> ${adminEmail}
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Plan:</span> <span class="plan-badge">${plan}</span>
+                </div>
+              </div>
+              
+              <p><strong>What's Next?</strong></p>
+              <ol>
+                <li>Log in to your admin dashboard using your admin credentials</li>
+                <li>Set up your buildings, rooms, and beds</li>
+                <li>Start adding your tenants</li>
+                <li>Manage payments and track occupancy</li>
+              </ol>
+              
+              <p>If you need any help getting started, feel free to reach out to our support team.</p>
+              
+              <p>Welcome aboard!<br/>
+              <strong>PG Stay Team</strong></p>
+            </div>
+            
+            <div class="footer">
+              <p>&copy; ${new Date().getFullYear()} PG Stay. All rights reserved.</p>
+              <p>This is an automated email. Please do not reply directly.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: orgEmail,
+      subject: '🎉 Welcome to PG Stay - Your PG is Registered!',
+      html: htmlContent,
+    };
+
+    await mailer.sendMail(mailOptions);
+    console.log(`✅ Organization welcome email sent to ${orgEmail}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error sending organization welcome email:', error.message);
+    return false;
+  }
+};
+
+module.exports = { sendTenantCredentials, sendThankYouEmail, sendPaymentReminder, sendRentReceipt, sendOrgWelcomeEmail };

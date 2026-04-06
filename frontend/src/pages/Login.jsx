@@ -60,27 +60,38 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-gray-100 p-4">
-      <div className="bg-white rounded-lg shadow-2xl overflow-hidden w-full max-w-4xl">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-brand-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-4xl border border-gray-100">
         <div className="grid grid-cols-1 md:grid-cols-2">
-          {/* Image Section */}
-          <div className="hidden md:flex items-center justify-center bg-gradient-to-br from-orange-500 to-orange-600 p-8">
-            <div className="text-center text-white">
-              <h2 className="text-3xl font-bold mb-4">PG Stay</h2>
-              <p className="text-lg opacity-90">Manage your PG/Hostel business with ease</p>
+          {/* Branding Section */}
+          <div className="hidden md:flex flex-col items-center justify-center bg-gradient-to-br from-dark-900 via-dark-800 to-brand-950 p-10 relative overflow-hidden">
+            <div className="absolute top-10 left-10 w-40 h-40 bg-brand-400/10 rounded-full blur-2xl"></div>
+            <div className="absolute bottom-10 right-10 w-56 h-56 bg-brand-600/10 rounded-full blur-2xl"></div>
+            <div className="relative text-center text-white">
+              <img src="/images/aupl8-logo.svg" alt="Aupl8 Stay" className="h-24 w-24 mx-auto mb-6 drop-shadow-lg" />
+              <h2 className="text-3xl font-extrabold mb-2">Aupl8 <span className="text-brand-400">Stay</span></h2>
+              <p className="text-gray-300 text-lg">Manage your PG/Hostel business with ease</p>
+              <div className="mt-8 flex gap-3 justify-center">
+                <div className="w-2 h-2 bg-brand-400 rounded-full"></div>
+                <div className="w-2 h-2 bg-brand-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-brand-600 rounded-full"></div>
+              </div>
             </div>
           </div>
 
           {/* Form Section */}
           <div className="p-8">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-orange-500 mb-2">🏢 PG Stay</h1>
+              <div className="flex items-center justify-center gap-2 mb-2 md:hidden">
+                <img src="/images/aupl8-logo.svg" alt="Aupl8" className="h-10 w-10" />
+                <span className="text-3xl font-extrabold text-gray-800">Aupl8 <span className="text-brand-500">Stay</span></span>
+              </div>
               <h2 className="text-2xl font-bold text-gray-800">
                 <FormattedMessage id="auth.loginTitle" defaultMessage="Admin Login" />
               </h2>
             </div>
             
-            {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>}
+            {error && <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4">{error}</div>}
 
             {/* Multi-org selection */}
             {orgList ? (
@@ -90,7 +101,7 @@ const Login = () => {
                   <button
                     key={org.slug}
                     onClick={() => handleOrgSelect(org.slug)}
-                    className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-orange-50 hover:border-orange-300 transition"
+                    className="w-full text-left px-4 py-3 border border-gray-200 rounded-xl hover:bg-brand-50 hover:border-brand-300 transition"
                   >
                     <p className="font-semibold text-gray-800">{org.name}</p>
                     <p className="text-sm text-gray-500">{org.slug}</p>
@@ -114,7 +125,7 @@ const Login = () => {
                     placeholder="you@example.com"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                     required
                   />
                 </div>
@@ -127,7 +138,7 @@ const Login = () => {
                     placeholder="••••••••"
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                     required
                   />
                 </div>
@@ -140,13 +151,13 @@ const Login = () => {
                     placeholder="e.g. bajrang-hostels"
                     value={form.orgSlug}
                     onChange={(e) => setForm({ ...form, orgSlug: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                   />
                 </div>
                 <button 
                   type="submit" 
                   disabled={loading}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition disabled:opacity-50"
+                  className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 px-4 rounded-xl transition disabled:opacity-50 shadow-lg shadow-brand-500/20"
                 >
                   {loading ? (
                     <FormattedMessage id="common.loading" defaultMessage="Loading..." />
@@ -160,7 +171,7 @@ const Login = () => {
             <div className="mt-6 text-center space-y-2">
               <p className="text-gray-600">
                 Want to list your PG?{' '}
-                <Link to="/onboarding" className="text-orange-500 hover:text-orange-600 font-bold">
+                <Link to="/onboarding" className="text-brand-500 hover:text-brand-600 font-bold">
                   <FormattedMessage id="auth.registerBusiness" defaultMessage="Register your business" />
                 </Link>
               </p>

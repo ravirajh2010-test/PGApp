@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormattedMessage } from 'react-intl';
 import api from '../services/api';
+import FloorOccupancyVisual from '../components/FloorOccupancyVisual';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -245,9 +246,9 @@ const AdminDashboard = () => {
 
       {/* Occupancy Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
+        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-brand-500">
           <h3 className="text-sm font-semibold text-gray-600 uppercase"><FormattedMessage id="dashboard.totalBeds" defaultMessage="Total Beds" /></h3>
-          <p className="text-3xl font-bold text-orange-500">{occupancy.total || 0}</p>
+          <p className="text-3xl font-bold text-brand-500">{occupancy.total || 0}</p>
         </div>
         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
           <h3 className="text-sm font-semibold text-gray-600 uppercase"><FormattedMessage id="dashboard.occupied" defaultMessage="Occupied" /></h3>
@@ -281,7 +282,7 @@ const AdminDashboard = () => {
                 setSelectedRoomBeds([]);
               }
             }}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition"
+            className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-2 rounded-lg font-semibold transition"
           >
             {showTenantForm ? '✕ Close' : <><FormattedMessage id="dashboard.addNewTenant" defaultMessage="+ Add New Tenant" /></>}
           </button>
@@ -317,7 +318,7 @@ const AdminDashboard = () => {
 
       {/* Add Tenant Form */}
       {showTenantForm && (
-        <div className="bg-white rounded-lg shadow-md p-6 border-2 border-orange-300">
+        <div className="bg-white rounded-lg shadow-md p-6 border-2 border-brand-300">
           <h2 className="text-2xl font-bold text-gray-800 mb-6"><FormattedMessage id="tenants.addNewTenant" defaultMessage="Add New Tenant" /></h2>
           
           {tenantError && (
@@ -335,7 +336,7 @@ const AdminDashboard = () => {
                 value={formData.name}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
               />
               <input
                 type="email"
@@ -344,7 +345,7 @@ const AdminDashboard = () => {
                 value={formData.email}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
               />
               <input
                 type="tel"
@@ -352,7 +353,7 @@ const AdminDashboard = () => {
                 placeholder="Phone (WhatsApp)"
                 value={formData.phone}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
               />
             </div>
 
@@ -367,7 +368,7 @@ const AdminDashboard = () => {
                     value={formData.password}
                     onChange={handleInputChange}
                     required
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
                   />
                   <button
                     type="button"
@@ -383,7 +384,7 @@ const AdminDashboard = () => {
                 value={formData.roomId}
                 onChange={handleInputChange}
                 required
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
               >
                 <option value=""><FormattedMessage id="tenants.selectRoom" defaultMessage="Select Room" /></option>
                 {rooms.map((room) => (
@@ -398,7 +399,7 @@ const AdminDashboard = () => {
                 onChange={handleInputChange}
                 required
                 disabled={!formData.roomId}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 <option value=""><FormattedMessage id="tenants.selectBed" defaultMessage="Select Bed" /></option>
                 {selectedRoomBeds.map((bed) => (
@@ -416,14 +417,14 @@ const AdminDashboard = () => {
                 value={formData.startDate}
                 onChange={handleInputChange}
                 required
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
               />
               <input
                 type="date"
                 name="endDate"
                 value={formData.endDate}
                 onChange={handleInputChange}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
               />
               <input
                 type="number"
@@ -433,7 +434,7 @@ const AdminDashboard = () => {
                 onChange={handleInputChange}
                 required
                 step="0.01"
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
               />
             </div>
 
@@ -466,9 +467,12 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      {/* Floor-wise Occupancy Visual */}
+      <FloorOccupancyVisual buildings={buildings} />
+
       {/* Tenants Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="px-6 py-4 bg-orange-50 border-b-2 border-orange-500">
+        <div className="px-6 py-4 bg-brand-50 border-b-2 border-brand-500">
           <h2 className="text-2xl font-bold text-gray-800">👥 <FormattedMessage id="dashboard.tenantsSection" defaultMessage="Tenants" /></h2>
         </div>
         <div className="overflow-x-auto">

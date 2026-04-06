@@ -94,7 +94,7 @@ const TenantDashboard = () => {
       </div>
 
       {/* Profile Section */}
-      <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
+      <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-brand-500">
         <h2 className="text-2xl font-bold text-gray-800 mb-4"><FormattedMessage id="tenant.myProfile" defaultMessage="Profile Information" /></h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -133,7 +133,7 @@ const TenantDashboard = () => {
           <h2 className="text-2xl font-bold text-gray-800"><FormattedMessage id="tenant.paymentHistory" defaultMessage="Payment History" /></h2>
           <button 
             onClick={handlePay} 
-            className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg transition"
+            className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-2 px-6 rounded-lg transition"
           >
             💳 <FormattedMessage id="tenant.payRent" defaultMessage="Pay Rent" />
           </button>

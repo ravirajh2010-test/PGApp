@@ -53,7 +53,7 @@ const getMyInvoices = async (req, res) => {
 
 const getMyAuditLogs = async (req, res) => {
   try {
-    const logs = await AuditLog.findByOrgId(req.orgId);
+    const logs = await AuditLog.findAll(req.pool);
     res.json(logs);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -62,7 +62,7 @@ const getMyAuditLogs = async (req, res) => {
 
 const getMyUsers = async (req, res) => {
   try {
-    const users = await User.findByOrgId(req.orgId);
+    const users = await User.findAll(req.pool);
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });

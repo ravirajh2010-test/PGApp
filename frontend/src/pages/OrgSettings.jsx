@@ -86,7 +86,7 @@ const OrgSettings = () => {
             onClick={() => setActiveTab(tab)}
             className={`px-6 py-3 font-semibold capitalize transition ${
               activeTab === tab
-                ? 'border-b-2 border-orange-500 text-orange-500'
+                ? 'border-b-2 border-brand-500 text-brand-500'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -114,7 +114,7 @@ const OrgSettings = () => {
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
               <div>
@@ -134,7 +134,7 @@ const OrgSettings = () => {
                   type="email"
                   value={editForm.email}
                   onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
               <div>
@@ -143,7 +143,7 @@ const OrgSettings = () => {
                   type="tel"
                   value={editForm.phone}
                   onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
             </div>
@@ -153,13 +153,13 @@ const OrgSettings = () => {
                 value={editForm.address}
                 onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
                 rows={2}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
             <button
               type="submit"
               disabled={saving}
-              className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg transition disabled:opacity-50"
+              className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-2 px-6 rounded-lg transition disabled:opacity-50"
             >
               {saving ? 'Saving...' : <FormattedMessage id="orgSettings.saveChanges" defaultMessage="Save Changes" />}
             </button>
@@ -199,7 +199,7 @@ const OrgSettings = () => {
           
           {subscription && (
             <div className="space-y-6">
-              <div className="bg-orange-50 rounded-lg p-6 border-2 border-orange-200">
+              <div className="bg-brand-50 rounded-lg p-6 border-2 border-brand-200">
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="text-2xl font-bold text-gray-800 capitalize">{subscription.current?.plan || org?.plan} Plan</h3>
@@ -208,7 +208,7 @@ const OrgSettings = () => {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-3xl font-bold text-orange-500">₹{subscription.current?.amount || 0}</p>
+                    <p className="text-3xl font-bold text-brand-500">₹{subscription.current?.amount || 0}</p>
                     <p className="text-sm text-gray-500">/{subscription.current?.billing_cycle || 'month'}</p>
                   </div>
                 </div>
@@ -242,7 +242,7 @@ const OrgSettings = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {subscription.available_plans.map((plan) => (
                       <div key={plan.plan} className={`border rounded-lg p-4 ${
-                        plan.plan === (org?.plan || subscription.current?.plan) ? 'border-orange-500 bg-orange-50' : 'border-gray-200'
+                        plan.plan === (org?.plan || subscription.current?.plan) ? 'border-brand-500 bg-brand-50' : 'border-gray-200'
                       }`}>
                         <div className="flex justify-between items-start">
                           <div>
@@ -252,10 +252,10 @@ const OrgSettings = () => {
                               {plan.max_beds === -1 ? 'Unlimited' : plan.max_beds} beds
                             </p>
                           </div>
-                          <p className="font-bold text-orange-500">₹{plan.price_monthly}/mo</p>
+                          <p className="font-bold text-brand-500">₹{plan.price_monthly}/mo</p>
                         </div>
                         {plan.plan === (org?.plan || subscription.current?.plan) && (
-                          <span className="text-xs bg-orange-500 text-white px-2 py-1 rounded mt-2 inline-block">Current Plan</span>
+                          <span className="text-xs bg-brand-500 text-white px-2 py-1 rounded mt-2 inline-block">Current Plan</span>
                         )}
                       </div>
                     ))}
@@ -270,7 +270,7 @@ const OrgSettings = () => {
       {/* Users */}
       {activeTab === 'users' && (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="px-6 py-4 bg-orange-50 border-b-2 border-orange-500">
+          <div className="px-6 py-4 bg-brand-50 border-b-2 border-brand-500">
             <h2 className="text-xl font-bold text-gray-800"><FormattedMessage id="orgSettings.usersTab" defaultMessage="Organization Users" /></h2>
           </div>
           <div className="overflow-x-auto">

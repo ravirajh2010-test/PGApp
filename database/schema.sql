@@ -117,10 +117,16 @@ CREATE TABLE payments (
   id SERIAL PRIMARY KEY,
   org_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
   tenant_id INTEGER REFERENCES tenants(id),
+  tenant_name VARCHAR(255),
+  email VARCHAR(255),
+  phone VARCHAR(20),
   amount DECIMAL(10,2) NOT NULL,
   status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),
+  payment_month INTEGER NOT NULL,
+  payment_year INTEGER NOT NULL,
   payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  razorpay_payment_id VARCHAR(255)
+  razorpay_payment_id VARCHAR(255),
+  UNIQUE(tenant_id, payment_month, payment_year)
 );
 
 -- ============================================

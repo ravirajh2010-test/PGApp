@@ -69,9 +69,9 @@ const SuperAdminDashboard = () => {
       {/* Platform Stats */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-brand-500">
             <h3 className="text-sm font-semibold text-gray-600 uppercase"><FormattedMessage id="superAdmin.organizations" defaultMessage="Organizations" /></h3>
-            <p className="text-3xl font-bold text-orange-500">{stats.total_organizations || 0}</p>
+            <p className="text-3xl font-bold text-brand-500">{stats.total_organizations || 0}</p>
             <p className="text-xs text-gray-500 mt-1">{stats.active_organizations || 0} active</p>
           </div>
           <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
@@ -112,7 +112,7 @@ const SuperAdminDashboard = () => {
             onClick={() => setActiveTab(tab)}
             className={`px-6 py-3 font-semibold capitalize transition ${
               activeTab === tab
-                ? 'border-b-2 border-orange-500 text-orange-500'
+                ? 'border-b-2 border-brand-500 text-brand-500'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -124,7 +124,7 @@ const SuperAdminDashboard = () => {
       {/* Organizations Table */}
       {activeTab === 'organizations' && (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="px-6 py-4 bg-orange-50 border-b-2 border-orange-500">
+          <div className="px-6 py-4 bg-brand-50 border-b-2 border-brand-500">
             <h2 className="text-2xl font-bold text-gray-800"><FormattedMessage id="superAdmin.organizations" defaultMessage="All Organizations" /></h2>
           </div>
           <div className="overflow-x-auto">

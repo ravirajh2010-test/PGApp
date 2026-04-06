@@ -1,5 +1,5 @@
 {
-  "app.title": "PG Stay - Multi-Tenant Property Management",
+  "app.title": "Aupl8 Stay - Multi-Tenant Property Management",
   "app.listYourPG": "List Your PG",
 
   "auth.login": "Login",
@@ -121,7 +121,7 @@
   "superAdmin.noOrganizations": "No organizations found",
 
   "onboarding.registerBusiness": "Register Your PG Business",
-  "onboarding.setupOrg": "Set up your organization on PG Stay in minutes",
+  "onboarding.setupOrg": "Set up your organization on Aupl8 Stay in minutes",
   "onboarding.choosePlan": "Choose Your Plan",
   "onboarding.orgDetails": "Organization Details",
   "onboarding.createAdmin": "Create Admin Account",
@@ -151,7 +151,7 @@
   "onboarding.fillRequired": "Please fill in all required fields",
   "onboarding.enterAddress": "Enter your business address",
 
-  "guest.pageTitle": "PG Stay",
+  "guest.pageTitle": "Aupl8 Stay",
   "guest.tagline": "The easiest way to manage your PG & Hostel business",
   "guest.taglineSub": "Multi-tenant SaaS platform for PG owners and hostel managers",
   "guest.propertyMgmt": "Property Management",

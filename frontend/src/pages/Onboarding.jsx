@@ -63,11 +63,14 @@ const Onboarding = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-gray-100 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-brand-50 py-8">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">🏢 <FormattedMessage id="onboarding.registerBusiness" defaultMessage="Register Your PG Business" /></h1>
-          <p className="text-gray-600"><FormattedMessage id="onboarding.setupOrg" defaultMessage="Set up your organization on PG Stay in minutes" /></p>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <img src="/images/aupl8-logo.svg" alt="Aupl8" className="h-10 w-10" />
+            <span className="text-4xl font-extrabold text-gray-800">Aupl8 <span className="text-brand-500">Stay</span></span>
+          </div>
+          <p className="text-gray-600"><FormattedMessage id="onboarding.setupOrg" defaultMessage="Set up your organization on Aupl8 Stay in minutes" /></p>
         </div>
 
         {/* Progress Steps */}
@@ -75,18 +78,18 @@ const Onboarding = () => {
           {[1, 2, 3].map((s) => (
             <div key={s} className="flex items-center">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                step >= s ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-500'
+                step >= s ? 'bg-brand-500 text-white' : 'bg-gray-200 text-gray-500'
               }`}>
                 {s}
               </div>
-              {s < 3 && <div className={`w-16 h-1 ${step > s ? 'bg-orange-500' : 'bg-gray-200'}`} />}
+              {s < 3 && <div className={`w-16 h-1 ${step > s ? 'bg-brand-500' : 'bg-gray-200'}`} />}
             </div>
           ))}
         </div>
 
-        {error && <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-6">{error}</div>}
+        {error && <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6">{error}</div>}
 
-        <div className="bg-white rounded-lg shadow-xl p-8">
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           {/* Step 1: Choose Plan */}
           {step === 1 && (
             <div>
@@ -98,17 +101,17 @@ const Onboarding = () => {
                     onClick={() => setForm({ ...form, plan: plan.id })}
                     className={`relative cursor-pointer border-2 rounded-lg p-6 transition ${
                       form.plan === plan.id
-                        ? 'border-orange-500 bg-orange-50'
-                        : 'border-gray-200 hover:border-orange-300'
+                        ? 'border-brand-500 bg-brand-50'
+                        : 'border-gray-200 hover:border-brand-300'
                     }`}
                   >
                     {plan.popular && (
-                      <span className="absolute -top-3 right-4 bg-orange-500 text-white text-xs px-3 py-1 rounded-full font-bold">
+                      <span className="absolute -top-3 right-4 bg-brand-500 text-white text-xs px-3 py-1 rounded-full font-bold">
                         POPULAR
                       </span>
                     )}
                     <h3 className="text-xl font-bold text-gray-800">{plan.name}</h3>
-                    <p className="text-2xl font-bold text-orange-500 mt-1">{plan.price}</p>
+                    <p className="text-2xl font-bold text-brand-500 mt-1">{plan.price}</p>
                     <p className="text-sm text-gray-500 mt-1">{plan.desc}</p>
                     <div className="mt-4 space-y-1 text-sm text-gray-600">
                       <p><FormattedMessage id="onboarding.properties" defaultMessage="Properties" />: {plan.properties}</p>
@@ -120,7 +123,7 @@ const Onboarding = () => {
               </div>
               <button
                 onClick={() => setStep(2)}
-                className="w-full mt-6 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition"
+                className="w-full mt-6 bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-brand-500/20"
               >
                 <FormattedMessage id="onboarding.continue" defaultMessage="Continue" />
               </button>
@@ -139,20 +142,20 @@ const Onboarding = () => {
                     value={form.orgName}
                     onChange={handleOrgNameChange}
                     placeholder="e.g. Sunrise PG & Hostels"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
                     required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1"><FormattedMessage id="onboarding.orgUrlSlug" defaultMessage="Organization URL Slug" /> *</label>
                   <div className="flex items-center">
-                    <span className="text-gray-500 text-sm mr-2">pgstay.com/</span>
+                    <span className="text-gray-500 text-sm mr-2">aupl8stay.com/</span>
                     <input
                       type="text"
                       value={form.orgSlug}
                       onChange={(e) => setForm({ ...form, orgSlug: e.target.value })}
                       placeholder="sunrise-pg"
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
                       required
                     />
                   </div>
@@ -165,7 +168,7 @@ const Onboarding = () => {
                       value={form.orgEmail}
                       onChange={(e) => setForm({ ...form, orgEmail: e.target.value })}
                       placeholder="info@sunrise-pg.com"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
                       required
                     />
                   </div>
@@ -176,7 +179,7 @@ const Onboarding = () => {
                       value={form.orgPhone}
                       onChange={(e) => setForm({ ...form, orgPhone: e.target.value })}
                       placeholder="+91 98765 43210"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
                     />
                   </div>
                 </div>
@@ -187,14 +190,14 @@ const Onboarding = () => {
                     onChange={(e) => setForm({ ...form, orgAddress: e.target.value })}
                     placeholder="Enter your business address" // text field
                     rows={2}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
               </div>
               <div className="flex gap-4 mt-6">
                 <button
                   onClick={() => setStep(1)}
-                  className="flex-1 border-2 border-gray-300 text-gray-700 font-bold py-3 rounded-lg transition hover:bg-gray-50"
+                  className="flex-1 border-2 border-gray-300 text-gray-700 font-bold py-3 rounded-xl transition hover:bg-gray-50"
                 >
                 <FormattedMessage id="onboarding.back" defaultMessage="Back" />
                 </button>
@@ -207,7 +210,7 @@ const Onboarding = () => {
                     setError('');
                     setStep(3);
                   }}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition"
+                  className="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-brand-500/20"
                 >
                   <FormattedMessage id="onboarding.continue" defaultMessage="Continue" />
                 </button>
@@ -227,7 +230,7 @@ const Onboarding = () => {
                     value={form.adminName}
                     onChange={(e) => setForm({ ...form, adminName: e.target.value })}
                     placeholder="John Doe"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
                     required
                   />
                 </div>
@@ -238,7 +241,7 @@ const Onboarding = () => {
                     value={form.adminEmail}
                     onChange={(e) => setForm({ ...form, adminEmail: e.target.value })}
                     placeholder="you@example.com"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
                     required
                   />
                 </div>
@@ -248,8 +251,8 @@ const Onboarding = () => {
                     type="password"
                     value={form.adminPassword}
                     onChange={(e) => setForm({ ...form, adminPassword: e.target.value })}
-                    placeholder="Min 6 characters" // password field
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="Min 6 characters"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
                     required
                     minLength={6}
                   />
@@ -270,14 +273,14 @@ const Onboarding = () => {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="flex-1 border-2 border-gray-300 text-gray-700 font-bold py-3 rounded-lg transition hover:bg-gray-50"
+                  className="flex-1 border-2 border-gray-300 text-gray-700 font-bold py-3 rounded-xl transition hover:bg-gray-50"
                 >
                   <FormattedMessage id="onboarding.back" defaultMessage="Back" />
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition disabled:opacity-50"
+                  className="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-brand-500/20 disabled:opacity-50"
                 >
                   {loading ? <FormattedMessage id="onboarding.creating" defaultMessage="Creating..." /> : <FormattedMessage id="onboarding.createOrganization" defaultMessage="Create Organization" />}
                 </button>
@@ -289,7 +292,7 @@ const Onboarding = () => {
         <div className="text-center mt-6">
           <p className="text-gray-600">
             <FormattedMessage id="onboarding.alreadyHaveAccount" defaultMessage="Already have an account?" />{' '}
-            <Link to="/login" className="text-orange-500 hover:text-orange-600 font-bold"><FormattedMessage id="onboarding.loginHere" defaultMessage="Login here" /></Link>
+            <Link to="/login" className="text-brand-500 hover:text-brand-600 font-bold"><FormattedMessage id="onboarding.loginHere" defaultMessage="Login here" /></Link>
           </p>
         </div>
       </div>

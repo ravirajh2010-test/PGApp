@@ -6,6 +6,7 @@
 
 const cron = require('node-cron');
 const { processTenantCheckouts } = require('./tenantCheckoutService');
+const dbManager = require('./DatabaseManager');
 
 let checkoutJobScheduled = false;
 
@@ -19,14 +20,18 @@ const scheduleCheckoutJob = () => {
   const job = cron.schedule('5 0 * * *', async () => {
     console.log('[SCHEDULER] Running scheduled tenant checkout at', new Date().toISOString());
     try {
-      const result = await processTenantCheckouts();
-      if (result.success) {
-        console.log('[SCHEDULER] ✅ Checkout job completed successfully');
-        console.log('[SCHEDULER] Results:', result);
-      } else {
-        console.error('[SCHEDULER] ❌ Checkout job encountered errors');
-        console.error('[SCHEDULER] Error:', result.error);
+      const orgPools = await dbManager.getAllOrgPools();
+      for (const { orgId, pool } of orgPools) {
+        try {
+          const result = await processTenantCheckouts(pool, orgId);
+          if (result.checkouts > 0) {
+            console.log(`[SCHEDULER] Org ${orgId}: ${result.message}`);
+          }
+        } catch (error) {
+          console.error(`[SCHEDULER] Error processing org ${orgId}:`, error.message);
+        }
       }
+      console.log('[SCHEDULER] ✅ Checkout job completed');
     } catch (error) {
       console.error('[SCHEDULER] ❌ Critical error in checkout job:', error.message);
     }
@@ -35,7 +40,6 @@ const scheduleCheckoutJob = () => {
   checkoutJobScheduled = true;
   console.log('[SCHEDULER] ✅ Tenant checkout job scheduled to run daily at 00:05');
   
-  // Also provide manual trigger function
   return job;
 };
 

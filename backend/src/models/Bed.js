@@ -1,54 +1,51 @@
-const pool = require('../config/database');
-
+/**
+ * Bed model - all methods accept org pool as first parameter.
+ * No org_id filtering needed since each org has its own database.
+ */
 class Bed {
-  static async findAll(orgId) {
-    const query = 'SELECT * FROM beds WHERE org_id = $1 ORDER BY id';
-    const result = await pool.query(query, [orgId]);
+  static async findAll(pool) {
+    const result = await pool.query('SELECT * FROM beds ORDER BY id');
     return result.rows;
   }
 
-  static async findByRoom(roomId, orgId) {
-    const query = 'SELECT * FROM beds WHERE room_id = $1 AND org_id = $2 ORDER BY id';
-    const result = await pool.query(query, [roomId, orgId]);
+  static async findByRoom(pool, roomId) {
+    const result = await pool.query('SELECT * FROM beds WHERE room_id = $1 ORDER BY id', [roomId]);
     return result.rows;
   }
 
-  static async findById(id, orgId) {
-    const query = orgId 
-      ? 'SELECT * FROM beds WHERE id = $1 AND org_id = $2'
-      : 'SELECT * FROM beds WHERE id = $1';
-    const params = orgId ? [id, orgId] : [id];
-    const result = await pool.query(query, params);
+  static async findById(pool, id) {
+    const result = await pool.query('SELECT * FROM beds WHERE id = $1', [id]);
     return result.rows[0];
   }
 
-  static async findVacantByRoom(roomId, orgId) {
-    const query = 'SELECT * FROM beds WHERE room_id = $1 AND status = $2 AND org_id = $3';
-    const result = await pool.query(query, [roomId, 'vacant', orgId]);
+  static async findVacantByRoom(pool, roomId) {
+    const result = await pool.query("SELECT * FROM beds WHERE room_id = $1 AND status = 'vacant'", [roomId]);
     return result.rows;
   }
 
-  static async create(roomId, bedIdentifier, status = 'vacant', orgId) {
-    const query = 'INSERT INTO beds (room_id, bed_identifier, status, org_id) VALUES ($1, $2, $3, $4) RETURNING *';
-    const result = await pool.query(query, [roomId, bedIdentifier, status, orgId]);
+  static async create(pool, roomId, bedIdentifier, status = 'vacant') {
+    const result = await pool.query(
+      'INSERT INTO beds (room_id, bed_identifier, status) VALUES ($1, $2, $3) RETURNING *',
+      [roomId, bedIdentifier, status]
+    );
     return result.rows[0];
   }
 
-  static async update(id, roomId, bedIdentifier, status, orgId) {
-    const query = 'UPDATE beds SET room_id = $1, bed_identifier = $2, status = $3 WHERE id = $4 AND org_id = $5 RETURNING *';
-    const result = await pool.query(query, [roomId, bedIdentifier, status, id, orgId]);
+  static async update(pool, id, roomId, bedIdentifier, status) {
+    const result = await pool.query(
+      'UPDATE beds SET room_id = $1, bed_identifier = $2, status = $3 WHERE id = $4 RETURNING *',
+      [roomId, bedIdentifier, status, id]
+    );
     return result.rows[0];
   }
 
-  static async updateStatus(id, status) {
-    const query = 'UPDATE beds SET status = $1 WHERE id = $2 RETURNING *';
-    const result = await pool.query(query, [status, id]);
+  static async updateStatus(pool, id, status) {
+    const result = await pool.query('UPDATE beds SET status = $1 WHERE id = $2 RETURNING *', [status, id]);
     return result.rows[0];
   }
 
-  static async delete(id, orgId) {
-    // Verify ownership
-    const check = await pool.query('SELECT id FROM beds WHERE id = $1 AND org_id = $2', [id, orgId]);
+  static async delete(pool, id) {
+    const check = await pool.query('SELECT id FROM beds WHERE id = $1', [id]);
     if (check.rows.length === 0) return null;
 
     const tenantResult = await pool.query('SELECT id, user_id FROM tenants WHERE bed_id = $1', [id]);
@@ -63,8 +60,7 @@ class Bed {
       await pool.query("DELETE FROM users WHERE id = $1 AND role = 'tenant'", [tenant.user_id]);
     }
 
-    const query = 'DELETE FROM beds WHERE id = $1 AND org_id = $2 RETURNING *';
-    const result = await pool.query(query, [id, orgId]);
+    const result = await pool.query('DELETE FROM beds WHERE id = $1 RETURNING *', [id]);
     return result.rows[0];
   }
 }

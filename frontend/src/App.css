@@ -5,7 +5,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(to bottom, #f9fafb, #ffffff);
+  background: #f8fafc;
 }
 
 code {
@@ -14,10 +14,10 @@ code {
 
 .App {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+  background: #f8fafc;
 }
 
-/* Saffron theme colors */
+/* Aupl8 brand theme */
 :root {
   --saffron-primary: #FF9933;
   --saffron-dark: #E68A2C;

@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
 dotenv.config();
@@ -10,10 +9,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
+// Initialize DatabaseManager and master pool
+const dbManager = require('./src/services/DatabaseManager');
+const pool = dbManager.initMasterPool();
 
 // Initialize checkout scheduler in production
 if (process.env.NODE_ENV === 'production') {
@@ -42,10 +40,12 @@ app.use('/api/organization', organizationRoutes);
 
 const PORT = process.env.PORT || 5000;
 
-// Auto-initialize database tables on startup
+// Auto-initialize database tables on startup (runs in background, doesn't block server)
 const initDatabase = async () => {
   try {
-    // Organizations table (SaaS customers)
+    // --- Master DB tables (minimal initialization, no org pool warmup ---
+
+    // Organizations table (with database_name column for per-org DB)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS organizations (
         id SERIAL PRIMARY KEY,
@@ -60,9 +60,18 @@ const initDatabase = async () => {
         max_properties INTEGER DEFAULT 1,
         max_beds INTEGER DEFAULT 10,
         max_users INTEGER DEFAULT 5,
+        database_name VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+    // Add database_name column if missing (migration for existing installs)
+    await pool.query(`
+      DO $$ BEGIN
+        ALTER TABLE organizations ADD COLUMN IF NOT EXISTS database_name VARCHAR(255);
+      EXCEPTION WHEN duplicate_column THEN NULL;
+      END $$;
     `);
 
     // Plan limits
@@ -125,11 +134,10 @@ const initDatabase = async () => {
       );
     `);
 
-    // Users (with org_id)
+    // Users table in master DB (for super_admin only)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
-        org_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL,
         password VARCHAR(255) NOT NULL,
@@ -139,95 +147,22 @@ const initDatabase = async () => {
       );
     `);
 
-    // Buildings (with org_id)
+    // User-org mapping table (for cross-org login resolution)
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS buildings (
+      CREATE TABLE IF NOT EXISTS user_org_map (
         id SERIAL PRIMARY KEY,
-        org_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
-        name VARCHAR(255) NOT NULL,
-        location VARCHAR(255),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    // Rooms (with org_id)
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS rooms (
-        id SERIAL PRIMARY KEY,
-        org_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
-        building_id INTEGER REFERENCES buildings(id),
-        room_number VARCHAR(50) NOT NULL,
-        floor_number INTEGER DEFAULT 1,
-        capacity INTEGER NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    // Beds (with org_id)
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS beds (
-        id SERIAL PRIMARY KEY,
-        org_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
-        room_id INTEGER REFERENCES rooms(id),
-        bed_identifier VARCHAR(50),
-        status VARCHAR(50) DEFAULT 'vacant',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    // Tenants (with org_id)
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS tenants (
-        id SERIAL PRIMARY KEY,
-        org_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
-        user_id INTEGER REFERENCES users(id),
         email VARCHAR(255) NOT NULL,
-        phone VARCHAR(20),
-        bed_id INTEGER REFERENCES beds(id),
-        start_date DATE NOT NULL,
-        end_date DATE,
-        rent DECIMAL(10,2) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    // Auto-add phone column if missing (migration)
-    await pool.query(`
-      DO $$ BEGIN
-        ALTER TABLE tenants ADD COLUMN IF NOT EXISTS phone VARCHAR(20);
-      EXCEPTION WHEN duplicate_column THEN NULL;
-      END $$;
-    `);
-
-    // Payments (with org_id)
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS payments (
-        id SERIAL PRIMARY KEY,
         org_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
-        tenant_id INTEGER REFERENCES tenants(id),
-        amount DECIMAL(10,2) NOT NULL,
-        status VARCHAR(50) DEFAULT 'pending',
-        payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        razorpay_payment_id VARCHAR(255)
+        user_id INTEGER NOT NULL,
+        role VARCHAR(50) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(email, org_id)
       );
     `);
 
-    // Audit logs
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS audit_logs (
-        id SERIAL PRIMARY KEY,
-        org_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
-        user_id INTEGER,
-        action VARCHAR(255) NOT NULL,
-        entity_type VARCHAR(100),
-        entity_id INTEGER,
-        details JSONB,
-        ip_address VARCHAR(50),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_user_org_map_email ON user_org_map(email)');
 
-    console.log('Database tables initialized successfully');
+    console.log('Master database tables initialized successfully');
 
     // Create super admin if none exists
     const superAdminCheck = await pool.query("SELECT id FROM users WHERE role = 'super_admin' LIMIT 1");
@@ -240,61 +175,25 @@ const initDatabase = async () => {
       console.log('Default super admin created (superadmin@pgstay.com / superadmin123)');
     }
 
-    // Create default demo organization if none exists
-    const orgCheck = await pool.query("SELECT id FROM organizations LIMIT 1");
+    // Check for existing orgs
+    const orgCheck = await pool.query("SELECT id, database_name FROM organizations LIMIT 1");
     if (orgCheck.rows.length === 0) {
-      // Create demo org
-      const orgResult = await pool.query(
-        "INSERT INTO organizations (name, slug, email, plan, status, max_properties, max_beds, max_users) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
-        ['Bajrang Hostels', 'bajrang-hostels', 'admin@pgstay.com', 'pro', 'active', 10, 200, 100]
-      );
-      const orgId = orgResult.rows[0].id;
-
-      // Create subscription for demo org
-      await pool.query(
-        "INSERT INTO subscriptions (org_id, plan, amount, billing_cycle, current_period_start, current_period_end) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '1 month')",
-        [orgId, 'pro', 1499, 'monthly']
-      );
-
-      // Create admin user for this org
-      const adminPassword = await bcrypt.hash('admin123', 10);
-      await pool.query(
-        "INSERT INTO users (name, email, password, role, org_id, is_first_login) VALUES ($1, $2, $3, $4, $5, $6)",
-        ['Admin', 'admin@pgstay.com', adminPassword, 'admin', orgId, false]
-      );
-
-      // Seed buildings
-      await pool.query("INSERT INTO buildings (id, name, location, org_id) VALUES (1, 'Main Building', 'Chennai', $1), (2, 'AddBuilding', 'Chennai', $1)", [orgId]);
-      await pool.query("SELECT setval('buildings_id_seq', (SELECT MAX(id) FROM buildings))");
-
-      // Seed rooms with floor numbers (auto-calculated from room number: 0xx=Ground, 1xx=1st, 2xx=2nd, 3xx=3rd)
-      await pool.query(`
-        INSERT INTO rooms (id, building_id, room_number, floor_number, capacity, org_id) VALUES
-        (1, 1, '001', 0, 3, $1), (2, 1, '101', 1, 3, $1), (3, 1, '201', 2, 2, $1), 
-        (4, 2, '002', 0, 3, $1), (5, 2, '102', 1, 3, $1), (6, 2, '202', 2, 3, $1)
-      `, [orgId]);
-      await pool.query("SELECT setval('rooms_id_seq', (SELECT MAX(id) FROM rooms))");
-
-      // Seed beds
-      const roomsResult = await pool.query("SELECT id, capacity FROM rooms ORDER BY id");
-      const bedLabels = ['A', 'B', 'C', 'D', 'E'];
-      for (const room of roomsResult.rows) {
-        for (let i = 0; i < room.capacity; i++) {
-          await pool.query(
-            "INSERT INTO beds (room_id, bed_identifier, status, org_id) VALUES ($1, $2, 'vacant', $3)",
-            [room.id, bedLabels[i], orgId]
-          );
-        }
-      }
-
-      console.log('Demo organization "Bajrang Hostels" created with seed data');
-      console.log('Admin login: admin@pgstay.com / admin123 (org: bajrang-hostels)');
+      console.log('NOTE: No organizations found. Create one via the registration page.');
+    } else if (!orgCheck.rows[0].database_name) {
+      console.log('NOTE: Existing organizations found without per-org databases.');
+      console.log('Run the migration script: node backend/scripts/migrate-to-per-org-db.js');
     }
+    
+    console.log('Database initialization complete');
   } catch (error) {
     console.error('Database initialization error:', error.message);
   }
 };
 
-initDatabase();
-
+// Start server immediately, initialize DB in background
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Initialize database tables asynchronously (don't block server startup)
+initDatabase().catch(error => {
+  console.error('Background database initialization failed:', error.message);
+});

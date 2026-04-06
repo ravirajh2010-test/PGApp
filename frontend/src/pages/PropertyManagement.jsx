@@ -139,7 +139,7 @@ const PropertyManagement = () => {
         await api.delete(`/admin/buildings/${id}`);
         await fetchBuildings();
       } catch (error) {
-        alert('Error deleting building');
+        alert(error.response?.data?.message || 'Error deleting building');
       }
     }
   };
@@ -258,7 +258,7 @@ const PropertyManagement = () => {
         await api.delete(`/admin/beds/${id}`);
         await fetchBeds();
       } catch (error) {
-        alert('Error deleting bed');
+        alert(error.response?.data?.message || 'Error deleting bed');
       }
     }
   };
