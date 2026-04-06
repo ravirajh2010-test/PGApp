@@ -58,7 +58,8 @@ class DatabaseManager {
   constructor() {
     this.pools = new Map(); // orgId -> Pool or SchemaPool
     this.masterPool = null;
-    this.singleDbMode = process.env.USE_SINGLE_DB === 'true';
+    // Auto-enable single-DB mode in production (Render free plan only allows one database)
+    this.singleDbMode = process.env.USE_SINGLE_DB === 'true' || process.env.NODE_ENV === 'production';
   }
 
   /**
