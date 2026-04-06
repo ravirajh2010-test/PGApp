@@ -31,6 +31,16 @@ const guestRoutes = require('./src/routes/guestRoutes');
 const superAdminRoutes = require('./src/routes/superAdminRoutes');
 const organizationRoutes = require('./src/routes/organizationRoutes');
 
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.status(200).json({ status: 'ok', database: 'connected' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', database: 'disconnected', error: error.message });
+  }
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/tenant', tenantRoutes);
