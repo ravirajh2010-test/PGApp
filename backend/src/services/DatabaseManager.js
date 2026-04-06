@@ -1,16 +1,64 @@
 const { Pool } = require('pg');
 
 /**
- * DatabaseManager - Manages separate PostgreSQL database per organization.
- * 
+ * SchemaPool - Wraps a real Pool to scope all queries to a PostgreSQL schema.
+ * Used in single-DB mode (e.g., Render free plan) where separate databases
+ * cannot be created. Each org gets its own schema within the same database.
+ */
+class SchemaPool {
+  constructor(realPool, schemaName) {
+    this._pool = realPool;
+    this._schema = schemaName;
+  }
+
+  async query(text, params) {
+    const client = await this._pool.connect();
+    try {
+      await client.query(`SET search_path TO "${this._schema}", public`);
+      const result = await client.query(text, params);
+      return result;
+    } finally {
+      await client.query('RESET search_path');
+      client.release();
+    }
+  }
+
+  async connect() {
+    const client = await this._pool.connect();
+    const origRelease = client.release.bind(client);
+    await client.query(`SET search_path TO "${this._schema}", public`);
+    // Override release to reset search_path before returning to pool
+    client.release = async () => {
+      try { await client.query('RESET search_path'); } catch (e) { /* ignore */ }
+      origRelease();
+    };
+    return client;
+  }
+
+  // Proxy end() — no-op because we share the master pool
+  async end() { /* no-op */ }
+
+  on() { /* no-op */ }
+}
+
+/**
+ * DatabaseManager - Manages per-organization database isolation.
+ *
+ * Supports two modes:
+ *   1. Multi-DB mode (default, local dev): Each org gets its own PostgreSQL database.
+ *   2. Single-DB/Schema mode (USE_SINGLE_DB=true, Render free plan):
+ *      Each org gets its own PostgreSQL SCHEMA within the same database.
+ *      Queries are transparently scoped via search_path.
+ *
  * Architecture:
- *   Master DB (pg_stay): organizations, plan_limits, subscriptions, invoices, super_admin users, user_org_map
- *   Per-org DB (pg_stay_org_{id}): users, buildings, rooms, beds, tenants, payments, audit_logs
+ *   Master DB: organizations, plan_limits, subscriptions, invoices, super_admin users, user_org_map
+ *   Per-org (DB or Schema): users, buildings, rooms, beds, tenants, payments, audit_logs
  */
 class DatabaseManager {
   constructor() {
-    this.pools = new Map(); // orgId -> Pool
+    this.pools = new Map(); // orgId -> Pool or SchemaPool
     this.masterPool = null;
+    this.singleDbMode = process.env.USE_SINGLE_DB === 'true';
   }
 
   /**
@@ -23,7 +71,7 @@ class DatabaseManager {
       ? new Pool({
           connectionString: process.env.DATABASE_URL,
           ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-          max: 5,
+          max: 10,
           min: 1,
           idleTimeoutMillis: 30000,
           connectionTimeoutMillis: 5000,
@@ -34,7 +82,7 @@ class DatabaseManager {
           host: process.env.DB_HOST || 'localhost',
           port: process.env.DB_PORT || 5432,
           database: process.env.DB_NAME || 'pg_stay',
-          max: 5,
+          max: 10,
           min: 1,
           idleTimeoutMillis: 30000,
           connectionTimeoutMillis: 5000,
@@ -43,6 +91,10 @@ class DatabaseManager {
     this.masterPool.on('error', (err) => {
       console.error('[DB_MANAGER] Master pool error:', err);
     });
+
+    if (this.singleDbMode) {
+      console.log('[DB_MANAGER] Running in SINGLE-DB (schema) mode');
+    }
 
     return this.masterPool;
   }
@@ -53,7 +105,14 @@ class DatabaseManager {
   }
 
   /**
-   * Get or create a connection pool for a specific org database
+   * Get the schema name for an org
+   */
+  _getSchemaName(orgId) {
+    return `org_${parseInt(orgId)}`;
+  }
+
+  /**
+   * Get or create a connection pool for a specific org
    */
   async getOrgPool(orgId) {
     if (this.pools.has(orgId)) {
@@ -70,6 +129,15 @@ class DatabaseManager {
       throw new Error(`Organization ${orgId} not found`);
     }
 
+    if (this.singleDbMode) {
+      // Schema-based isolation within the same database
+      const schemaName = this._getSchemaName(orgId);
+      const schemaPool = new SchemaPool(master, schemaName);
+      this.pools.set(orgId, schemaPool);
+      return schemaPool;
+    }
+
+    // Multi-DB mode: connect to org-specific database
     const dbName = result.rows[0].database_name;
     if (!dbName) {
       throw new Error(`Organization ${orgId} has no database configured`);
@@ -119,7 +187,6 @@ class DatabaseManager {
 
   /**
    * Sanitize org name for use as a database name suffix.
-   * Converts to lowercase, replaces non-alphanumeric chars with underscores, trims.
    */
   _sanitizeDbName(orgName) {
     return orgName
@@ -130,19 +197,19 @@ class DatabaseManager {
   }
 
   /**
-   * Provision a new database for an organization.
-   * Creates the database, runs the schema, and stores the mapping.
-   * @param {number} orgId - Organization ID
-   * @param {string} orgName - Business name (used for database naming: pg_stay_<orgname>)
+   * Provision a new database (or schema) for an organization.
    */
   async createOrgDatabase(orgId, orgName) {
     const master = this.getMasterPool();
 
-    // Build database name from org name, fallback to org ID if name not provided
+    if (this.singleDbMode) {
+      return this._createOrgSchema(orgId);
+    }
+
+    // --- Multi-DB mode ---
     const suffix = orgName ? this._sanitizeDbName(orgName) : `org_${parseInt(orgId)}`;
     let safeDbName = `pg_stay_${suffix}`;
 
-    // Ensure uniqueness: if a DB with this name already exists for a different org, append the ID
     const nameConflict = await master.query(
       "SELECT id FROM organizations WHERE database_name = $1 AND id != $2",
       [safeDbName, orgId]
@@ -151,14 +218,11 @@ class DatabaseManager {
       safeDbName = `pg_stay_${suffix}_${parseInt(orgId)}`;
     }
 
-    // Check if database already exists
     const exists = await master.query(
       "SELECT 1 FROM pg_database WHERE datname = $1", [safeDbName]
     );
 
     if (exists.rows.length === 0) {
-      // CREATE DATABASE cannot run inside a transaction block
-      // Use a fresh client from master pool  
       const client = await master.connect();
       try {
         await client.query(`CREATE DATABASE "${safeDbName}"`);
@@ -168,15 +232,13 @@ class DatabaseManager {
       }
     }
 
-    // Update organization with database_name
     await master.query(
       'UPDATE organizations SET database_name = $1 WHERE id = $2',
       [safeDbName, orgId]
     );
 
-    // Initialize schema in the new database
     const orgPool = this._createPool(safeDbName);
-    await this.initOrgSchema(orgPool);
+    await this._initOrgTables(orgPool);
 
     this.pools.set(orgId, orgPool);
     console.log(`[DB_MANAGER] Organization ${orgId} database ready: ${safeDbName}`);
@@ -184,9 +246,34 @@ class DatabaseManager {
   }
 
   /**
+   * Single-DB mode: Create a schema for the org and initialize tables within it.
+   */
+  async _createOrgSchema(orgId) {
+    const master = this.getMasterPool();
+    const schemaName = this._getSchemaName(orgId);
+
+    await master.query(`CREATE SCHEMA IF NOT EXISTS "${schemaName}"`);
+    console.log(`[DB_MANAGER] Schema "${schemaName}" ensured`);
+
+    // Mark the org with a schema-style database_name for tracking
+    await master.query(
+      'UPDATE organizations SET database_name = $1 WHERE id = $2',
+      [`schema:${schemaName}`, orgId]
+    );
+
+    // Initialize tables within the schema
+    const schemaPool = new SchemaPool(master, schemaName);
+    await this._initOrgTables(schemaPool);
+
+    this.pools.set(orgId, schemaPool);
+    console.log(`[DB_MANAGER] Organization ${orgId} schema ready: ${schemaName}`);
+    return schemaPool;
+  }
+
+  /**
    * Initialize org-scoped tables (WITHOUT org_id columns)
    */
-  async initOrgSchema(pool) {
+  async _initOrgTables(pool) {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -262,11 +349,35 @@ class DatabaseManager {
     `);
   }
 
+  // Keep old name as alias for backward compatibility
+  async initOrgSchema(pool) {
+    return this._initOrgTables(pool);
+  }
+
   /**
-   * Get all active org pools (for scheduled tasks like checkout)
+   * Get all active org pools (for scheduled tasks, stats aggregation, etc.)
    */
   async getAllOrgPools() {
     const master = this.getMasterPool();
+
+    if (this.singleDbMode) {
+      // In single-DB mode, get all active orgs and return schema pools
+      const result = await master.query(
+        "SELECT id FROM organizations WHERE status = 'active'"
+      );
+      const pools = [];
+      for (const org of result.rows) {
+        try {
+          const pool = await this.getOrgPool(org.id);
+          pools.push({ orgId: org.id, pool });
+        } catch (err) {
+          console.error(`[DB_MANAGER] Failed to get schema pool for org ${org.id}:`, err.message);
+        }
+      }
+      return pools;
+    }
+
+    // Multi-DB mode
     const result = await master.query(
       "SELECT id, database_name FROM organizations WHERE status = 'active' AND database_name IS NOT NULL"
     );
@@ -284,11 +395,32 @@ class DatabaseManager {
   }
 
   /**
+   * Ensure all active org schemas exist (single-DB mode startup)
+   */
+  async initAllOrgSchemas() {
+    if (!this.singleDbMode) return;
+
+    const master = this.getMasterPool();
+    const result = await master.query("SELECT id FROM organizations WHERE status = 'active'");
+
+    console.log(`[DB_MANAGER] Initializing schemas for ${result.rows.length} active organizations...`);
+    for (const org of result.rows) {
+      try {
+        await this._createOrgSchema(org.id);
+      } catch (err) {
+        console.error(`[DB_MANAGER] Failed to init schema for org ${org.id}:`, err.message);
+      }
+    }
+    console.log('[DB_MANAGER] All org schemas initialized');
+  }
+
+  /**
    * Destroy a pool for an org (cleanup)
    */
   async destroyOrgPool(orgId) {
     if (this.pools.has(orgId)) {
-      await this.pools.get(orgId).end();
+      const pool = this.pools.get(orgId);
+      if (pool.end) await pool.end();
       this.pools.delete(orgId);
     }
   }
@@ -298,7 +430,7 @@ class DatabaseManager {
    */
   async destroyAll() {
     for (const [, pool] of this.pools) {
-      await pool.end();
+      if (pool.end) await pool.end();
     }
     this.pools.clear();
     if (this.masterPool) {

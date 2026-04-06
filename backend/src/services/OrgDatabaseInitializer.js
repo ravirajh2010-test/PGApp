@@ -3,11 +3,17 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * OrgDatabaseInitializer - Auto-creates missing organization databases
- * Runs on server startup to ensure all organizations have their own PostgreSQL database
+ * OrgDatabaseInitializer - Auto-creates missing organization databases (multi-DB mode only).
+ * In single-DB mode (USE_SINGLE_DB=true), this is a no-op since DatabaseManager handles schemas.
  */
 class OrgDatabaseInitializer {
   static async initialize() {
+    // Skip in single-DB mode — schemas are initialized by DatabaseManager.initAllOrgSchemas()
+    if (process.env.USE_SINGLE_DB === 'true') {
+      console.log('[INIT-ORG-DB] Skipped — running in single-DB (schema) mode');
+      return;
+    }
+
     try {
       console.log('[INIT-ORG-DB] Checking organization databases...');
 

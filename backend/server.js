@@ -204,12 +204,9 @@ const initDatabase = async () => {
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 // Initialize database tables asynchronously (don't block server startup)
-initDatabase().catch(error => {
+initDatabase().then(async () => {
+  // In single-DB mode, initialize org schemas after master tables are ready
+  await dbManager.initAllOrgSchemas();
+}).catch(error => {
   console.error('Background database initialization failed:', error.message);
-});
-
-// Initialize organization databases asynchronously
-const OrgDatabaseInitializer = require('./src/services/OrgDatabaseInitializer');
-OrgDatabaseInitializer.initialize().catch(error => {
-  console.error('Organization database initialization failed:', error.message);
 });
