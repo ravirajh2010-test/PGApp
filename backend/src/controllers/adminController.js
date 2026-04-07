@@ -597,13 +597,11 @@ const sendPaymentReminderEmail = async (req, res) => {
       return res.json({ message: 'WhatsApp link generated', whatsappUrl });
     }
 
-    // Default: email
-    const emailSent = await sendPaymentReminder(tenant.email, tenant.name, tenant.rent, bedInfo, prevMonthName);
-    if (emailSent) {
-      res.json({ message: `Payment reminder sent to ${tenant.email}` });
-    } else {
-      res.status(500).json({ message: 'Failed to send reminder email. Check email configuration.' });
-    }
+    // Default: email - respond immediately, send in background
+    res.json({ message: `Payment reminder being sent to ${tenant.email}` });
+    sendPaymentReminder(tenant.email, tenant.name, tenant.rent, bedInfo, prevMonthName)
+      .then(sent => console.log(sent ? `✅ Reminder sent to ${tenant.email}` : `⚠️ Reminder failed for ${tenant.email}`))
+      .catch(err => console.error('❌ Reminder email error:', err.message));
   } catch (error) {
     console.error('Error sending payment reminder:', error);
     res.status(500).json({ message: 'Server error' });
@@ -662,14 +660,15 @@ const markOfflinePay = async (req, res) => {
       [tenantId, tenant.name, tenant.email, tenant.phone || null, tenant.rent, dbMonth, payYear, 'OFFLINE_' + Date.now()]
     );
 
-    // Send rent receipt email
-    const emailSent = await sendRentReceipt(tenant.email, tenant.name, tenant.rent, bedInfo, monthName, new Date());
-
+    // Respond immediately
     res.json({ 
-      message: `Offline payment marked for ${monthName}`,
-      receiptSent: emailSent,
-      receiptMessage: emailSent ? 'Receipt sent to tenant email' : 'Payment recorded but receipt email could not be sent'
+      message: `Offline payment marked for ${monthName}`
     });
+
+    // Send rent receipt email in background (fire and forget)
+    sendRentReceipt(tenant.email, tenant.name, tenant.rent, bedInfo, monthName, new Date())
+      .then(sent => console.log(sent ? `✅ Receipt sent to ${tenant.email}` : `⚠️ Receipt failed for ${tenant.email}`))
+      .catch(err => console.error('❌ Receipt email error:', err.message));
   } catch (error) {
     console.error('Error marking offline payment:', error);
     res.status(500).json({ message: 'Server error' });

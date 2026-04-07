@@ -50,13 +50,11 @@ const processTenantCheckouts = async (orgPool, orgId) => {
         // Prepare bed info
         const bedInfo = `${tenant.building_name} - Room ${tenant.room_number}, Bed ${tenant.bed_identifier}`;
         
-        // Step 1: Send thank you email
+        // Step 1: Send thank you email in background (don't block checkout)
         console.log(`[CHECKOUT] Sending thank you email to ${tenant.email}...`);
-        const emailSent = await sendThankYouEmail(tenant.email, tenant.name, bedInfo, stayDuration);
-        
-        if (!emailSent) {
-          console.warn(`[CHECKOUT] ⚠️  Failed to send thank you email to ${tenant.email}, continuing with checkout...`);
-        }
+        sendThankYouEmail(tenant.email, tenant.name, bedInfo, stayDuration)
+          .then(sent => console.log(sent ? `[CHECKOUT] ✅ Email sent to ${tenant.email}` : `[CHECKOUT] ⚠️ Email failed for ${tenant.email}`))
+          .catch(err => console.error(`[CHECKOUT] ❌ Email error:`, err.message));
         
         // Step 2: Update bed status to vacant
         console.log(`[CHECKOUT] Updating bed ${tenant.bed_identifier} to vacant...`);
