@@ -346,7 +346,7 @@ const PaymentInfo = () => {
                           )}
                         </td>
                         <td className="px-6 py-3 text-center">
-                          {tenant.payment_status === 'Not Paid' ? (
+                          {tenant.payment_status !== 'Paid' ? (
                             <button
                               onClick={() => handleMarkOfflinePay(tenant.id, tenant.name)}
                               disabled={markingPaid[tenant.id]}
