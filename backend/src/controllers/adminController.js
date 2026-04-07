@@ -77,29 +77,32 @@ const createTenant = async (req, res) => {
       console.warn('Warning: Could not add org mapping:', e.message);
     }
 
-    // Get bed info for email (using org pool after transaction)
-    const bedQuery = `
-      SELECT b.id, r.room_number, bl.name as building_name 
-      FROM beds b 
-      JOIN rooms r ON b.room_id = r.id 
-      JOIN buildings bl ON r.building_id = bl.id 
-      WHERE b.id = $1
-    `;
-    const bedResult = await req.pool.query(bedQuery, [bedId]);
-    const bedInfo = bedResult.rows[0] 
-      ? `${bedResult.rows[0].building_name} - Room ${bedResult.rows[0].room_number}`
-      : 'Bed assigned';
-    
-    const emailSent = await sendTenantCredentials(email, name, password, bedInfo);
-    
+    // Respond immediately - don't wait for email
     res.status(201).json({ 
-      message: emailSent 
-        ? 'Tenant created successfully and credentials sent to email'
-        : 'Tenant created successfully but email could not be sent. Please share credentials manually.',
-      emailSent,
+      message: 'Tenant created successfully',
       tenant: { id: tenant.id, name, email, bedId, startDate, endDate, rent },
       credentials: { email, password }
     });
+
+    // Send email in background (fire and forget)
+    try {
+      const bedQuery = `
+        SELECT b.id, r.room_number, bl.name as building_name 
+        FROM beds b 
+        JOIN rooms r ON b.room_id = r.id 
+        JOIN buildings bl ON r.building_id = bl.id 
+        WHERE b.id = $1
+      `;
+      const bedResult = await req.pool.query(bedQuery, [bedId]);
+      const bedInfo = bedResult.rows[0] 
+        ? `${bedResult.rows[0].building_name} - Room ${bedResult.rows[0].room_number}`
+        : 'Bed assigned';
+      sendTenantCredentials(email, name, password, bedInfo)
+        .then(sent => console.log(sent ? `✅ Email sent to ${email}` : `⚠️ Email failed for ${email}`))
+        .catch(err => console.error('❌ Email error:', err.message));
+    } catch (emailErr) {
+      console.error('❌ Email prep error:', emailErr.message);
+    }
   } catch (error) {
     await client.query('ROLLBACK').catch(e => console.error('Rollback error:', e));
     console.error('❌ Error creating tenant:', error.message, error.detail);

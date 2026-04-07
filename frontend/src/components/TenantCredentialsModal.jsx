@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FormattedMessage } from 'react-intl';
 
-const TenantCredentialsModal = ({ credentials, emailSent, onClose }) => {
+const TenantCredentialsModal = ({ credentials, onClose }) => {
   const [copied, setCopied] = useState(null);
 
   const copyToClipboard = (text, field) => {
@@ -19,22 +19,6 @@ const TenantCredentialsModal = ({ credentials, emailSent, onClose }) => {
           <h2 className="text-lg font-bold text-gray-800">Tenant Created Successfully!</h2>
           <p className="text-gray-500 text-sm">Share these credentials with the tenant</p>
         </div>
-
-        {/* Email Status */}
-        {!emailSent && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-2 mb-3">
-            <p className="text-yellow-800 text-xs">
-              <strong>⚠️ Note:</strong> Email could not be sent. Please share credentials manually.
-            </p>
-          </div>
-        )}
-        {emailSent && (
-          <div className="bg-green-50 border-l-4 border-green-400 p-2 mb-3">
-            <p className="text-green-800 text-xs">
-              <strong>✓</strong> Credentials sent to tenant's email.
-            </p>
-          </div>
-        )}
 
         {/* Credentials */}
         <div className="space-y-2 mb-3 bg-gray-50 p-3 rounded-lg">

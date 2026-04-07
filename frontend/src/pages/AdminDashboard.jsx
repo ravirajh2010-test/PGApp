@@ -183,9 +183,12 @@ const AdminDashboard = () => {
     setFormData({ ...formData, password });
   };
 
+  const [creatingTenant, setCreatingTenant] = useState(false);
+
   const handleCreateTenant = async (e) => {
     e.preventDefault();
     setTenantError('');
+    setCreatingTenant(true);
     try {
       // Save credentials before clearing form
       const savedCredentials = {
@@ -194,7 +197,7 @@ const AdminDashboard = () => {
         password: formData.password
       };
 
-      const res = await api.post('/admin/tenants', {
+      await api.post('/admin/tenants', {
         name: formData.name,
         email: formData.email,
         password: formData.password,
@@ -205,7 +208,7 @@ const AdminDashboard = () => {
         rent: parseFloat(formData.rent)
       });
 
-      // Clear form first
+      // Clear form and hide it
       setFormData({
         name: '',
         email: '',
@@ -220,15 +223,13 @@ const AdminDashboard = () => {
       setSelectedRoomBeds([]);
       setShowTenantForm(false);
 
-      // Show modal with saved credentials (set these AFTER form reset)
-      setCredentialsEmailSent(res.data.emailSent === true);
+      // Show modal immediately
       setCreatedCredentials(savedCredentials);
-
-      // Refresh data in background (don't await - let modal show immediately)
-      Promise.all([fetchTenants(), fetchOccupancy(), fetchAvailableBeds(), fetchBeds()]).catch(() => {});
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.message || 'Error creating tenant';
       setTenantError(errorMsg);
+    } finally {
+      setCreatingTenant(false);
     }
   };
 
@@ -243,9 +244,10 @@ const AdminDashboard = () => {
     }
   };
 
-  const closeCredentialsModal = () => {
+  const closeCredentialsModal = async () => {
     setCreatedCredentials(null);
-    setCredentialsEmailSent(false);
+    // Refresh data when modal closes so tenant appears in list
+    await Promise.all([fetchTenants(), fetchOccupancy(), fetchAvailableBeds(), fetchBeds()]).catch(() => {});
   };
 
   return (
@@ -254,7 +256,6 @@ const AdminDashboard = () => {
       {createdCredentials && (
         <TenantCredentialsModal 
           credentials={createdCredentials} 
-          emailSent={credentialsEmailSent}
           onClose={closeCredentialsModal}
         />
       )}
@@ -460,9 +461,10 @@ const AdminDashboard = () => {
 
             <button
               type="submit"
-              className="w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition"
+              disabled={creatingTenant}
+              className="w-full bg-green-500 hover:bg-green-600 disabled:bg-green-300 disabled:cursor-wait text-white px-6 py-3 rounded-lg font-semibold transition"
             >
-              <FormattedMessage id="tenants.create" defaultMessage="Create Tenant" />
+              {creatingTenant ? 'Creating...' : <FormattedMessage id="tenants.create" defaultMessage="Create Tenant" />}
             </button>
           </form>
         </div>
