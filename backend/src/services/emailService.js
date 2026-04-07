@@ -6,15 +6,26 @@ const getTransporter = () => {
   if (!transporter) {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
       console.error('❌ EMAIL_USER or EMAIL_PASSWORD not set in environment variables');
+      console.error(`   EMAIL_USER env: ${process.env.EMAIL_USER ? '✓ SET' : '✗ NOT SET'}`);
+      console.error(`   EMAIL_PASSWORD env: ${process.env.EMAIL_PASSWORD ? '✓ SET' : '✗ NOT SET'}`);
+      console.error(`   To send emails, set these variables in your deployment platform:`);
+      console.error(`   - EMAIL_USER: Your Gmail address (e.g., your-email@gmail.com)`);
+      console.error(`   - EMAIL_PASSWORD: Gmail app password (generate from Gmail account settings)`);
       return null;
     }
-    transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
+    try {
+      transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASSWORD,
+        },
+      });
+      console.log(`✅ Email transporter initialized for: ${process.env.EMAIL_USER}`);
+    } catch (error) {
+      console.error('❌ Error creating email transporter:', error.message);
+      return null;
+    }
   }
   return transporter;
 };

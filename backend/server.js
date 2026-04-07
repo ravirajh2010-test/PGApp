@@ -30,6 +30,7 @@ const tenantRoutes = require('./src/routes/tenantRoutes');
 const guestRoutes = require('./src/routes/guestRoutes');
 const superAdminRoutes = require('./src/routes/superAdminRoutes');
 const organizationRoutes = require('./src/routes/organizationRoutes');
+const debugEmailRoutes = require('./src/routes/debugEmailRoutes');
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
@@ -47,6 +48,7 @@ app.use('/api/tenant', tenantRoutes);
 app.use('/api/guest', guestRoutes);
 app.use('/api/super-admin', superAdminRoutes);
 app.use('/api/organization', organizationRoutes);
+app.use('/api/debug/email', debugEmailRoutes);
 
 const PORT = process.env.PORT || 5000;
 
