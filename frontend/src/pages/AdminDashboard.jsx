@@ -187,6 +187,13 @@ const AdminDashboard = () => {
     e.preventDefault();
     setTenantError('');
     try {
+      // Save credentials before clearing form
+      const savedCredentials = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password
+      };
+
       const res = await api.post('/admin/tenants', {
         name: formData.name,
         email: formData.email,
@@ -198,14 +205,7 @@ const AdminDashboard = () => {
         rent: parseFloat(formData.rent)
       });
 
-      setCreatedCredentials({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password
-      });
-
-      setCredentialsEmailSent(res.data.emailSent === true);
-
+      // Clear form first
       setFormData({
         name: '',
         email: '',
@@ -218,9 +218,14 @@ const AdminDashboard = () => {
         rent: ''
       });
       setSelectedRoomBeds([]);
-      setShowTenantForm(false); // Hide the form when successful
+      setShowTenantForm(false);
 
-      await Promise.all([fetchTenants(), fetchOccupancy(), fetchAvailableBeds(), fetchBeds()]);
+      // Show modal with saved credentials (set these AFTER form reset)
+      setCredentialsEmailSent(res.data.emailSent === true);
+      setCreatedCredentials(savedCredentials);
+
+      // Refresh data in background (don't await - let modal show immediately)
+      Promise.all([fetchTenants(), fetchOccupancy(), fetchAvailableBeds(), fetchBeds()]).catch(() => {});
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.message || 'Error creating tenant';
       setTenantError(errorMsg);
@@ -245,6 +250,15 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-8">
+      {/* Tenant Credentials Modal - rendered at top level for proper overlay */}
+      {createdCredentials && (
+        <TenantCredentialsModal 
+          credentials={createdCredentials} 
+          emailSent={credentialsEmailSent}
+          onClose={closeCredentialsModal}
+        />
+      )}
+
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-gray-800 mb-2">📊 <FormattedMessage id="dashboard.adminDashboard" defaultMessage="Admin Dashboard" /></h1>
         <p className="text-gray-600"><FormattedMessage id="dashboard.subtitle" defaultMessage="Manage tenants and view property overview" /></p>
@@ -452,15 +466,6 @@ const AdminDashboard = () => {
             </button>
           </form>
         </div>
-      )}
-
-      {/* Tenant Credentials Modal */}
-      {createdCredentials && (
-        <TenantCredentialsModal 
-          credentials={createdCredentials} 
-          emailSent={credentialsEmailSent}
-          onClose={closeCredentialsModal}
-        />
       )}
 
       {/* Floor-wise Occupancy Visual */}
