@@ -107,4 +107,48 @@ router.get('/email-config-status', (req, res) => {
   });
 });
 
+// Verify SMTP connection (with timeout)
+router.get('/verify-smtp', async (req, res) => {
+  try {
+    const nodemailer = require('nodemailer');
+    
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      return res.json({ success: false, error: 'EMAIL_USER or EMAIL_PASSWORD not set' });
+    }
+
+    const testTransporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
+      tls: { rejectUnauthorized: false }
+    });
+
+    // Race between verify and a 12s timeout
+    const verifyPromise = testTransporter.verify();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('SMTP connection timed out after 12s - port 587 may be blocked')), 12000)
+    );
+
+    await Promise.race([verifyPromise, timeoutPromise]);
+    testTransporter.close();
+    
+    res.json({ success: true, message: '✅ SMTP connection to Gmail verified successfully' });
+  } catch (error) {
+    res.json({ 
+      success: false, 
+      error: error.message,
+      hint: error.message.includes('timed out') 
+        ? 'Railway may be blocking outbound SMTP. Consider using an email API service (SendGrid, Resend, etc.)' 
+        : 'Check your EMAIL_PASSWORD (Gmail app password)'
+    });
+  }
+});
+
 module.exports = router;

@@ -1,25 +1,30 @@
 const nodemailer = require('nodemailer');
 
 let transporter = null;
+let transporterVerified = false;
 
 const getTransporter = () => {
   if (!transporter) {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
       console.error('❌ EMAIL_USER or EMAIL_PASSWORD not set in environment variables');
-      console.error(`   EMAIL_USER env: ${process.env.EMAIL_USER ? '✓ SET' : '✗ NOT SET'}`);
-      console.error(`   EMAIL_PASSWORD env: ${process.env.EMAIL_PASSWORD ? '✓ SET' : '✗ NOT SET'}`);
-      console.error(`   To send emails, set these variables in your deployment platform:`);
-      console.error(`   - EMAIL_USER: Your Gmail address (e.g., your-email@gmail.com)`);
-      console.error(`   - EMAIL_PASSWORD: Gmail app password (generate from Gmail account settings)`);
       return null;
     }
     try {
       transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
         auth: {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASSWORD,
         },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
+        pool: false,
+        tls: {
+          rejectUnauthorized: false
+        }
       });
       console.log(`✅ Email transporter initialized for: ${process.env.EMAIL_USER}`);
     } catch (error) {
