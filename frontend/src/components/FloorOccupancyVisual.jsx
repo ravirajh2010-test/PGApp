@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FormattedMessage } from 'react-intl';
+import { FormattedMessage, useIntl } from 'react-intl';
 import api from '../services/api';
 
 const FloorOccupancyVisual = ({ buildings }) => {
@@ -7,6 +7,7 @@ const FloorOccupancyVisual = ({ buildings }) => {
   const [floors, setFloors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hoveredBed, setHoveredBed] = useState(null);
+  const intl = useIntl();
 
   useEffect(() => {
     if (selectedBuilding) {
@@ -29,11 +30,11 @@ const FloorOccupancyVisual = ({ buildings }) => {
   };
 
   const getFloorLabel = (floorNumber) => {
-    if (floorNumber === 0) return 'Ground Floor';
-    if (floorNumber === 1) return '1st Floor';
-    if (floorNumber === 2) return '2nd Floor';
-    if (floorNumber === 3) return '3rd Floor';
-    return `${floorNumber}th Floor`;
+    if (floorNumber === 0) return intl.formatMessage({ id: 'dashboard.groundFloor', defaultMessage: 'Ground Floor' });
+    if (floorNumber === 1) return intl.formatMessage({ id: 'dashboard.firstFloor', defaultMessage: '1st Floor' });
+    if (floorNumber === 2) return intl.formatMessage({ id: 'dashboard.secondFloor', defaultMessage: '2nd Floor' });
+    if (floorNumber === 3) return intl.formatMessage({ id: 'dashboard.thirdFloor', defaultMessage: '3rd Floor' });
+    return intl.formatMessage({ id: 'dashboard.nthFloor', defaultMessage: '{number}th Floor' }, { number: floorNumber });
   };
 
   const buildingName = buildings.find(b => b.id === parseInt(selectedBuilding))?.name || '';
@@ -64,7 +65,7 @@ const FloorOccupancyVisual = ({ buildings }) => {
             onChange={(e) => setSelectedBuilding(e.target.value)}
             className="px-4 py-2 rounded-lg text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-white"
           >
-            <option value="">Select Building</option>
+            <option value="">{intl.formatMessage({ id: 'dashboard.chooseBuilding', defaultMessage: 'Choose a building...' })}</option>
             {buildings.map((b) => (
               <option key={b.id} value={b.id}>{b.name}</option>
             ))}
@@ -78,20 +79,20 @@ const FloorOccupancyVisual = ({ buildings }) => {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded bg-red-500"></div>
-            <span className="text-sm font-medium text-gray-700">Occupied</span>
+            <span className="text-sm font-medium text-gray-700"><FormattedMessage id="dashboard.occupiedStatus" defaultMessage="Occupied" /></span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded bg-green-500"></div>
-            <span className="text-sm font-medium text-gray-700">Vacant</span>
+            <span className="text-sm font-medium text-gray-700"><FormattedMessage id="dashboard.vacantStatus" defaultMessage="Vacant" /></span>
           </div>
         </div>
         {totalBeds > 0 && (
           <div className="flex items-center gap-4 text-sm font-semibold">
-            <span className="text-gray-600">Total: {totalBeds}</span>
-            <span className="text-red-600">Occupied: {occupiedBeds}</span>
-            <span className="text-green-600">Vacant: {vacantBeds}</span>
+            <span className="text-gray-600"><FormattedMessage id="dashboard.totalLabel" defaultMessage="Total" />: {totalBeds}</span>
+            <span className="text-red-600"><FormattedMessage id="dashboard.occupiedStatus" defaultMessage="Occupied" />: {occupiedBeds}</span>
+            <span className="text-green-600"><FormattedMessage id="dashboard.vacantStatus" defaultMessage="Vacant" />: {vacantBeds}</span>
             <span className="text-indigo-600">
-              {Math.round((occupiedBeds / totalBeds) * 100)}% Full
+              <FormattedMessage id="dashboard.percentFull" defaultMessage="{percent}% Full" values={{ percent: Math.round((occupiedBeds / totalBeds) * 100) }} />
             </span>
           </div>
         )}
@@ -101,9 +102,9 @@ const FloorOccupancyVisual = ({ buildings }) => {
       {selectedBuilding && (
       <div className="p-6">
         {loading ? (
-          <p className="text-center text-gray-500 py-8">Loading floor layout...</p>
+          <p className="text-center text-gray-500 py-8"><FormattedMessage id="dashboard.loadingFloorLayout" defaultMessage="Loading floor layout..." /></p>
         ) : floors.length === 0 ? (
-          <p className="text-center text-gray-500 py-8">No floors/rooms found for this building.</p>
+          <p className="text-center text-gray-500 py-8"><FormattedMessage id="dashboard.noFloorsFound" defaultMessage="No floors/rooms found for this building." /></p>
         ) : (
           <div className="space-y-6">
             {/* Building visual container */}
@@ -127,7 +128,7 @@ const FloorOccupancyVisual = ({ buildings }) => {
                           {getFloorLabel(floor.floor_number)}
                         </span>
                         <span className="text-xs font-medium text-gray-500">
-                          {floorOccupied}/{floorTotal} beds occupied
+                          <FormattedMessage id="dashboard.bedsOccupiedCount" defaultMessage="{occupied}/{total} beds occupied" values={{ occupied: floorOccupied, total: floorTotal }} />
                         </span>
                       </div>
 
@@ -138,7 +139,7 @@ const FloorOccupancyVisual = ({ buildings }) => {
                             {/* Room label */}
                             <div className="text-center mb-2">
                               <span className="text-xs font-bold text-gray-600 bg-white px-2 py-0.5 rounded border">
-                                Room {room.room_number}
+                                <FormattedMessage id="dashboard.roomLabel" defaultMessage="Room {number}" values={{ number: room.room_number }} />
                               </span>
                             </div>
 
@@ -159,7 +160,7 @@ const FloorOccupancyVisual = ({ buildings }) => {
                                           ? 'bg-red-500 border-red-600 text-white hover:bg-red-600 hover:shadow-md'
                                           : 'bg-green-500 border-green-600 text-white hover:bg-green-600 hover:shadow-md'
                                       }`}
-                                      title={`Bed ${bed.bed_identifier} - ${bed.status}${bed.tenant_name ? ' (' + bed.tenant_name + ')' : ''}`}
+                                      title={`${intl.formatMessage({ id: 'dashboard.bedTooltip', defaultMessage: 'Bed {identifier}' }, { identifier: bed.bed_identifier })} - ${bed.status === 'occupied' ? intl.formatMessage({ id: 'dashboard.occupiedStatus' }) : intl.formatMessage({ id: 'dashboard.vacantStatus' })}${bed.tenant_name ? ' (' + bed.tenant_name + ')' : ''}`}
                                     >
                                       <span className="text-xs font-bold">{bed.bed_identifier}</span>
                                     </div>
@@ -167,16 +168,16 @@ const FloorOccupancyVisual = ({ buildings }) => {
                                     {/* Tooltip */}
                                     {hoveredBed === bed.id && (
                                       <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-gray-900 text-white text-xs rounded-lg p-2 shadow-lg pointer-events-none">
-                                        <div className="font-bold mb-1">Bed {bed.bed_identifier}</div>
-                                        <div>Status: <span className={bed.status === 'occupied' ? 'text-red-300' : 'text-green-300'}>{bed.status}</span></div>
-                                        {bed.tenant_name && <div>Tenant: {bed.tenant_name}</div>}
+                                        <div className="font-bold mb-1"><FormattedMessage id="dashboard.bedTooltip" defaultMessage="Bed {identifier}" values={{ identifier: bed.bed_identifier }} /></div>
+                                        <div><FormattedMessage id="dashboard.statusColon" defaultMessage="Status" />: <span className={bed.status === 'occupied' ? 'text-red-300' : 'text-green-300'}>{bed.status === 'occupied' ? intl.formatMessage({ id: 'dashboard.occupiedStatus' }) : intl.formatMessage({ id: 'dashboard.vacantStatus' })}</span></div>
+                                        {bed.tenant_name && <div><FormattedMessage id="dashboard.tenantColon" defaultMessage="Tenant" />: {bed.tenant_name}</div>}
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
                                       </div>
                                     )}
                                   </div>
                                 ))
                               ) : (
-                                <span className="text-xs text-gray-400 italic">No beds</span>
+                                <span className="text-xs text-gray-400 italic"><FormattedMessage id="dashboard.noBeds" defaultMessage="No beds" /></span>
                               )}
                             </div>
                           </div>
