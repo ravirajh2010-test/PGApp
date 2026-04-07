@@ -1,7 +1,24 @@
 const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 let transporter = null;
-let transporterVerified = false;
+let resendClient = null;
+
+// Determine which email provider to use
+const getEmailProvider = () => {
+  if (process.env.RESEND_API_KEY) {
+    if (!resendClient) {
+      resendClient = new Resend(process.env.RESEND_API_KEY);
+      console.log('✅ Resend email client initialized');
+    }
+    return 'resend';
+  }
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
+    return 'smtp';
+  }
+  console.error('❌ No email provider configured. Set RESEND_API_KEY or EMAIL_USER/EMAIL_PASSWORD');
+  return null;
+};
 
 const getTransporter = () => {
   if (!transporter) {
@@ -26,22 +43,56 @@ const getTransporter = () => {
           rejectUnauthorized: false
         }
       });
-      console.log(`✅ Email transporter initialized for: ${process.env.EMAIL_USER}`);
+      console.log(`✅ SMTP transporter initialized for: ${process.env.EMAIL_USER}`);
     } catch (error) {
-      console.error('❌ Error creating email transporter:', error.message);
+      console.error('❌ Error creating SMTP transporter:', error.message);
       return null;
     }
   }
   return transporter;
 };
 
-const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo) => {
-  try {
-    const mailer = getTransporter();
-    if (!mailer) {
-      console.error('❌ Email transporter not configured. Check EMAIL_USER and EMAIL_PASSWORD env vars.');
+// Unified send function: tries Resend first, falls back to SMTP
+const sendEmail = async (to, subject, html) => {
+  const provider = getEmailProvider();
+  if (!provider) return false;
+
+  if (provider === 'resend') {
+    try {
+      const fromAddress = process.env.RESEND_FROM_EMAIL || 'PG Stay <onboarding@resend.dev>';
+      const { data, error } = await resendClient.emails.send({
+        from: fromAddress,
+        to: [to],
+        subject,
+        html,
+      });
+      if (error) {
+        console.error('❌ Resend error:', error);
+        return false;
+      }
+      console.log(`✅ Email sent via Resend to ${to} (id: ${data.id})`);
+      return true;
+    } catch (err) {
+      console.error('❌ Resend exception:', err.message);
       return false;
     }
+  }
+
+  // SMTP fallback
+  const mailer = getTransporter();
+  if (!mailer) return false;
+  try {
+    await mailer.sendMail({ from: process.env.EMAIL_USER, to, subject, html });
+    console.log(`✅ Email sent via SMTP to ${to}`);
+    return true;
+  } catch (err) {
+    console.error('❌ SMTP error:', err.message);
+    return false;
+  }
+};
+
+const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo) => {
+  try {
     const htmlContent = `
       <html>
         <head>
@@ -118,16 +169,10 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo)
       </html>
     `;
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: tenantEmail,
-      subject: '🎉 Welcome to Bajrang Hostels and PG Pvt Ltd - Your Login Credentials',
-      html: htmlContent,
-    };
-
-    await mailer.sendMail(mailOptions);
-    console.log(`✅ Email sent successfully to ${tenantEmail}`);
-    return true;
+    const subject = '🎉 Welcome to Bajrang Hostels and PG Pvt Ltd - Your Login Credentials';
+    const result = await sendEmail(tenantEmail, subject, htmlContent);
+    if (result) console.log(`✅ Tenant credentials email sent to ${tenantEmail}`);
+    return result;
   } catch (error) {
     console.error('❌ Error sending email:', error.message);
     return false;
@@ -136,11 +181,6 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo)
 
 const sendThankYouEmail = async (tenantEmail, tenantName, bedInfo, stayDuration) => {
   try {
-    const mailer = getTransporter();
-    if (!mailer) {
-      console.error('❌ Email transporter not configured. Check EMAIL_USER and EMAIL_PASSWORD env vars.');
-      return false;
-    }
     const htmlContent = `
       <html>
         <head>
@@ -211,16 +251,10 @@ const sendThankYouEmail = async (tenantEmail, tenantName, bedInfo, stayDuration)
       </html>
     `;
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: tenantEmail,
-      subject: '🙏 Thank You For Your Stay - Bajrang Hostels and PG Pvt Ltd',
-      html: htmlContent,
-    };
-
-    await mailer.sendMail(mailOptions);
-    console.log(`✅ Thank you email sent to ${tenantEmail}`);
-    return true;
+    const subject = '🙏 Thank You For Your Stay - Bajrang Hostels and PG Pvt Ltd';
+    const result = await sendEmail(tenantEmail, subject, htmlContent);
+    if (result) console.log(`✅ Thank you email sent to ${tenantEmail}`);
+    return result;
   } catch (error) {
     console.error('❌ Error sending thank you email:', error.message);
     return false;
@@ -229,11 +263,6 @@ const sendThankYouEmail = async (tenantEmail, tenantName, bedInfo, stayDuration)
 
 const sendPaymentReminder = async (tenantEmail, tenantName, rent, bedInfo, monthName) => {
   try {
-    const mailer = getTransporter();
-    if (!mailer) {
-      console.error('❌ Email transporter not configured. Check EMAIL_USER and EMAIL_PASSWORD env vars.');
-      return false;
-    }
     const htmlContent = `
       <html>
         <head>
@@ -276,16 +305,10 @@ const sendPaymentReminder = async (tenantEmail, tenantName, rent, bedInfo, month
       </html>
     `;
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: tenantEmail,
-      subject: `⚠️ Rent Payment Reminder for ${monthName} - Bajrang Hostels and PG Pvt Ltd`,
-      html: htmlContent,
-    };
-
-    await mailer.sendMail(mailOptions);
-    console.log(`✅ Payment reminder sent to ${tenantEmail}`);
-    return true;
+    const subject = `⚠️ Rent Payment Reminder for ${monthName} - Bajrang Hostels and PG Pvt Ltd`;
+    const result = await sendEmail(tenantEmail, subject, htmlContent);
+    if (result) console.log(`✅ Payment reminder sent to ${tenantEmail}`);
+    return result;
   } catch (error) {
     console.error('❌ Error sending payment reminder:', error.message);
     return false;
@@ -294,12 +317,6 @@ const sendPaymentReminder = async (tenantEmail, tenantName, rent, bedInfo, month
 
 const sendRentReceipt = async (tenantEmail, tenantName, rent, bedInfo, monthName, paymentDate) => {
   try {
-    const mailer = getTransporter();
-    if (!mailer) {
-      console.error('❌ Email transporter not configured. Check EMAIL_USER and EMAIL_PASSWORD env vars.');
-      return false;
-    }
-    
     // Format payment date
     const formattedDate = new Date(paymentDate).toLocaleDateString('en-IN', { 
       day: '2-digit', 
@@ -399,16 +416,10 @@ const sendRentReceipt = async (tenantEmail, tenantName, rent, bedInfo, monthName
       </html>
     `;
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: tenantEmail,
-      subject: `💰 Rent Receipt - ${monthName} - Bajrang Hostels and PG Pvt Ltd`,
-      html: htmlContent,
-    };
-
-    await mailer.sendMail(mailOptions);
-    console.log(`✅ Rent receipt sent to ${tenantEmail}`);
-    return true;
+    const subject = `💰 Rent Receipt - ${monthName} - Bajrang Hostels and PG Pvt Ltd`;
+    const result = await sendEmail(tenantEmail, subject, htmlContent);
+    if (result) console.log(`✅ Rent receipt sent to ${tenantEmail}`);
+    return result;
   } catch (error) {
     console.error('❌ Error sending rent receipt:', error.message);
     return false;
@@ -417,11 +428,6 @@ const sendRentReceipt = async (tenantEmail, tenantName, rent, bedInfo, monthName
 
 const sendOrgWelcomeEmail = async (orgEmail, orgName, adminName, adminEmail, plan) => {
   try {
-    const mailer = getTransporter();
-    if (!mailer) {
-      console.error('❌ Email transporter not configured. Check EMAIL_USER and EMAIL_PASSWORD env vars.');
-      return false;
-    }
     const htmlContent = `
       <html>
         <head>
@@ -496,16 +502,10 @@ const sendOrgWelcomeEmail = async (orgEmail, orgName, adminName, adminEmail, pla
       </html>
     `;
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: orgEmail,
-      subject: '🎉 Welcome to PG Stay - Your PG is Registered!',
-      html: htmlContent,
-    };
-
-    await mailer.sendMail(mailOptions);
-    console.log(`✅ Organization welcome email sent to ${orgEmail}`);
-    return true;
+    const subject = '🎉 Welcome to PG Stay - Your PG is Registered!';
+    const result = await sendEmail(orgEmail, subject, htmlContent);
+    if (result) console.log(`✅ Organization welcome email sent to ${orgEmail}`);
+    return result;
   } catch (error) {
     console.error('❌ Error sending organization welcome email:', error.message);
     return false;

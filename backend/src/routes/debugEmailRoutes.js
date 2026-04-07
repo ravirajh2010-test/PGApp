@@ -94,16 +94,25 @@ router.post('/test-org-email', async (req, res) => {
 router.get('/email-config-status', (req, res) => {
   const emailUserSet = !!process.env.EMAIL_USER;
   const emailPasswordSet = !!process.env.EMAIL_PASSWORD;
+  const resendKeySet = !!process.env.RESEND_API_KEY;
+  const resendFromEmail = process.env.RESEND_FROM_EMAIL || 'PG Stay <onboarding@resend.dev>';
+  
+  const provider = resendKeySet ? 'resend' : (emailUserSet && emailPasswordSet ? 'smtp' : 'none');
   
   res.json({
-    status: emailUserSet && emailPasswordSet ? '✅ OK' : '❌ INCOMPLETE',
+    status: provider !== 'none' ? '✅ OK' : '❌ INCOMPLETE',
+    activeProvider: provider,
+    resendConfigured: resendKeySet,
+    resendFromEmail: resendKeySet ? resendFromEmail : 'N/A',
     emailUserConfigured: emailUserSet,
     emailPasswordConfigured: emailPasswordSet,
     emailUser: emailUserSet ? process.env.EMAIL_USER : 'NOT SET',
     nodeEnv: process.env.NODE_ENV,
-    message: !emailUserSet || !emailPasswordSet 
-      ? '⚠️ Email environment variables are not configured. Please set EMAIL_USER and EMAIL_PASSWORD.'
-      : '✅ Email configuration looks good'
+    message: provider === 'resend' 
+      ? '✅ Using Resend HTTP API for emails'
+      : provider === 'smtp'
+      ? '✅ Using Gmail SMTP for emails (may not work on Railway)'
+      : '⚠️ No email provider configured. Set RESEND_API_KEY or EMAIL_USER/EMAIL_PASSWORD.'
   });
 });
 
