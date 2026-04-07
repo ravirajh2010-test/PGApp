@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FormattedMessage } from 'react-intl';
 import api from '../services/api';
 import FloorOccupancyVisual from '../components/FloorOccupancyVisual';
+import TenantCredentialsModal from '../components/TenantCredentialsModal';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ const AdminDashboard = () => {
   const [availableBeds, setAvailableBeds] = useState([]);
   const [selectedRoomBeds, setSelectedRoomBeds] = useState([]);
   const [createdCredentials, setCreatedCredentials] = useState(null);
+  const [credentialsEmailSent, setCredentialsEmailSent] = useState(false);
   const [tenantError, setTenantError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -202,9 +204,7 @@ const AdminDashboard = () => {
         password: formData.password
       });
 
-      if (res.data.emailSent === false) {
-        setTenantError('Tenant created but email could not be sent. Please share credentials manually.');
-      }
+      setCredentialsEmailSent(res.data.emailSent === true);
 
       setFormData({
         name: '',
@@ -218,6 +218,7 @@ const AdminDashboard = () => {
         rent: ''
       });
       setSelectedRoomBeds([]);
+      setShowTenantForm(false); // Hide the form when successful
 
       await Promise.all([fetchTenants(), fetchOccupancy(), fetchAvailableBeds(), fetchBeds()]);
     } catch (error) {
@@ -235,6 +236,11 @@ const AdminDashboard = () => {
         alert('Error deleting tenant');
       }
     }
+  };
+
+  const closeCredentialsModal = () => {
+    setCreatedCredentials(null);
+    setCredentialsEmailSent(false);
   };
 
   return (
@@ -448,23 +454,13 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* Created Credentials Display */}
+      {/* Tenant Credentials Modal */}
       {createdCredentials && (
-        <div className="bg-green-50 border-2 border-green-500 rounded-lg p-6">
-          <h3 className="text-lg font-bold text-green-800 mb-4">✓ <FormattedMessage id="tenants.tenantCreated" defaultMessage="Tenant Created Successfully" /></h3>
-          <div className="bg-white rounded p-4 space-y-2 font-mono text-sm">
-            <p><span className="font-bold text-gray-700">Name:</span> {createdCredentials.name}</p>
-            <p><span className="font-bold text-gray-700">Email:</span> {createdCredentials.email}</p>
-            <p><span className="font-bold text-gray-700">Password:</span> {createdCredentials.password}</p>
-          </div>
-          <p className="text-sm text-green-700 mt-4"><FormattedMessage id="tenants.shareCredentials" defaultMessage="Share these credentials with the tenant. They will be prompted to change their password on first login." /></p>
-          <button
-            onClick={() => setCreatedCredentials(null)}
-            className="mt-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition"
-          >
-            Close
-          </button>
-        </div>
+        <TenantCredentialsModal 
+          credentials={createdCredentials} 
+          emailSent={credentialsEmailSent}
+          onClose={closeCredentialsModal}
+        />
       )}
 
       {/* Floor-wise Occupancy Visual */}
