@@ -201,7 +201,7 @@ const initDatabase = async () => {
 };
 
 // Start server immediately, initialize DB in background
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
 
 // Initialize database tables asynchronously (don't block server startup)
 initDatabase().then(async () => {
