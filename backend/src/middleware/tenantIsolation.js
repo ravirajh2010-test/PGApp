@@ -31,7 +31,7 @@ const tenantIsolation = async (req, res, next) => {
     }
 
     // Verify org is active
-    const orgResult = await pool.query('SELECT id, status, plan, database_name FROM organizations WHERE id = $1', [req.user.orgId]);
+    const orgResult = await pool.query('SELECT id, name, status, plan, database_name FROM organizations WHERE id = $1', [req.user.orgId]);
     if (orgResult.rows.length === 0) {
       return res.status(404).json({ message: 'Organization not found' });
     }
@@ -42,6 +42,7 @@ const tenantIsolation = async (req, res, next) => {
     }
 
     req.orgId = req.user.orgId;
+    req.orgName = org.name;
     req.orgPlan = org.plan;
 
     // Inject org-specific database pool

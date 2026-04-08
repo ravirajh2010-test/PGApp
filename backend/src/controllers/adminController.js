@@ -98,7 +98,7 @@ const createTenant = async (req, res) => {
       const bedInfo = bedResult.rows[0] 
         ? `${bedResult.rows[0].building_name} - Room ${bedResult.rows[0].room_number}`
         : 'Bed assigned';
-      sendTenantCredentials(email, name, password, bedInfo)
+      sendTenantCredentials(email, name, password, bedInfo, req.orgName)
         .then(sent => console.log(sent ? `✅ Email sent to ${email}` : `⚠️ Email failed for ${email}`))
         .catch(err => console.error('❌ Email error:', err.message));
     } catch (emailErr) {
@@ -624,7 +624,7 @@ const sendPaymentReminderEmail = async (req, res) => {
 
     // Default: email - respond immediately, send in background
     res.json({ message: `Payment reminder being sent to ${tenant.email}` });
-    sendPaymentReminder(tenant.email, tenant.name, tenant.rent, bedInfo, prevMonthName)
+    sendPaymentReminder(tenant.email, tenant.name, tenant.rent, bedInfo, prevMonthName, req.orgName)
       .then(sent => console.log(sent ? `✅ Reminder sent to ${tenant.email}` : `⚠️ Reminder failed for ${tenant.email}`))
       .catch(err => console.error('❌ Reminder email error:', err.message));
   } catch (error) {
@@ -662,7 +662,7 @@ const markOfflinePay = async (req, res) => {
     // Get full tenant details for receipt
     const tenantQuery = `
       SELECT t.id, t.email, t.rent, t.phone,
-             u.name,
+             u.name, u.email as user_email,
              b.bed_identifier, r.room_number, bl.name as building_name
       FROM tenants t
       JOIN users u ON t.user_id = u.id
@@ -678,11 +678,12 @@ const markOfflinePay = async (req, res) => {
     
     const tenant = tenantResult.rows[0];
     const bedInfo = `${tenant.building_name} - Room ${tenant.room_number} - ${tenant.bed_identifier || 'Bed'}`;
+    const tenantEmail = tenant.email || tenant.user_email;
 
     await req.pool.query(
       `INSERT INTO payments (tenant_id, tenant_name, email, phone, amount, status, payment_month, payment_year, razorpay_payment_id)
        VALUES ($1, $2, $3, $4, $5, 'completed', $6, $7, $8)`,
-      [tenantId, tenant.name, tenant.email, tenant.phone || null, tenant.rent, dbMonth, payYear, 'OFFLINE_' + Date.now()]
+      [tenantId, tenant.name, tenantEmail, tenant.phone || null, tenant.rent, dbMonth, payYear, 'OFFLINE_' + Date.now()]
     );
 
     // Respond immediately
@@ -691,9 +692,14 @@ const markOfflinePay = async (req, res) => {
     });
 
     // Send rent receipt email in background (fire and forget)
-    sendRentReceipt(tenant.email, tenant.name, tenant.rent, bedInfo, monthName, new Date())
-      .then(sent => console.log(sent ? `✅ Receipt sent to ${tenant.email}` : `⚠️ Receipt failed for ${tenant.email}`))
-      .catch(err => console.error('❌ Receipt email error:', err.message));
+    if (tenantEmail) {
+      console.log(`📧 Sending rent receipt to ${tenantEmail} for ${monthName}...`);
+      sendRentReceipt(tenantEmail, tenant.name, tenant.rent, bedInfo, monthName, new Date(), req.orgName)
+        .then(sent => console.log(sent ? `✅ Receipt sent to ${tenantEmail}` : `⚠️ Receipt failed for ${tenantEmail}`))
+        .catch(err => console.error('❌ Receipt email error:', err.message));
+    } else {
+      console.warn(`⚠️ No email found for tenant ${tenantId}, skipping receipt`);
+    }
   } catch (error) {
     console.error('Error marking offline payment:', error);
     res.status(500).json({ message: 'Server error' });

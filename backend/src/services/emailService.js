@@ -91,7 +91,7 @@ const sendEmail = async (to, subject, html) => {
   }
 };
 
-const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo) => {
+const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo, orgName) => {
   try {
     const htmlContent = `
       <html>
@@ -115,14 +115,14 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo)
         <body>
           <div class="container">
             <div class="header">
-              <h1>🏢 Bajrang Hostels and PG Pvt Ltd</h1>
+              <h1>🏢 ${orgName || 'PG Stay'}</h1>
               <p>Welcome to Your New Home</p>
             </div>
             
             <div class="content">
               <p>Hello <strong>${tenantName}</strong>,</p>
               
-              <p>Welcome to <strong>Bajrang Hostels and PG Pvt Ltd!</strong> We are thrilled to have you join our community. Your accommodation has been successfully registered.</p>
+              <p>Welcome to <strong>${orgName || 'PG Stay'}!</strong> We are thrilled to have you join our community. Your accommodation has been successfully registered.</p>
               
               <div class="credentials-box">
                 <h3 style="margin-top: 0; color: #ff6b35;">Your Login Credentials</h3>
@@ -157,11 +157,11 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo)
               <p>If you have any questions or need assistance, please don't hesitate to contact us.</p>
               
               <p>Best wishes for a comfortable stay!<br/>
-              <strong>Bajrang Hostels and PG Pvt Ltd Team</strong></p>
+              <strong>${orgName || 'PG Stay'} Team</strong></p>
             </div>
             
             <div class="footer">
-              <p>&copy; 2024 Bajrang Hostels and PG Pvt Ltd. All rights reserved.</p>
+              <p>&copy; ${new Date().getFullYear()} ${orgName || 'PG Stay'}. All rights reserved.</p>
               <p>This is an automated email. Please do not reply directly.</p>
             </div>
           </div>
@@ -169,7 +169,7 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo)
       </html>
     `;
 
-    const subject = '🎉 Welcome to Bajrang Hostels and PG Pvt Ltd - Your Login Credentials';
+    const subject = `🎉 Welcome to ${orgName || 'PG Stay'} - Your Login Credentials`;
     const result = await sendEmail(tenantEmail, subject, htmlContent);
     if (result) console.log(`✅ Tenant credentials email sent to ${tenantEmail}`);
     return result;
@@ -179,7 +179,7 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo)
   }
 };
 
-const sendThankYouEmail = async (tenantEmail, tenantName, bedInfo, stayDuration) => {
+const sendThankYouEmail = async (tenantEmail, tenantName, bedInfo, stayDuration, orgName) => {
   try {
     const htmlContent = `
       <html>
@@ -201,7 +201,7 @@ const sendThankYouEmail = async (tenantEmail, tenantName, bedInfo, stayDuration)
         <body>
           <div class="container">
             <div class="header">
-              <h1>🏢 Bajrang Hostels and PG Pvt Ltd</h1>
+              <h1>🏢 ${orgName || 'PG Stay'}</h1>
               <p>Thank You For Your Stay</p>
             </div>
             
@@ -213,7 +213,7 @@ const sendThankYouEmail = async (tenantEmail, tenantName, bedInfo, stayDuration)
                 <p>We truly appreciate your stay with us. It was a pleasure hosting you!</p>
               </div>
               
-              <p>Your tenancy has come to an end, and we wanted to express our gratitude for choosing <strong>Bajrang Hostels and PG Pvt Ltd</strong> as your home.</p>
+              <p>Your tenancy has come to an end, and we wanted to express our gratitude for choosing <strong>${orgName || 'PG Stay'}</strong> as your home.</p>
               
               <div class="details-box">
                 <h3 style="margin-top: 0; color: #333;">Your Stay Details</h3>
@@ -239,11 +239,11 @@ const sendThankYouEmail = async (tenantEmail, tenantName, bedInfo, stayDuration)
               <p>If you ever need accommodation in the future, we would be delighted to welcome you back!</p>
               
               <p>Best wishes for your future!<br/>
-              <strong>Bajrang Hostels and PG Pvt Ltd Team</strong></p>
+              <strong>${orgName || 'PG Stay'} Team</strong></p>
             </div>
             
             <div class="footer">
-              <p>&copy; 2024 Bajrang Hostels and PG Pvt Ltd. All rights reserved.</p>
+              <p>&copy; ${new Date().getFullYear()} ${orgName || 'PG Stay'}. All rights reserved.</p>
               <p>This is an automated email. Please do not reply directly.</p>
             </div>
           </div>
@@ -251,7 +251,7 @@ const sendThankYouEmail = async (tenantEmail, tenantName, bedInfo, stayDuration)
       </html>
     `;
 
-    const subject = '🙏 Thank You For Your Stay - Bajrang Hostels and PG Pvt Ltd';
+    const subject = `🙏 Thank You For Your Stay - ${orgName || 'PG Stay'}`;
     const result = await sendEmail(tenantEmail, subject, htmlContent);
     if (result) console.log(`✅ Thank you email sent to ${tenantEmail}`);
     return result;
@@ -261,7 +261,7 @@ const sendThankYouEmail = async (tenantEmail, tenantName, bedInfo, stayDuration)
   }
 };
 
-const sendPaymentReminder = async (tenantEmail, tenantName, rent, bedInfo, monthName) => {
+const sendPaymentReminder = async (tenantEmail, tenantName, rent, bedInfo, monthName, orgName) => {
   try {
     const htmlContent = `
       <html>
@@ -280,7 +280,7 @@ const sendPaymentReminder = async (tenantEmail, tenantName, rent, bedInfo, month
         <body>
           <div class="container">
             <div class="header">
-              <h1>🏢 Bajrang Hostels and PG Pvt Ltd</h1>
+              <h1>🏢 ${orgName || 'PG Stay'}</h1>
               <p>Payment Reminder</p>
             </div>
             <div class="content">
@@ -294,10 +294,10 @@ const sendPaymentReminder = async (tenantEmail, tenantName, rent, bedInfo, month
               </div>
               <p>Please make the payment at the earliest to avoid any inconvenience.</p>
               <p>If you have already made the payment, please disregard this email.</p>
-              <p>Best regards,<br/><strong>Bajrang Hostels and PG Pvt Ltd Team</strong></p>
+              <p>Best regards,<br/><strong>${orgName || 'PG Stay'} Team</strong></p>
             </div>
             <div class="footer">
-              <p>&copy; 2024 Bajrang Hostels and PG Pvt Ltd. All rights reserved.</p>
+              <p>&copy; ${new Date().getFullYear()} ${orgName || 'PG Stay'}. All rights reserved.</p>
               <p>This is an automated email. Please do not reply directly.</p>
             </div>
           </div>
@@ -305,7 +305,7 @@ const sendPaymentReminder = async (tenantEmail, tenantName, rent, bedInfo, month
       </html>
     `;
 
-    const subject = `⚠️ Rent Payment Reminder for ${monthName} - Bajrang Hostels and PG Pvt Ltd`;
+    const subject = `⚠️ Rent Payment Reminder for ${monthName} - ${orgName || 'PG Stay'}`;
     const result = await sendEmail(tenantEmail, subject, htmlContent);
     if (result) console.log(`✅ Payment reminder sent to ${tenantEmail}`);
     return result;
@@ -315,7 +315,7 @@ const sendPaymentReminder = async (tenantEmail, tenantName, rent, bedInfo, month
   }
 };
 
-const sendRentReceipt = async (tenantEmail, tenantName, rent, bedInfo, monthName, paymentDate) => {
+const sendRentReceipt = async (tenantEmail, tenantName, rent, bedInfo, monthName, paymentDate, orgName) => {
   try {
     // Format payment date
     const formattedDate = new Date(paymentDate).toLocaleDateString('en-IN', { 
@@ -356,7 +356,7 @@ const sendRentReceipt = async (tenantEmail, tenantName, rent, bedInfo, monthName
           <div class="container">
             <div class="header">
               <h1>💰 Rent Payment Receipt</h1>
-              <p>Bajrang Hostels and PG Pvt Ltd</p>
+              <p>${orgName || 'PG Stay'}</p>
             </div>
             
             <div class="content">
@@ -404,11 +404,11 @@ const sendRentReceipt = async (tenantEmail, tenantName, rent, bedInfo, monthName
               <p>Thank you for your timely payment. We appreciate your cooperation!</p>
               
               <p>Best regards,<br/>
-              <strong>Bajrang Hostels and PG Pvt Ltd Team</strong></p>
+              <strong>${orgName || 'PG Stay'} Team</strong></p>
             </div>
             
             <div class="footer">
-              <p>&copy; 2024 Bajrang Hostels and PG Pvt Ltd. All rights reserved.</p>
+              <p>&copy; ${new Date().getFullYear()} ${orgName || 'PG Stay'}. All rights reserved.</p>
               <p>This is an automated email. Please do not reply directly.</p>
             </div>
           </div>
@@ -416,7 +416,7 @@ const sendRentReceipt = async (tenantEmail, tenantName, rent, bedInfo, monthName
       </html>
     `;
 
-    const subject = `💰 Rent Receipt - ${monthName} - Bajrang Hostels and PG Pvt Ltd`;
+    const subject = `💰 Rent Receipt - ${monthName} - ${orgName || 'PG Stay'}`;
     const result = await sendEmail(tenantEmail, subject, htmlContent);
     if (result) console.log(`✅ Rent receipt sent to ${tenantEmail}`);
     return result;

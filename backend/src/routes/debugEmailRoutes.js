@@ -19,7 +19,7 @@ router.post('/test-tenant-email', async (req, res) => {
     console.log(`EMAIL_PASSWORD: ${process.env.EMAIL_PASSWORD ? '***SET***' : '❌ NOT SET'}`);
     
     const bedInfo = 'Building A - Room 101';
-    const result = await sendTenantCredentials(email, name, password, bedInfo);
+    const result = await sendTenantCredentials(email, name, password, bedInfo, 'Test Organization');
 
     res.json({
       success: result,
