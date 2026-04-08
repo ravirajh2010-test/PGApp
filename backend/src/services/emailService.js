@@ -512,4 +512,71 @@ const sendOrgWelcomeEmail = async (orgEmail, orgName, adminName, adminEmail, pla
   }
 };
 
-module.exports = { sendTenantCredentials, sendThankYouEmail, sendPaymentReminder, sendRentReceipt, sendOrgWelcomeEmail };
+const sendDeactivationEmail = async (tenantEmail, tenantName, bedInfo, orgName) => {
+  try {
+    const htmlContent = `
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; border-radius: 8px; }
+            .header { background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+            .header h1 { margin: 0; font-size: 28px; }
+            .content { background: white; padding: 30px; border-radius: 0 0 8px 8px; }
+            .thank-you-box { background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border-left: 4px solid #4caf50; padding: 20px; margin: 20px 0; border-radius: 4px; text-align: center; }
+            .thank-you-box h2 { color: #2e7d32; margin: 0 0 10px 0; }
+            .details-box { background: #f0f7ff; border-left: 4px solid #ff6b35; padding: 15px; margin: 20px 0; border-radius: 4px; }
+            .review-box { background: #fff8e1; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px; }
+            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🏢 ${orgName || 'PG Stay'}</h1>
+              <p>Thank You For Your Stay</p>
+            </div>
+            <div class="content">
+              <p>Dear <strong>${tenantName}</strong>,</p>
+
+              <div class="thank-you-box">
+                <h2>🙏 Thank You!</h2>
+                <p>We sincerely appreciate your stay with us. It was a pleasure having you as part of our community!</p>
+              </div>
+
+              <div class="details-box">
+                <h3 style="margin-top: 0; color: #ff6b35;">Stay Details</h3>
+                <p><strong>Accommodation:</strong> ${bedInfo}</p>
+                <p>Your account has been deactivated and the bed has been released.</p>
+              </div>
+
+              <div class="review-box">
+                <h3 style="margin-top: 0; color: #f57c00;">⭐ We'd Love Your Feedback!</h3>
+                <p>Your feedback means the world to us. If you had a good experience, we'd really appreciate it if you could leave us a review on <strong>Google Reviews</strong>. It helps other tenants find a great place to stay!</p>
+              </div>
+
+              <p>We wish you all the very best for your future endeavors. If you ever need accommodation again, our doors are always open for you!</p>
+
+              <p>Warm regards,<br/>
+              <strong>${orgName || 'PG Stay'} Team</strong></p>
+            </div>
+            <div class="footer">
+              <p>&copy; ${new Date().getFullYear()} ${orgName || 'PG Stay'}. All rights reserved.</p>
+              <p>This is an automated email. Please do not reply directly.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const subject = `🙏 Thank You For Your Stay - ${orgName || 'PG Stay'}`;
+    const result = await sendEmail(tenantEmail, subject, htmlContent);
+    if (result) console.log(`✅ Deactivation email sent to ${tenantEmail}`);
+    return result;
+  } catch (error) {
+    console.error('❌ Error sending deactivation email:', error.message);
+    return false;
+  }
+};
+
+module.exports = { sendEmail, sendTenantCredentials, sendThankYouEmail, sendPaymentReminder, sendRentReceipt, sendOrgWelcomeEmail, sendDeactivationEmail };

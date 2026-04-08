@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormattedMessage } from 'react-intl';
 import api, { getUser, getOrganization } from '../services/api';
+import Toast from '../components/Toast';
+import ChangePasswordModal from '../components/ChangePasswordModal';
 
 const OrgSettings = () => {
   const navigate = useNavigate();
@@ -14,6 +16,9 @@ const OrgSettings = () => {
   const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', address: '' });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [toast, setToast] = useState(null);
+  const [deactivating, setDeactivating] = useState(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState(null);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -67,12 +72,36 @@ const OrgSettings = () => {
     }
   };
 
+  const handleDeactivateUser = async (userId, userName) => {
+    if (!window.confirm(`Are you sure you want to deactivate "${userName}"? This will remove their bed allocation and send a farewell email.`)) return;
+    setDeactivating(userId);
+    try {
+      await api.post(`/admin/deactivate-user/${userId}`);
+      setToast({ message: `${userName} has been deactivated successfully. A farewell email has been sent.`, type: 'success', key: Date.now() });
+      fetchOrgData();
+    } catch (error) {
+      setToast({ message: error.response?.data?.message || 'Error deactivating user', type: 'error', key: Date.now() });
+    } finally {
+      setDeactivating(null);
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-12 text-gray-500">Loading organization settings...</div>;
   }
 
   return (
     <div className="space-y-8">
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          key={toast.key}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-gray-800 mb-2"><FormattedMessage id="orgSettings.title" defaultMessage="Organization Settings" /></h1>
         <p className="text-gray-600"><FormattedMessage id="orgSettings.general" defaultMessage="Manage your organization details and subscription" /></p>
@@ -267,6 +296,18 @@ const OrgSettings = () => {
         </div>
       )}
 
+      {/* Password Reset Modal */}
+      {resetPasswordUser && (
+        <ChangePasswordModal
+          user={resetPasswordUser}
+          onClose={() => setResetPasswordUser(null)}
+          onSuccess={() => {
+            setResetPasswordUser(null);
+            setToast({ message: 'Password changed successfully!', type: 'success', key: Date.now() });
+          }}
+        />
+      )}
+
       {/* Users */}
       {activeTab === 'users' && (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -282,6 +323,7 @@ const OrgSettings = () => {
                     <th className="px-6 py-3 text-left font-semibold text-gray-700">Email</th>
                     <th className="px-6 py-3 text-left font-semibold text-gray-700">Role</th>
                     <th className="px-6 py-3 text-left font-semibold text-gray-700">Created</th>
+                    <th className="px-6 py-3 text-center font-semibold text-gray-700">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -298,6 +340,27 @@ const OrgSettings = () => {
                       </td>
                       <td className="px-6 py-3 text-sm text-gray-500">
                         {new Date(u.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-3 text-center">
+                        <div className="flex gap-2 justify-center">
+                          {u.role === 'admin' && u.id === user.id && (
+                            <button
+                              onClick={() => setResetPasswordUser({ id: u.id, email: u.email, name: u.name, is_first_login: false })}
+                              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition"
+                            >
+                              Reset Password
+                            </button>
+                          )}
+                          {u.id !== user.id && (
+                            <button
+                              onClick={() => handleDeactivateUser(u.id, u.name)}
+                              disabled={deactivating === u.id}
+                              className="bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition"
+                            >
+                              {deactivating === u.id ? 'Deactivating...' : 'Deactivate'}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -214,12 +214,27 @@ const registerOrganization = async (req, res) => {
 
 const changePassword = async (req, res) => {
   try {
-    const { email, newPassword } = req.body;
+    const { email, newPassword, otp } = req.body;
     const userId = req.user?.id;
 
-    if (!email || !newPassword) {
-      return res.status(400).json({ message: 'Email and new password are required' });
+    if (!email || !newPassword || !otp) {
+      return res.status(400).json({ message: 'Email, OTP, and new password are required' });
     }
+
+    // Verify OTP
+    const storedOtp = otpStore.get(email);
+    if (!storedOtp) {
+      return res.status(400).json({ message: 'OTP expired or not requested. Please request a new OTP.' });
+    }
+    if (storedOtp.otp !== otp) {
+      return res.status(400).json({ message: 'Invalid OTP. Please try again.' });
+    }
+    if (Date.now() > storedOtp.expiresAt) {
+      otpStore.delete(email);
+      return res.status(400).json({ message: 'OTP has expired. Please request a new OTP.' });
+    }
+    // OTP valid — remove it
+    otpStore.delete(email);
 
     // Determine which pool to use based on user role
     let userPool;
@@ -251,4 +266,63 @@ const changePassword = async (req, res) => {
   }
 };
 
-module.exports = { register, login, registerOrganization, changePassword };
+// In-memory OTP store (email -> { otp, expiresAt })
+const otpStore = new Map();
+
+const sendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const userId = req.user?.id;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    // Determine which pool to use
+    let userPool;
+    if (req.user.role === 'super_admin') {
+      userPool = require('../config/database');
+    } else {
+      userPool = req.pool;
+    }
+
+    const user = await User.findById(userPool, userId);
+    if (!user || user.email !== email) {
+      return res.status(400).json({ message: 'Email does not match your account' });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+
+    otpStore.set(email, { otp, expiresAt });
+
+    // Send OTP email
+    const { sendEmail } = require('../services/emailService');
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+          <h1 style="margin: 0; font-size: 24px;">🔒 Password Reset OTP</h1>
+        </div>
+        <div style="background: white; padding: 30px; border: 1px solid #eee; border-radius: 0 0 8px 8px;">
+          <p>Hello <strong>${user.name}</strong>,</p>
+          <p>Your OTP for password reset is:</p>
+          <div style="text-align: center; margin: 20px 0;">
+            <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #ff6b35; background: #fff3e0; padding: 12px 24px; border-radius: 8px; display: inline-block;">${otp}</span>
+          </div>
+          <p style="color: #666; font-size: 14px;">This OTP is valid for <strong>5 minutes</strong>. Do not share it with anyone.</p>
+        </div>
+      </div>
+    `;
+    sendEmail(email, '🔒 Your Password Reset OTP - PG Stay', htmlContent)
+      .then(sent => console.log(sent ? `✅ OTP email sent to ${email}` : `⚠️ OTP email failed for ${email}`))
+      .catch(err => console.error('❌ OTP email error:', err.message));
+
+    res.json({ message: 'OTP sent to your email address' });
+  } catch (error) {
+    console.error('Send OTP error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { register, login, registerOrganization, changePassword, sendOtp };

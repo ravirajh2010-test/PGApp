@@ -14,15 +14,9 @@ const PaymentInfo = () => {
   const [reminderDropdown, setReminderDropdown] = useState(null); // tenantId of open dropdown
   const [roomFilter, setRoomFilter] = useState(''); // '' = None (show all)
   
-  // Month/Year selection state
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const now = new Date();
-    return now.getMonth() - 1 < 0 ? 11 : now.getMonth() - 1;
-  });
-  const [selectedYear, setSelectedYear] = useState(() => {
-    const now = new Date();
-    return now.getMonth() - 1 < 0 ? now.getFullYear() - 1 : now.getFullYear();
-  });
+  // Month/Year selection state — default to current month
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -99,6 +93,7 @@ const PaymentInfo = () => {
 
   const paidCount = tenants.filter(t => t.payment_status === 'Paid').length;
   const unpaidCount = tenants.filter(t => t.payment_status === 'Bill Generated').length;
+  const naCount = tenants.filter(t => t.payment_status === 'NA').length;
 
   // Get unique room numbers for the filter dropdown
   const roomOptions = [...new Set(tenants.map(t => t.room_number))].sort();
@@ -161,7 +156,7 @@ const PaymentInfo = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-blue-500">
           <h3 className="text-sm font-semibold text-gray-600 uppercase"><FormattedMessage id="dashboard.tenantsSection" defaultMessage="Total Tenants" /></h3>
           <p className="text-3xl font-bold text-blue-600">{tenants.length}</p>
@@ -174,6 +169,12 @@ const PaymentInfo = () => {
           <h3 className="text-sm font-semibold text-gray-600 uppercase"><FormattedMessage id="payment.unpaid" defaultMessage="Not Paid" /></h3>
           <p className="text-3xl font-bold text-red-600">{unpaidCount}</p>
         </div>
+        {naCount > 0 && (
+          <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-gray-400">
+            <h3 className="text-sm font-semibold text-gray-600 uppercase">NA</h3>
+            <p className="text-3xl font-bold text-gray-500">{naCount}</p>
+          </div>
+        )}
       </div>
 
       {/* Payment Table */}
@@ -239,12 +240,23 @@ const PaymentInfo = () => {
                         {tenant.bed_info}
                       </span>
                     </td>
-                    <td className="px-6 py-3 font-semibold">₹{tenant.billAmount}</td>
+                    <td className="px-6 py-3 font-semibold">
+                      ₹{tenant.billAmount}
+                      {tenant.isProrated && (
+                        <span className="block text-xs text-gray-500 font-normal">
+                          ({tenant.daysStayed}/{tenant.daysInMonth} days × ₹{tenant.rent})
+                        </span>
+                      )}
+                    </td>
                     <td className="px-6 py-3">{monthName}</td>
                     <td className="px-6 py-3 text-center">
                       {tenant.payment_status === 'Paid' ? (
                         <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
                           ✅ Paid
+                        </span>
+                      ) : tenant.payment_status === 'NA' ? (
+                        <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-semibold">
+                          — NA
                         </span>
                       ) : (
                         <span
@@ -256,7 +268,7 @@ const PaymentInfo = () => {
                       )}
                     </td>
                     <td className="px-6 py-3 text-center">
-                      {tenant.payment_status !== 'Paid' && (
+                      {tenant.payment_status === 'Bill Generated' && (
                         <div className="relative inline-block">
                           {sendingReminder[tenant.id] ? (
                             <span className="bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-semibold">

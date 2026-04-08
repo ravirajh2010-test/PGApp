@@ -173,13 +173,14 @@ const Onboarding = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1"><FormattedMessage id="onboarding.phone" defaultMessage="Phone" /></label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1"><FormattedMessage id="onboarding.phone" defaultMessage="Phone" /> *</label>
                     <input
                       type="tel"
                       value={form.orgPhone}
                       onChange={(e) => setForm({ ...form, orgPhone: e.target.value })}
                       placeholder="+91 98765 43210"
                       className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      required
                     />
                   </div>
                 </div>
@@ -203,8 +204,8 @@ const Onboarding = () => {
                 </button>
                 <button
                   onClick={() => {
-                    if (!form.orgName || !form.orgSlug || !form.orgEmail) {
-                      setError('Please fill in all required fields');
+                    if (!form.orgName || !form.orgSlug || !form.orgEmail || !form.orgPhone) {
+                      setError('Please fill in all required fields including phone number');
                       return;
                     }
                     setError('');

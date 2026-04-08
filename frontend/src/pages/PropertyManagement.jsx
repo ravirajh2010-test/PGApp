@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormattedMessage } from 'react-intl';
 import api from '../services/api';
+import Toast from '../components/Toast';
 
 const PropertyManagement = () => {
   const navigate = useNavigate();
@@ -40,6 +41,12 @@ const PropertyManagement = () => {
     bedIdentifier: '',
     status: 'vacant'
   });
+
+  // Toast state
+  const [toast, setToast] = useState(null);
+  const showToast = useCallback((message, type = 'success') => {
+    setToast({ message, type, key: Date.now() });
+  }, []);
 
   // Refresh all data
   const refreshAllData = async () => {
@@ -114,8 +121,10 @@ const PropertyManagement = () => {
 
       if (editingBuildingId) {
         await api.put(`/admin/buildings/${editingBuildingId}`, buildingForm);
+        showToast('Building updated successfully!');
       } else {
         await api.post('/admin/buildings', buildingForm);
+        showToast('Building created successfully!');
       }
 
       setBuildingForm({ name: '', location: '' });
@@ -137,9 +146,10 @@ const PropertyManagement = () => {
     if (window.confirm('Delete this building?')) {
       try {
         await api.delete(`/admin/buildings/${id}`);
+        showToast('Building deleted successfully!');
         await fetchBuildings();
       } catch (error) {
-        alert(error.response?.data?.message || 'Error deleting building');
+        showToast(error.response?.data?.message || 'Error deleting building', 'error');
       }
     }
   };
@@ -160,12 +170,14 @@ const PropertyManagement = () => {
           roomNumber: roomForm.roomNumber,
           capacity: parseInt(roomForm.capacity)
         });
+        showToast('Room updated successfully!');
       } else {
         await api.post('/admin/rooms', {
           buildingId: parseInt(roomForm.buildingId),
           roomNumber: roomForm.roomNumber,
           capacity: parseInt(roomForm.capacity)
         });
+        showToast('Room created successfully!');
       }
 
       setRoomForm({ buildingId: '', roomNumber: '', capacity: '' });
@@ -191,9 +203,10 @@ const PropertyManagement = () => {
     if (window.confirm('Delete this room? This will also delete all beds and tenants in this room.')) {
       try {
         await api.delete(`/admin/rooms/${id}`);
+        showToast('Room deleted successfully!');
         await refreshAllData();
       } catch (error) {
-        alert(error.response?.data?.message || 'Error deleting room');
+        showToast(error.response?.data?.message || 'Error deleting room', 'error');
       }
     }
   };
@@ -229,12 +242,14 @@ const PropertyManagement = () => {
           bedIdentifier: bedForm.bedIdentifier,
           status: bedForm.status
         });
+        showToast('Bed updated successfully!');
       } else {
         await api.post('/admin/beds', {
           roomId: parseInt(bedForm.roomId),
           bedIdentifier: bedForm.bedIdentifier,
           status: bedForm.status
         });
+        showToast('Bed created successfully!');
       }
 
       setBedForm({ roomId: '', bedIdentifier: '', status: 'vacant' });
@@ -256,15 +271,26 @@ const PropertyManagement = () => {
     if (window.confirm('Delete this bed?')) {
       try {
         await api.delete(`/admin/beds/${id}`);
+        showToast('Bed deleted successfully!');
         await fetchBeds();
       } catch (error) {
-        alert(error.response?.data?.message || 'Error deleting bed');
+        showToast(error.response?.data?.message || 'Error deleting bed', 'error');
       }
     }
   };
 
   return (
     <div className="space-y-8">
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          key={toast.key}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-gray-800 mb-2">⚙️ <FormattedMessage id="property.propertyManagement" defaultMessage="Property Management" /></h1>
         <p className="text-gray-600"><FormattedMessage id="property.manageBuildings" defaultMessage="Manage buildings, rooms, and beds" /></p>

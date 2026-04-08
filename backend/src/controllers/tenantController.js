@@ -1,5 +1,6 @@
 const Tenant = require('../models/Tenant');
 const Payment = require('../models/Payment');
+const Organization = require('../models/Organization');
 const Razorpay = require('razorpay');
 
 let razorpay = null;
@@ -88,4 +89,27 @@ const verifyPayment = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, getStayDetails, getPayments, createPaymentOrder, verifyPayment };
+const getAdminContact = async (req, res) => {
+  try {
+    // Get admin user(s) from org database
+    const adminResult = await req.pool.query(
+      "SELECT name, email FROM users WHERE role = 'admin' ORDER BY created_at ASC LIMIT 1"
+    );
+    const admin = adminResult.rows[0] || null;
+
+    // Get org info (email, phone) from master DB
+    const org = await Organization.findById(req.orgId);
+
+    res.json({
+      adminName: admin ? admin.name : 'N/A',
+      adminEmail: admin ? admin.email : (org ? org.email : 'N/A'),
+      orgPhone: org ? org.phone : 'N/A',
+      orgName: org ? org.name : 'N/A',
+    });
+  } catch (error) {
+    console.error('Error fetching admin contact:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getProfile, getStayDetails, getPayments, createPaymentOrder, verifyPayment, getAdminContact };

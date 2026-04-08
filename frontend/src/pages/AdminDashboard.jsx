@@ -37,6 +37,8 @@ const AdminDashboard = () => {
     endDate: '',
     rent: ''
   });
+  const [editingCheckout, setEditingCheckout] = useState(null); // tenant id being edited
+  const [editCheckoutDate, setEditCheckoutDate] = useState('');
 
   // Refresh all data
   const refreshAllData = async () => {
@@ -297,7 +299,6 @@ const AdminDashboard = () => {
                   roomId: '',
                   bedId: '',
                   startDate: '',
-                  endDate: '',
                   rent: ''
                 });
                 setSelectedRoomBeds([]);
@@ -432,31 +433,41 @@ const AdminDashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <input
-                type="date"
-                name="startDate"
-                value={formData.startDate}
-                onChange={handleInputChange}
-                required
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
-              />
-              <input
-                type="date"
-                name="endDate"
-                value={formData.endDate}
-                onChange={handleInputChange}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
-              />
-              <input
-                type="number"
-                name="rent"
-                placeholder="Monthly Rent" // number field
-                value={formData.rent}
-                onChange={handleInputChange}
-                required
-                step="0.01"
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
-              />
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Check-in Date *</label>
+                <input
+                  type="date"
+                  name="startDate"
+                  value={formData.startDate}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Checkout Date</label>
+                <input
+                  type="date"
+                  name="endDate"
+                  value={formData.endDate}
+                  onChange={handleInputChange}
+                  min={formData.startDate || undefined}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Monthly Rent *</label>
+                <input
+                  type="number"
+                  name="rent"
+                  placeholder="Monthly Rent"
+                  value={formData.rent}
+                  onChange={handleInputChange}
+                  required
+                  step="0.01"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
+                />
+              </div>
             </div>
 
             <button
@@ -490,6 +501,7 @@ const AdminDashboard = () => {
                   <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.bedAssigned" defaultMessage="Bed Assigned" /></th>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.rent" defaultMessage="Rent" /></th>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.checkIn" defaultMessage="Check-in" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Checkout</th>
                   <th className="px-6 py-3 text-center font-semibold text-gray-700"><FormattedMessage id="dashboard.action" defaultMessage="Action" /></th>
                 </tr>
               </thead>
@@ -505,6 +517,46 @@ const AdminDashboard = () => {
                     </td>
                     <td className="px-6 py-3">₹{tenant.rent}</td>
                     <td className="px-6 py-3">{new Date(tenant.start_date).toLocaleDateString()}</td>
+                    <td className="px-6 py-3">
+                      {editingCheckout === tenant.id ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="date"
+                            value={editCheckoutDate}
+                            onChange={(e) => setEditCheckoutDate(e.target.value)}
+                            min={new Date(tenant.start_date).toISOString().split('T')[0]}
+                            className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-brand-500"
+                          />
+                          <button
+                            onClick={async () => {
+                              try {
+                                await api.put(`/admin/tenants/${tenant.id}`, { end_date: editCheckoutDate || null });
+                                setEditingCheckout(null);
+                                fetchTenants();
+                              } catch (err) {
+                                alert(err.response?.data?.message || 'Failed to update');
+                              }
+                            }}
+                            className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs"
+                          >✓</button>
+                          <button
+                            onClick={() => setEditingCheckout(null)}
+                            className="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs"
+                          >✕</button>
+                        </div>
+                      ) : (
+                        <span
+                          onClick={() => {
+                            setEditingCheckout(tenant.id);
+                            setEditCheckoutDate(tenant.end_date ? new Date(tenant.end_date).toISOString().split('T')[0] : '');
+                          }}
+                          className="cursor-pointer hover:text-brand-600 underline decoration-dashed"
+                          title="Click to edit checkout date"
+                        >
+                          {tenant.end_date ? new Date(tenant.end_date).toLocaleDateString() : '—'}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-6 py-3 text-center">
                       <button 
                         onClick={() => handleDeleteTenant(tenant.id)} 

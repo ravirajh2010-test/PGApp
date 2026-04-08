@@ -1,5 +1,5 @@
 const express = require('express');
-const { getProfile, getStayDetails, getPayments, createPaymentOrder, verifyPayment } = require('../controllers/tenantController');
+const { getProfile, getStayDetails, getPayments, createPaymentOrder, verifyPayment, getAdminContact } = require('../controllers/tenantController');
 const { authenticateToken, authorizeRole } = require('../middleware/auth');
 const { tenantIsolation } = require('../middleware/tenantIsolation');
 
@@ -14,5 +14,6 @@ router.get('/stay-details', getStayDetails);
 router.get('/payments', getPayments);
 router.post('/pay', createPaymentOrder);
 router.post('/verify-payment', verifyPayment);
+router.get('/admin-contact', getAdminContact);
 
 module.exports = router;

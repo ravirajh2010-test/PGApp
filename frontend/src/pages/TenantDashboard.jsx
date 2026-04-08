@@ -10,6 +10,7 @@ const TenantDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [adminContact, setAdminContact] = useState(null);
 
   useEffect(() => {
     // Get user from localStorage
@@ -25,6 +26,7 @@ const TenantDashboard = () => {
     fetchProfile();
     fetchStay();
     fetchPayments();
+    fetchAdminContact();
   }, []);
 
   const fetchProfile = async () => {
@@ -53,6 +55,15 @@ const TenantDashboard = () => {
       setPayments(res.data || []);
     } catch (error) {
       console.error('Error fetching payments');
+    }
+  };
+
+  const fetchAdminContact = async () => {
+    try {
+      const res = await api.get('/tenant/admin-contact');
+      setAdminContact(res.data || null);
+    } catch (error) {
+      console.error('Error fetching admin contact');
     }
   };
 
@@ -95,7 +106,15 @@ const TenantDashboard = () => {
 
       {/* Profile Section */}
       <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-brand-500">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4"><FormattedMessage id="tenant.myProfile" defaultMessage="Profile Information" /></h2>
+        <div className="flex justify-between items-start mb-4">
+          <h2 className="text-2xl font-bold text-gray-800"><FormattedMessage id="tenant.myProfile" defaultMessage="Profile Information" /></h2>
+          <button
+            onClick={() => setShowPasswordModal(true)}
+            className="bg-brand-500 hover:bg-brand-600 text-white font-semibold py-2 px-4 rounded-lg transition text-sm"
+          >
+            🔒 <FormattedMessage id="tenant.resetPassword" defaultMessage="Reset Password" />
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <p className="text-sm text-gray-600"><FormattedMessage id="tenant.name" defaultMessage="Name" /></p>
@@ -169,6 +188,35 @@ const TenantDashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Service Manager Contact */}
+      {adminContact && (
+        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">📞 <FormattedMessage id="tenant.serviceManagerContact" defaultMessage="Service Manager Contact" /></h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <p className="text-sm text-gray-600"><FormattedMessage id="tenant.contactName" defaultMessage="Name" /></p>
+              <p className="text-lg font-semibold text-gray-800">{adminContact.adminName}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600"><FormattedMessage id="tenant.contactEmail" defaultMessage="Email" /></p>
+              <a href={`mailto:${adminContact.adminEmail}`} className="text-lg font-semibold text-brand-500 hover:underline">
+                {adminContact.adminEmail}
+              </a>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600"><FormattedMessage id="tenant.contactPhone" defaultMessage="Phone" /></p>
+              {adminContact.orgPhone && adminContact.orgPhone !== 'N/A' ? (
+                <a href={`tel:${adminContact.orgPhone}`} className="text-lg font-semibold text-brand-500 hover:underline">
+                  {adminContact.orgPhone}
+                </a>
+              ) : (
+                <p className="text-lg font-semibold text-gray-800">N/A</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,7 +1,8 @@
 const Tenant = require('../models/Tenant');
 const User = require('../models/User');
 const Bed = require('../models/Bed');
-const { sendTenantCredentials, sendPaymentReminder, sendRentReceipt } = require('../services/emailService');
+const Organization = require('../models/Organization');
+const { sendTenantCredentials, sendPaymentReminder, sendRentReceipt, sendDeactivationEmail } = require('../services/emailService');
 
 const getTenants = async (req, res) => {
   try {
@@ -502,8 +503,8 @@ const getPaymentInfo = async (req, res) => {
   try {
     const now = new Date();
     
-    // Get month and year from query parameters, default to previous month
-    let month = req.query.month ? parseInt(req.query.month) : now.getMonth() - 1;
+    // Get month and year from query parameters, default to current month
+    let month = req.query.month != null ? parseInt(req.query.month) : now.getMonth();
     let year = req.query.year ? parseInt(req.query.year) : now.getFullYear();
     
     // Handle month overflow
@@ -514,6 +515,15 @@ const getPaymentInfo = async (req, res) => {
     
     const selectedDate = new Date(year, month, 1);
     const monthName = selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    // Determine if a bill has been generated for this month.
+    // Bills are generated on the 2nd of the NEXT month.
+    // So for a given month, check if we are on or past the 2nd of the following month.
+    const billGenDate = new Date(year, month + 1, 2); // 2nd of the next month
+    const isCurrentMonth = (month === now.getMonth() && year === now.getFullYear());
+    const isBillGenerated = now >= billGenDate; // past the 2nd of next month = bill generated
+    // If viewing the current month and today is before the 2nd of next month, bill is not yet generated
+    const billStatus = isCurrentMonth && !isBillGenerated ? 'NA' : 'Bill Generated';
 
     // DB stores 1-based months (1=Jan, 2=Feb, ..., 12=Dec)
     const dbMonth = month + 1;
@@ -536,23 +546,38 @@ const getPaymentInfo = async (req, res) => {
       ORDER BY bl.name, r.room_number, b.bed_identifier
     `;
     const result = await req.pool.query(query, [dbMonth, year]);
+
+    const monthStart = new Date(year, month, 1);
+    const monthEnd = new Date(year, month + 1, 0);
+    const daysInMonth = monthEnd.getDate();
+
     const tenants = result.rows.map(row => {
-      const proratedAmount = calculateProratedRent(
-        month,
-        year,
-        new Date(row.start_date),
-        row.end_date ? new Date(row.end_date) : null,
-        row.rent
-      );
+      const startDate = new Date(row.start_date);
+      const endDate = row.end_date ? new Date(row.end_date) : null;
+      const proratedAmount = calculateProratedRent(month, year, startDate, endDate, row.rent);
+
+      // Calculate actual days stayed for proration display (inclusive of both dates)
+      let daysStayed = daysInMonth;
+      if (startDate > monthStart) {
+        const joinDay = startDate.getDate();
+        const lastDay = (endDate && endDate < monthEnd) ? endDate.getDate() : daysInMonth;
+        daysStayed = Math.max(lastDay - joinDay + 1, 1); // +1 inclusive
+      } else if (endDate && endDate >= monthStart && endDate < monthEnd) {
+        daysStayed = endDate.getDate(); // days 1..N = N days (already inclusive)
+      }
+
       return {
         ...row,
-        payment_status: row.payment_id ? 'Paid' : 'Bill Generated',
+        payment_status: row.payment_id ? 'Paid' : billStatus,
         bed_info: `${row.building_name} - Room ${row.room_number} - ${row.bed_identifier || 'Bed'}`,
         month_name: monthName,
-        billAmount: proratedAmount
+        billAmount: proratedAmount,
+        daysStayed,
+        daysInMonth,
+        isProrated: proratedAmount !== row.rent
       };
     }).filter(t => t.billAmount > 0 || t.payment_status === 'Paid');
-    res.json({ tenants, monthName, month, year });
+    res.json({ tenants, monthName, month, year, billStatus });
   } catch (error) {
     console.error('Error fetching payment info:', error);
     res.status(500).json({ message: 'Server error' });
@@ -710,10 +735,10 @@ const searchTenants = async (req, res) => {
 
 // Helper function to calculate prorated rent for a given month
 // Rules:
-//   - Joined on or before 1st of billing month → full rent
+//   - Both check-in and check-out dates are inclusive
+//   - Joined on or before 1st of billing month → full rent (unless checkout mid-month)
 //   - Joined after billing month ends → ₹0 (not a tenant yet)
-//   - Joined mid-month → charge for remaining days: daysInMonth - joinDay
-//     e.g. joined 10th in 30-day month = 20 days, joined 30th in 31-day month = 1 day
+//   - Joined mid-month → charge for (lastDay - joinDay + 1) days (inclusive)
 const calculateProratedRent = (monthIndex, year, startDate, endDate, monthlyRent) => {
   const monthStart = new Date(year, monthIndex, 1);
   const monthEnd = new Date(year, monthIndex + 1, 0); // last day of month
@@ -727,20 +752,19 @@ const calculateProratedRent = (monthIndex, year, startDate, endDate, monthlyRent
 
   // Tenant was present from the 1st (or before) → full rent
   if (startDate <= monthStart) {
-    // But if checkout happened mid-month, prorate
+    // But if checkout happened mid-month, prorate (inclusive of checkout day)
     if (endDate && endDate >= monthStart && endDate < monthEnd) {
-      const daysCharged = endDate.getDate();
+      const daysCharged = endDate.getDate(); // days 1..N = N days (already inclusive)
       return Math.round((daysCharged / daysInMonth) * monthlyRent);
     }
     return monthlyRent;
   }
 
-  // Joined mid-month: charge remaining days after join date
+  // Joined mid-month: charge from joinDay to lastDay (inclusive of both)
   const joinDay = startDate.getDate();
   const lastDay = (endDate && endDate < monthEnd) ? endDate.getDate() : daysInMonth;
-  const daysCharged = lastDay - joinDay;
+  const daysCharged = lastDay - joinDay + 1; // +1 for inclusive of both dates
 
-  // If joined and left same day (or end before start in same month), charge at least 1 day
   if (daysCharged <= 0) {
     if (!endDate || endDate >= startDate) {
       return Math.round((1 / daysInMonth) * monthlyRent);
@@ -822,4 +846,81 @@ const getTenantPaymentHistory = async (req, res) => {
   }
 };
 
-module.exports = { getTenants, createTenant, updateTenant, deleteTenant, processCheckouts, getOccupancy, getAvailableBeds, getFloorLayout, getFloorLayoutWithBeds, getBuildings, createBuilding, updateBuilding, deleteBuilding, getRooms, createRoom, updateRoom, deleteRoom, getBeds, createBed, updateBed, deleteBed, getPaymentInfo, sendPaymentReminderEmail, markOfflinePay, searchTenants, getTenantPaymentHistory };
+const deactivateUser = async (req, res) => {
+  const client = await req.pool.connect();
+  try {
+    const { userId } = req.params;
+
+    await client.query('BEGIN');
+
+    // Get user details
+    const userResult = await client.query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (userResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const user = userResult.rows[0];
+
+    // Check if user has a tenant record with bed allocation
+    const tenantResult = await client.query(
+      `SELECT t.id, t.email, t.bed_id, t.rent, t.start_date, t.phone,
+              b.bed_identifier, r.room_number, bl.name as building_name
+       FROM tenants t
+       JOIN beds b ON t.bed_id = b.id
+       JOIN rooms r ON b.room_id = r.id
+       JOIN buildings bl ON r.building_id = bl.id
+       WHERE t.user_id = $1`,
+      [userId]
+    );
+
+    let bedInfo = 'N/A';
+
+    if (tenantResult.rows.length > 0) {
+      const tenant = tenantResult.rows[0];
+      bedInfo = `${tenant.building_name} - Room ${tenant.room_number} - ${tenant.bed_identifier || 'Bed'}`;
+
+      // Vacate the bed
+      await client.query('UPDATE beds SET status = $1 WHERE id = $2', ['vacant', tenant.bed_id]);
+
+      // Delete payments
+      await client.query('DELETE FROM payments WHERE tenant_id = $1', [tenant.id]);
+
+      // Delete tenant record
+      await client.query('DELETE FROM tenants WHERE id = $1', [tenant.id]);
+    }
+
+    // Delete user
+    await client.query('DELETE FROM users WHERE id = $1', [userId]);
+
+    await client.query('COMMIT');
+
+    // Remove org mapping
+    try {
+      await User.removeOrgMapping(user.email, req.orgId);
+    } catch (e) {
+      console.warn('Warning: Could not remove org mapping:', e.message);
+    }
+
+    // Respond immediately
+    res.json({ message: 'User deactivated successfully' });
+
+    // Send farewell email in background
+    try {
+      const org = await Organization.findById(req.orgId);
+      const orgName = org ? org.name : 'PG Stay';
+      sendDeactivationEmail(user.email, user.name, bedInfo, orgName)
+        .then(sent => console.log(sent ? `✅ Deactivation email sent to ${user.email}` : `⚠️ Deactivation email failed for ${user.email}`))
+        .catch(err => console.error('❌ Deactivation email error:', err.message));
+    } catch (emailErr) {
+      console.error('❌ Email prep error:', emailErr.message);
+    }
+  } catch (error) {
+    await client.query('ROLLBACK').catch(e => console.error('Rollback error:', e));
+    console.error('Error deactivating user:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  } finally {
+    client.release();
+  }
+};
+
+module.exports = { getTenants, createTenant, updateTenant, deleteTenant, processCheckouts, getOccupancy, getAvailableBeds, getFloorLayout, getFloorLayoutWithBeds, getBuildings, createBuilding, updateBuilding, deleteBuilding, getRooms, createRoom, updateRoom, deleteRoom, getBeds, createBed, updateBed, deleteBed, getPaymentInfo, sendPaymentReminderEmail, markOfflinePay, searchTenants, getTenantPaymentHistory, deactivateUser };
