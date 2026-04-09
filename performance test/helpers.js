@@ -19,13 +19,15 @@ export function login(email, password) {
   if (res.status === 300) {
     try {
       const body = JSON.parse(res.body);
-      if (body.organizations && body.organizations.length > 0) {
-        // Select first organization and login again with org context
+      if (body.organizations && Array.isArray(body.organizations) && body.organizations.length > 0) {
         const selectedOrg = body.organizations[0];
+        console.log(`ℹ️ User has multiple orgs, selecting: ${selectedOrg.name} (id: ${selectedOrg.id})`);
         return loginWithOrg(email, password, selectedOrg.id);
+      } else {
+        fail(`Multi-org login failed for ${email}: no organizations found in response`);
       }
-    } catch {
-      fail(`Multi-org login failed for ${email}: could not parse organizations - ${res.body}`);
+    } catch (err) {
+      fail(`Multi-org login failed for ${email}: could not parse response - ${err.message}`);
     }
   }
 
@@ -72,7 +74,11 @@ export function loginWithOrg(email, password, orgId) {
     fail(`Login with org failed for ${email} in org ${orgId}: ${res.status} - ${res.body}`);
   }
 
-  return JSON.parse(res.body).token;
+  try {
+    return JSON.parse(res.body).token;
+  } catch {
+    fail(`Could not extract token from org login response`);
+  }
 }
 
 /**
