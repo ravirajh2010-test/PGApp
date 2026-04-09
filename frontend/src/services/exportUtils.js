@@ -106,7 +106,7 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats) => {
     // Month & Date
     doc.setFontSize(12);
     doc.setFont(undefined, 'normal');
-    doc.text(`Month: ${monthName}`, pageWidth / 2, yPosition, { align: 'center' });
+    doc.text(String(monthName || 'N/A'), pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 7;
 
     // Generated date
@@ -122,10 +122,10 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats) => {
     doc.rect(15, yPosition, pageWidth - 30, 20, 'F');
     doc.setFontSize(10);
     doc.setFont(undefined, 'bold');
-    doc.text(`Total Tenants: ${summaryStats.total}`, 20, yPosition + 6);
-    doc.text(`Paid: ${summaryStats.paid}`, 80, yPosition + 6);
-    doc.text(`Unpaid: ${summaryStats.unpaid}`, 140, yPosition + 6);
-    doc.text(`NA: ${summaryStats.na}`, 200, yPosition + 6);
+    doc.text(`Total Tenants: ${String(summaryStats.total)}`, 20, yPosition + 6);
+    doc.text(`Paid: ${String(summaryStats.paid)}`, 80, yPosition + 6);
+    doc.text(`Unpaid: ${String(summaryStats.unpaid)}`, 140, yPosition + 6);
+    doc.text(`NA: ${String(summaryStats.na)}`, 200, yPosition + 6);
     yPosition += 25;
 
     // Table Headers
@@ -140,7 +140,7 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats) => {
 
     let xPosition = 15;
     headers.forEach((header, idx) => {
-      doc.text(header, xPosition + 1, yPosition + 4, { maxWidth: colWidths[idx] - 2 });
+      doc.text(String(header), xPosition + 1, yPosition + 4, { maxWidth: colWidths[idx] - 2 });
       xPosition += colWidths[idx];
     });
 
@@ -164,7 +164,7 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats) => {
         doc.setFontSize(9);
         xPosition = 15;
         headers.forEach((header, idx) => {
-          doc.text(header, xPosition + 1, yPosition + 4, { maxWidth: colWidths[idx] - 2 });
+          doc.text(String(header), xPosition + 1, yPosition + 4, { maxWidth: colWidths[idx] - 2 });
           xPosition += colWidths[idx];
         });
         yPosition += rowHeight;
@@ -180,15 +180,15 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats) => {
         doc.rect(15, yPosition, pageWidth - 30, rowHeight, 'F');
       }
 
-      // Row data
+      // Row data - convert ALL values to strings
       const rowData = [
-        rowIdx + 1,
-        item.name.substring(0, 20),
-        item.email.substring(0, 25),
-        item.bed_info,
-        `₹${item.rent}`,
-        `₹${item.billAmount}`,
-        item.payment_status,
+        String(rowIdx + 1),
+        String(item.name || '').substring(0, 20),
+        String(item.email || '').substring(0, 25),
+        String(item.bed_info || ''),
+        `₹${String(item.rent || 0)}`,
+        `₹${String(item.billAmount || 0)}`,
+        String(item.payment_status || ''),
       ];
 
       xPosition = 15;
@@ -207,7 +207,7 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats) => {
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       doc.text(
-        `Page ${i} of ${totalPages}`,
+        `Page ${String(i)} of ${String(totalPages)}`,
         pageWidth / 2,
         pageHeight - 8,
         { align: 'center' }
