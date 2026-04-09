@@ -32,12 +32,17 @@ export const exportAsCSV = (data, filename) => {
 
 /**
  * Export data as Excel (XLSX)
- * Requires: npm install xlsx
+ * Using: npm install xlsx
  */
 export const exportAsExcel = async (data, filename, monthName) => {
   try {
-    // Dynamically import xlsx to avoid bundle size issues
-    const { default: XLSX } = await import('xlsx');
+    // Import dynamically to reduce bundle size
+    const XLSX = await import('xlsx');
+    const xlsxLib = XLSX.default || XLSX;
+
+    if (!xlsxLib) {
+      throw new Error('XLSX library not loaded');
+    }
 
     const formattedData = data.map((item, idx) => ({
       '#': idx + 1,
@@ -49,31 +54,38 @@ export const exportAsExcel = async (data, filename, monthName) => {
       'Status': item.payment_status,
     }));
 
-    const sheet = XLSX.utils.json_to_sheet(formattedData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, sheet, monthName);
+    // Create worksheet and workbook
+    const sheet = xlsxLib.utils.json_to_sheet(formattedData);
+    const workbook = xlsxLib.utils.book_new();
+    xlsxLib.utils.book_append_sheet(workbook, sheet, monthName);
 
-    // Set column widths
+    // Set column widths for better readability
     const maxWidth = 20;
     const colWidths = Object.keys(formattedData[0] || {}).map(() => maxWidth);
     sheet['!cols'] = colWidths.map(w => ({ wch: w }));
 
-    XLSX.writeFile(workbook, `${filename}.xlsx`);
+    // Write file
+    xlsxLib.writeFile(workbook, `${filename}.xlsx`);
+    return true;
   } catch (error) {
     console.error('Error exporting to Excel:', error);
-    throw new Error('Failed to export Excel file. Please try CSV instead.');
+    throw new Error(`Excel export failed: ${error.message}`);
   }
 };
 
 /**
- * Export data as PDF
- * Requires: npm install jspdf html2canvas
+ * Export data as PDF - Simple text-based approach
+ * This is more reliable than html2canvas approach
  */
 export const exportAsPDF = async (data, filename, monthName, summaryStats) => {
   try {
-    // Dynamically import jsPDF
-    const { jsPDF } = await import('jspdf');
-    const { default: html2canvas } = await import('html2canvas');
+    // Import jsPDF
+    const jsPDFModule = await import('jspdf');
+    const { jsPDF } = jsPDFModule;
+
+    if (!jsPDF) {
+      throw new Error('jsPDF library not loaded');
+    }
 
     const doc = new jsPDF({
       orientation: 'landscape',
@@ -87,82 +99,76 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats) => {
 
     // Title
     doc.setFontSize(18);
+    doc.setFont(undefined, 'bold');
     doc.text('Payment Status Report', pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 10;
 
     // Month & Date
     doc.setFontSize(12);
+    doc.setFont(undefined, 'normal');
     doc.text(`Month: ${monthName}`, pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 7;
 
-    // Summary Stats
+    // Generated date
+    const generatedDate = new Date().toLocaleDateString();
     doc.setFontSize(10);
-    const summaryText = [
-      `Total Tenants: ${summaryStats.total || 0}`,
-      `Paid: ${summaryStats.paid || 0}`,
-      `Unpaid: ${summaryStats.unpaid || 0}`,
-      `NA: ${summaryStats.na || 0}`,
-    ];
-    summaryText.forEach((text, idx) => {
-      doc.text(text, 15, yPosition + (idx * 5));
-    });
-    yPosition += summaryText.length * 5 + 5;
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Generated: ${generatedDate}`, pageWidth / 2, yPosition, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+    yPosition += 10;
 
-    // Table
-    const headers = ['#', 'Tenant Name', 'Email', 'Bed', 'Rent', 'Bill Amount', 'Status'];
-    const rows = data.map((item, idx) => [
-      idx + 1,
-      item.name.substring(0, 15), // Truncate long names
-      item.email.substring(0, 18), // Truncate long emails
-      item.bed_info,
-      `₹${item.rent}`,
-      `₹${item.billAmount}`,
-      item.payment_status,
-    ]);
-
-    const tableStartY = yPosition;
-    const rowHeight = 6;
-    const colWidths = [8, 25, 28, 15, 15, 18, 20];
-
-    // Draw table header
-    doc.setFillColor(66, 139, 202); // Blue header
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(9);
+    // Summary Stats Box
+    doc.setFillColor(230, 240, 250);
+    doc.rect(15, yPosition, pageWidth - 30, 20, 'F');
+    doc.setFontSize(10);
     doc.setFont(undefined, 'bold');
+    doc.text(`Total Tenants: ${summaryStats.total}`, 20, yPosition + 6);
+    doc.text(`Paid: ${summaryStats.paid}`, 80, yPosition + 6);
+    doc.text(`Unpaid: ${summaryStats.unpaid}`, 140, yPosition + 6);
+    doc.text(`NA: ${summaryStats.na}`, 200, yPosition + 6);
+    yPosition += 25;
 
-    let xPosition = 10;
+    // Table Headers
+    const headers = ['#', 'Tenant Name', 'Email', 'Bed', 'Rent', 'Bill Amount', 'Status'];
+    const colWidths = [8, 28, 32, 18, 16, 22, 24];
+    const rowHeight = 6;
+
+    doc.setFillColor(66, 139, 202);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(9);
+
+    let xPosition = 15;
     headers.forEach((header, idx) => {
-      doc.rect(xPosition, tableStartY, colWidths[idx], rowHeight, 'F');
-      doc.text(header, xPosition + 1, tableStartY + 4, { maxWidth: colWidths[idx] - 2 });
+      doc.text(header, xPosition + 1, yPosition + 4, { maxWidth: colWidths[idx] - 2 });
       xPosition += colWidths[idx];
     });
 
-    // Draw table rows
+    yPosition += rowHeight;
+
+    // Table Body
     doc.setTextColor(0, 0, 0);
     doc.setFont(undefined, 'normal');
     doc.setFontSize(8);
 
-    let currentY = tableStartY + rowHeight;
-    rows.forEach((row, rowIdx) => {
-      // Check if we need a new page
-      if (currentY + rowHeight > pageHeight - 10) {
+    data.forEach((item, rowIdx) => {
+      // Check if new page needed
+      if (yPosition + rowHeight > pageHeight - 15) {
         doc.addPage();
-        currentY = 10;
+        yPosition = 15;
 
-        // Add header on new page
+        // Repeat header on new page
         doc.setFillColor(66, 139, 202);
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(9);
         doc.setFont(undefined, 'bold');
-        xPosition = 10;
+        doc.setFontSize(9);
+        xPosition = 15;
         headers.forEach((header, idx) => {
-          doc.rect(xPosition, currentY, colWidths[idx], rowHeight, 'F');
-          doc.text(header, xPosition + 1, currentY + 4, { maxWidth: colWidths[idx] - 2 });
+          doc.text(header, xPosition + 1, yPosition + 4, { maxWidth: colWidths[idx] - 2 });
           xPosition += colWidths[idx];
         });
-        currentY += rowHeight;
+        yPosition += rowHeight;
 
-        // Reset text color and font
         doc.setTextColor(0, 0, 0);
         doc.setFont(undefined, 'normal');
         doc.setFontSize(8);
@@ -170,37 +176,49 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats) => {
 
       // Alternate row colors
       if (rowIdx % 2 === 0) {
-        doc.setFillColor(240, 240, 240);
-        doc.rect(10, currentY, pageWidth - 20, rowHeight, 'F');
+        doc.setFillColor(245, 245, 245);
+        doc.rect(15, yPosition, pageWidth - 30, rowHeight, 'F');
       }
 
-      xPosition = 10;
-      row.forEach((cell, cellIdx) => {
-        doc.text(cell, xPosition + 1, currentY + 4, { maxWidth: colWidths[cellIdx] - 2 });
+      // Row data
+      const rowData = [
+        rowIdx + 1,
+        item.name.substring(0, 20),
+        item.email.substring(0, 25),
+        item.bed_info,
+        `₹${item.rent}`,
+        `₹${item.billAmount}`,
+        item.payment_status,
+      ];
+
+      xPosition = 15;
+      rowData.forEach((cell, cellIdx) => {
+        doc.text(cell, xPosition + 1, yPosition + 4, { maxWidth: colWidths[cellIdx] - 2 });
         xPosition += colWidths[cellIdx];
       });
 
-      currentY += rowHeight;
+      yPosition += rowHeight;
     });
 
     // Footer
-    const pageCount = doc.internal.pages.length - 1;
     doc.setFontSize(8);
     doc.setTextColor(128, 128, 128);
-    for (let i = 1; i <= pageCount; i++) {
-      doc.page = i;
+    const totalPages = doc.internal.pages.length - 1;
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
       doc.text(
-        `Page ${i} of ${pageCount}`,
+        `Page ${i} of ${totalPages}`,
         pageWidth / 2,
-        pageHeight - 5,
+        pageHeight - 8,
         { align: 'center' }
       );
     }
 
     doc.save(`${filename}.pdf`);
+    return true;
   } catch (error) {
     console.error('Error exporting to PDF:', error);
-    throw new Error('Failed to export PDF file. Please try CSV or Excel instead.');
+    throw new Error(`PDF export failed: ${error.message}`);
   }
 };
 
@@ -209,7 +227,7 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats) => {
  */
 export const exportPaymentData = async (format, data, monthName, summaryStats) => {
   try {
-    const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const timestamp = new Date().toISOString().split('T')[0];
     const filename = `Payment_Status_${monthName.replace(/\s+/g, '_')}_${timestamp}`;
 
     switch (format.toLowerCase()) {
