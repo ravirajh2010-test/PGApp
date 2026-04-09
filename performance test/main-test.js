@@ -66,6 +66,7 @@ export function setup() {
   // Admin login
   try {
     data.adminToken = login(ADMIN_CREDENTIALS.email, ADMIN_CREDENTIALS.password);
+    console.log(`✅ Admin logged in successfully`);
   } catch (e) {
     console.warn(`⚠ Admin login failed: ${e.message}. Admin tests will be skipped.`);
     data.adminToken = null;
@@ -74,6 +75,7 @@ export function setup() {
   // Tenant login
   try {
     data.tenantToken = login(TENANT_CREDENTIALS.email, TENANT_CREDENTIALS.password);
+    console.log(`✅ Tenant logged in successfully`);
   } catch (e) {
     console.warn(`⚠ Tenant login failed: ${e.message}. Tenant tests will be skipped.`);
     data.tenantToken = null;
@@ -82,6 +84,7 @@ export function setup() {
   // Super admin login
   try {
     data.superAdminToken = login(SUPER_ADMIN_CREDENTIALS.email, SUPER_ADMIN_CREDENTIALS.password);
+    console.log(`✅ Super admin logged in successfully`);
   } catch (e) {
     console.warn(`⚠ Super admin login failed: ${e.message}. Super admin tests will be skipped.`);
     data.superAdminToken = null;

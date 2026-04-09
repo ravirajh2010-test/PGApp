@@ -1,6 +1,6 @@
 // K6 Performance Test Configuration for PG Stay
 
-export const BASE_URL = __ENV.BASE_URL || 'http://localhost:5000/api';
+export const BASE_URL = __ENV.BASE_URL || 'https://pg-stay-backend-production.up.railway.app';
 
 // Test users — update these with real credentials from your local DB
 export const ADMIN_CREDENTIALS = {
@@ -9,8 +9,8 @@ export const ADMIN_CREDENTIALS = {
 };
 
 export const TENANT_CREDENTIALS = {
-  email: __ENV.TENANT_EMAIL || 'tenant@test.com',
-  password: __ENV.TENANT_PASSWORD || 'tenant123',
+  email: __ENV.TENANT_EMAIL || 'ravirajh85@gmail.com',
+  password: __ENV.TENANT_PASSWORD || 'admin123',
 };
 
 export const SUPER_ADMIN_CREDENTIALS = {

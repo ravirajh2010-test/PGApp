@@ -6,6 +6,7 @@ import { BASE_URL } from './config.js';
 
 /**
  * Login and return the JWT token
+ * Handles multi-org scenarios by selecting the first org
  */
 export function login(email, password) {
   const res = http.post(
@@ -13,6 +14,20 @@ export function login(email, password) {
     JSON.stringify({ email, password }),
     { headers: { 'Content-Type': 'application/json' }, tags: { name: 'login' } }
   );
+
+  // Handle multi-org case (status 300)
+  if (res.status === 300) {
+    try {
+      const body = JSON.parse(res.body);
+      if (body.organizations && body.organizations.length > 0) {
+        // Select first organization and login again with org context
+        const selectedOrg = body.organizations[0];
+        return loginWithOrg(email, password, selectedOrg.id);
+      }
+    } catch {
+      fail(`Multi-org login failed for ${email}: could not parse organizations - ${res.body}`);
+    }
+  }
 
   const ok = check(res, {
     'login status is 200': (r) => r.status === 200,
@@ -27,6 +42,34 @@ export function login(email, password) {
 
   if (!ok) {
     fail(`Login failed for ${email}: ${res.status} - ${res.body}`);
+  }
+
+  return JSON.parse(res.body).token;
+}
+
+/**
+ * Login with organization context
+ */
+export function loginWithOrg(email, password, orgId) {
+  const res = http.post(
+    `${BASE_URL}/auth/login`,
+    JSON.stringify({ email, password, orgId }),
+    { headers: { 'Content-Type': 'application/json' }, tags: { name: 'login-with-org' } }
+  );
+
+  const ok = check(res, {
+    'org login status is 200': (r) => r.status === 200,
+    'org login returns token': (r) => {
+      try {
+        return JSON.parse(r.body).token !== undefined;
+      } catch {
+        return false;
+      }
+    },
+  });
+
+  if (!ok) {
+    fail(`Login with org failed for ${email} in org ${orgId}: ${res.status} - ${res.body}`);
   }
 
   return JSON.parse(res.body).token;
