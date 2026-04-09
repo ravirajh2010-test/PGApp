@@ -21,8 +21,8 @@ export function login(email, password) {
       const body = JSON.parse(res.body);
       if (body.organizations && Array.isArray(body.organizations) && body.organizations.length > 0) {
         const selectedOrg = body.organizations[0];
-        console.log(`ℹ️ User has multiple orgs, selecting: ${selectedOrg.name} (id: ${selectedOrg.id})`);
-        return loginWithOrg(email, password, selectedOrg.id);
+        console.log(`ℹ️ User has multiple orgs, selecting: ${selectedOrg.name} (slug: ${selectedOrg.slug})`);
+        return loginWithOrgSlug(email, password, selectedOrg.slug);
       } else {
         fail(`Multi-org login failed for ${email}: no organizations found in response`);
       }
@@ -50,12 +50,12 @@ export function login(email, password) {
 }
 
 /**
- * Login with organization context
+ * Login with organization slug context
  */
-export function loginWithOrg(email, password, orgId) {
+export function loginWithOrgSlug(email, password, orgSlug) {
   const res = http.post(
     `${BASE_URL}/auth/login`,
-    JSON.stringify({ email, password, orgId }),
+    JSON.stringify({ email, password, orgSlug }),
     { headers: { 'Content-Type': 'application/json' }, tags: { name: 'login-with-org' } }
   );
 
@@ -71,7 +71,7 @@ export function loginWithOrg(email, password, orgId) {
   });
 
   if (!ok) {
-    fail(`Login with org failed for ${email} in org ${orgId}: ${res.status} - ${res.body}`);
+    fail(`Login with org failed for ${email} in org ${orgSlug}: ${res.status} - ${res.body}`);
   }
 
   try {
