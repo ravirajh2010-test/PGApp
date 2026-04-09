@@ -273,6 +273,26 @@ function testAdminPaymentInfo(token) {
 function testAdminOccupancy(token) {
   const headers = authHeaders(token);
 
+  // First, get buildings to extract a building ID for floor layout calls
+  let buildingId = null;
+  group('Admin - Get Buildings (for floor layout)', () => {
+    const res = http.get(`${BASE_URL}/admin/buildings`, {
+      ...headers,
+      tags: { name: 'admin_get_buildings_fl' },
+    });
+    if (res.status === 200) {
+      try {
+        const buildings = JSON.parse(res.body);
+        if (Array.isArray(buildings) && buildings.length > 0) {
+          buildingId = buildings[0].id;
+        }
+      } catch (e) {
+        // Silently handle parse errors
+      }
+    }
+    adminApiDuration.add(res.timings.duration);
+  });
+
   group('Admin - Occupancy', () => {
     const res = http.get(`${BASE_URL}/admin/occupancy`, {
       ...headers,
@@ -291,23 +311,25 @@ function testAdminOccupancy(token) {
     adminApiDuration.add(res.timings.duration);
   });
 
-  group('Admin - Floor Layout', () => {
-    const res = http.get(`${BASE_URL}/admin/floor-layout`, {
-      ...headers,
-      tags: { name: 'admin_floor_layout' },
+  if (buildingId) {
+    group('Admin - Floor Layout', () => {
+      const res = http.get(`${BASE_URL}/admin/floor-layout?buildingId=${buildingId}`, {
+        ...headers,
+        tags: { name: 'admin_floor_layout' },
+      });
+      checkResponse(res, 'floor_layout');
+      adminApiDuration.add(res.timings.duration);
     });
-    checkResponse(res, 'floor_layout');
-    adminApiDuration.add(res.timings.duration);
-  });
 
-  group('Admin - Floor Layout with Beds', () => {
-    const res = http.get(`${BASE_URL}/admin/floor-layout-beds`, {
-      ...headers,
-      tags: { name: 'admin_floor_layout_beds' },
+    group('Admin - Floor Layout with Beds', () => {
+      const res = http.get(`${BASE_URL}/admin/floor-layout-beds?buildingId=${buildingId}`, {
+        ...headers,
+        tags: { name: 'admin_floor_layout_beds' },
+      });
+      checkResponse(res, 'floor_layout_beds');
+      adminApiDuration.add(res.timings.duration);
     });
-    checkResponse(res, 'floor_layout_beds');
-    adminApiDuration.add(res.timings.duration);
-  });
+  }
 
   sleep(0.3);
 }
