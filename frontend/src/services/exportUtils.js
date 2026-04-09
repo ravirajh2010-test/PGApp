@@ -95,60 +95,74 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats) => {
 
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
+    const leftMargin = 14;
     let yPosition = 15;
 
     // Title
     doc.setFontSize(18);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
     doc.text('Payment Status Report', pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 10;
 
-    // Month & Date
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'normal');
-    doc.text(String(monthName || 'N/A'), pageWidth / 2, yPosition, { align: 'center' });
+    // Month
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'normal');
+    doc.text(String(monthName || ''), pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 7;
 
     // Generated date
     const generatedDate = new Date().toLocaleDateString();
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Generated: ${generatedDate}`, pageWidth / 2, yPosition, { align: 'center' });
+    doc.setFontSize(9);
+    doc.setTextColor(120, 120, 120);
+    doc.text('Generated: ' + generatedDate, pageWidth / 2, yPosition, { align: 'center' });
     doc.setTextColor(0, 0, 0);
-    yPosition += 10;
+    yPosition += 12;
 
     // Summary Stats Box
     doc.setFillColor(230, 240, 250);
-    doc.rect(15, yPosition, pageWidth - 30, 20, 'F');
+    doc.roundedRect(leftMargin, yPosition, pageWidth - leftMargin * 2, 14, 2, 2, 'F');
     doc.setFontSize(10);
-    doc.setFont(undefined, 'bold');
-    doc.text(`Total Tenants: ${String(summaryStats.total)}`, 20, yPosition + 6);
-    doc.text(`Paid: ${String(summaryStats.paid)}`, 80, yPosition + 6);
-    doc.text(`Unpaid: ${String(summaryStats.unpaid)}`, 140, yPosition + 6);
-    doc.text(`NA: ${String(summaryStats.na)}`, 200, yPosition + 6);
-    yPosition += 25;
-
-    // Table Headers
-    const headers = ['#', 'Tenant Name', 'Email', 'Bed', 'Rent', 'Bill Amount', 'Status'];
-    const colWidths = [8, 28, 32, 18, 16, 22, 24];
-    const rowHeight = 6;
-
-    doc.setFillColor(66, 139, 202);
-    doc.setTextColor(255, 255, 255);
-    doc.setFont(undefined, 'bold');
-    doc.setFontSize(9);
-
-    let xPosition = 15;
-    headers.forEach((header, idx) => {
-      doc.text(String(header), xPosition + 1, yPosition + 4, { maxWidth: colWidths[idx] - 2 });
-      xPosition += colWidths[idx];
-    });
-
-    yPosition += rowHeight;
-
-    // Table Body
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 30, 30);
+    const statsY = yPosition + 9;
+    const statsSpacing = (pageWidth - leftMargin * 2) / 4;
+    doc.text('Total Tenants: ' + String(summaryStats.total), leftMargin + 8, statsY);
+    doc.setTextColor(34, 139, 34);
+    doc.text('Paid: ' + String(summaryStats.paid), leftMargin + statsSpacing + 8, statsY);
+    doc.setTextColor(220, 50, 50);
+    doc.text('Unpaid: ' + String(summaryStats.unpaid), leftMargin + statsSpacing * 2 + 8, statsY);
+    doc.setTextColor(130, 130, 130);
+    doc.text('NA: ' + String(summaryStats.na), leftMargin + statsSpacing * 3 + 8, statsY);
     doc.setTextColor(0, 0, 0);
-    doc.setFont(undefined, 'normal');
+    yPosition += 20;
+
+    // Table column config — use Rs. instead of ₹ (jsPDF can't render Unicode ₹)
+    const headers = ['#', 'Tenant Name', 'Email', 'Bed Info', 'Rent (Rs.)', 'Bill (Rs.)', 'Month', 'Status'];
+    const colWidths = [10, 35, 50, 35, 25, 25, 30, 30];
+    const tableWidth = colWidths.reduce((a, b) => a + b, 0);
+    const rowHeight = 8;
+
+    // Draw header row
+    const drawTableHeader = (y) => {
+      doc.setFillColor(44, 62, 80);
+      doc.rect(leftMargin, y, tableWidth, rowHeight, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      let x = leftMargin;
+      headers.forEach((header, idx) => {
+        doc.text(header, x + 2, y + 5.5);
+        x += colWidths[idx];
+      });
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'normal');
+      return y + rowHeight;
+    };
+
+    yPosition = drawTableHeader(yPosition);
+
+    // Draw table rows
     doc.setFontSize(8);
 
     data.forEach((item, rowIdx) => {
@@ -156,69 +170,83 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats) => {
       if (yPosition + rowHeight > pageHeight - 15) {
         doc.addPage();
         yPosition = 15;
-
-        // Repeat header on new page
-        doc.setFillColor(66, 139, 202);
-        doc.setTextColor(255, 255, 255);
-        doc.setFont(undefined, 'bold');
-        doc.setFontSize(9);
-        xPosition = 15;
-        headers.forEach((header, idx) => {
-          doc.text(String(header), xPosition + 1, yPosition + 4, { maxWidth: colWidths[idx] - 2 });
-          xPosition += colWidths[idx];
-        });
-        yPosition += rowHeight;
-
-        doc.setTextColor(0, 0, 0);
-        doc.setFont(undefined, 'normal');
-        doc.setFontSize(8);
+        yPosition = drawTableHeader(yPosition);
       }
 
       // Alternate row colors
       if (rowIdx % 2 === 0) {
-        doc.setFillColor(245, 245, 245);
-        doc.rect(15, yPosition, pageWidth - 30, rowHeight, 'F');
+        doc.setFillColor(245, 247, 250);
+        doc.rect(leftMargin, yPosition, tableWidth, rowHeight, 'F');
       }
 
-      // Row data - convert ALL values to strings
+      // Draw bottom border for each row
+      doc.setDrawColor(220, 220, 220);
+      doc.line(leftMargin, yPosition + rowHeight, leftMargin + tableWidth, yPosition + rowHeight);
+
+      // Row data — ensure ALL values are plain ASCII strings
       const rowData = [
         String(rowIdx + 1),
-        String(item.name || '').substring(0, 20),
-        String(item.email || '').substring(0, 25),
+        String(item.name || ''),
+        String(item.email || ''),
         String(item.bed_info || ''),
-        `₹${String(item.rent || 0)}`,
-        `₹${String(item.billAmount || 0)}`,
+        'Rs.' + String(item.rent || 0),
+        'Rs.' + String(item.billAmount || 0),
+        String(monthName || ''),
         String(item.payment_status || ''),
       ];
 
-      xPosition = 15;
+      // Color the status cell
+      doc.setFont('helvetica', 'normal');
+      let x = leftMargin;
       rowData.forEach((cell, cellIdx) => {
-        doc.text(cell, xPosition + 1, yPosition + 4, { maxWidth: colWidths[cellIdx] - 2 });
-        xPosition += colWidths[cellIdx];
+        // Truncate text to fit column
+        const maxChars = Math.floor(colWidths[cellIdx] / 2);
+        const displayText = cell.length > maxChars ? cell.substring(0, maxChars) + '..' : cell;
+
+        // Style status column
+        if (cellIdx === 7) {
+          if (cell === 'Paid') {
+            doc.setTextColor(34, 139, 34);
+            doc.setFont('helvetica', 'bold');
+          } else if (cell === 'Bill Generated') {
+            doc.setTextColor(220, 120, 0);
+            doc.setFont('helvetica', 'bold');
+          } else {
+            doc.setTextColor(130, 130, 130);
+          }
+        } else {
+          doc.setTextColor(40, 40, 40);
+          doc.setFont('helvetica', 'normal');
+        }
+
+        doc.text(displayText, x + 2, yPosition + 5.5);
+        x += colWidths[cellIdx];
       });
 
+      doc.setTextColor(0, 0, 0);
       yPosition += rowHeight;
     });
 
-    // Footer
+    // Footer on each page
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.setTextColor(128, 128, 128);
+    doc.setTextColor(150, 150, 150);
     const totalPages = doc.internal.pages.length - 1;
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       doc.text(
-        `Page ${String(i)} of ${String(totalPages)}`,
+        'Page ' + String(i) + ' of ' + String(totalPages),
         pageWidth / 2,
         pageHeight - 8,
         { align: 'center' }
       );
     }
 
-    doc.save(`${filename}.pdf`);
+    doc.save(filename + '.pdf');
     return true;
   } catch (error) {
     console.error('Error exporting to PDF:', error);
-    throw new Error(`PDF export failed: ${error.message}`);
+    throw new Error('PDF export failed: ' + error.message);
   }
 };
 
