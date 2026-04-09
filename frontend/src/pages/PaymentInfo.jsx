@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormattedMessage } from 'react-intl';
 import api from '../services/api';
+import { exportPaymentData } from '../services/exportUtils';
 
 const PaymentInfo = () => {
   const navigate = useNavigate();
@@ -13,6 +14,8 @@ const PaymentInfo = () => {
   const [markingPaid, setMarkingPaid] = useState({});
   const [reminderDropdown, setReminderDropdown] = useState(null); // tenantId of open dropdown
   const [roomFilter, setRoomFilter] = useState(''); // '' = None (show all)
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exporting, setExporting] = useState(false);
   
   // Month/Year selection state — default to current month
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
@@ -80,6 +83,30 @@ const PaymentInfo = () => {
       alert(error.response?.data?.message || 'Failed to mark payment');
     } finally {
       setMarkingPaid(prev => ({ ...prev, [tenantId]: false }));
+    }
+  };
+
+  const handleExport = async (format) => {
+    setExporting(true);
+    try {
+      const paidCount = tenants.filter(t => t.payment_status === 'Paid').length;
+      const unpaidCount = tenants.filter(t => t.payment_status === 'Bill Generated').length;
+      const naCount = tenants.filter(t => t.payment_status === 'NA').length;
+
+      const summaryStats = {
+        total: tenants.length,
+        paid: paidCount,
+        unpaid: unpaidCount,
+        na: naCount,
+      };
+
+      await exportPaymentData(format, tenants, monthName, summaryStats);
+      alert(`✅ Payment data exported as ${format.toUpperCase()} successfully!`);
+      setShowExportModal(false);
+    } catch (error) {
+      alert(`❌ Export failed: ${error.message}`);
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -201,6 +228,12 @@ const PaymentInfo = () => {
               🔍 Search Tenant
             </button>
             <button
+              onClick={() => setShowExportModal(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold transition"
+            >
+              📊 Export
+            </button>
+            <button
               onClick={() => setShowOfflineModal(true)}
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition"
             >
@@ -312,6 +345,69 @@ const PaymentInfo = () => {
           )}
         </div>
       </div>
+
+      {/* Export Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="px-6 py-4 bg-purple-50 border-b-2 border-purple-500 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-800">📊 Export Payment Data</h2>
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="px-6 py-6 space-y-3">
+              <p className="text-gray-600 mb-4">
+                Export Payment Status for <span className="font-semibold">{monthName}</span>
+              </p>
+              <button
+                onClick={() => handleExport('csv')}
+                disabled={exporting}
+                className={`w-full ${
+                  exporting
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                } text-white px-4 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2`}
+              >
+                📄 {exporting ? 'Exporting...' : 'Export as CSV'}
+              </button>
+              <button
+                onClick={() => handleExport('excel')}
+                disabled={exporting}
+                className={`w-full ${
+                  exporting
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700'
+                } text-white px-4 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2`}
+              >
+                📊 {exporting ? 'Exporting...' : 'Export as Excel'}
+              </button>
+              <button
+                onClick={() => handleExport('pdf')}
+                disabled={exporting}
+                className={`w-full ${
+                  exporting
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-red-600 hover:bg-red-700'
+                } text-white px-4 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2`}
+              >
+                🔴 {exporting ? 'Exporting...' : 'Export as PDF'}
+              </button>
+            </div>
+            <div className="px-6 py-4 border-t bg-gray-50 flex justify-end">
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mark Offline Pay Modal */}
       {showOfflineModal && (
