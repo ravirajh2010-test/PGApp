@@ -5,7 +5,8 @@ const {
   updateOrganizationPlan, getPlatformStats,
   getSubscriptions, getInvoices,
   getPlanLimits, updatePlanLimits,
-  getAuditLogs
+  getAuditLogs,
+  getInactiveUsers, disableInactiveUser, deleteInactiveUser, sendInactiveUserReminder
 } = require('../controllers/superAdminController');
 const { authenticateToken } = require('../middleware/auth');
 const { superAdminOnly } = require('../middleware/tenantIsolation');
@@ -37,5 +38,11 @@ router.put('/plans/:plan', updatePlanLimits);
 
 // Audit logs
 router.get('/audit-logs', getAuditLogs);
+
+// Inactive users
+router.get('/inactive-users', getInactiveUsers);
+router.post('/inactive-users/:orgId/:userId/disable', disableInactiveUser);
+router.delete('/inactive-users/:orgId/:userId', deleteInactiveUser);
+router.post('/inactive-users/:orgId/:userId/remind', sendInactiveUserReminder);
 
 module.exports = router;

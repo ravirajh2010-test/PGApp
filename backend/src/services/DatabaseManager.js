@@ -283,8 +283,15 @@ class DatabaseManager {
         password VARCHAR(255) NOT NULL,
         role VARCHAR(50) NOT NULL CHECK (role IN ('admin', 'tenant', 'guest')),
         is_first_login BOOLEAN DEFAULT TRUE,
+        last_active TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+
+      -- Migration: add last_active column if missing
+      DO $$ BEGIN
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS last_active TIMESTAMP;
+      EXCEPTION WHEN duplicate_column THEN NULL;
+      END $$;
 
       CREATE TABLE IF NOT EXISTS buildings (
         id SERIAL PRIMARY KEY,

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FormattedMessage } from 'react-intl';
+import { FormattedMessage, useIntl } from 'react-intl';
 import api, { getUser } from '../services/api';
 
 const SuperAdminDashboard = () => {
@@ -11,6 +11,11 @@ const SuperAdminDashboard = () => {
   const [organizations, setOrganizations] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [inactiveUsers, setInactiveUsers] = useState([]);
+  const [inactiveDays, setInactiveDays] = useState(30);
+  const [loadingInactive, setLoadingInactive] = useState(false);
+  const [actionLoading, setActionLoading] = useState({});
+  const intl = useIntl();
 
   useEffect(() => {
     if (!user || user.role !== 'super_admin') {
@@ -52,6 +57,56 @@ const SuperAdminDashboard = () => {
       fetchData();
     } catch (error) {
       alert('Error activating organization');
+    }
+  };
+
+  const fetchInactiveUsers = async (days) => {
+    setLoadingInactive(true);
+    try {
+      const res = await api.get('/super-admin/inactive-users', { params: { days } });
+      setInactiveUsers(res.data);
+    } catch (error) {
+      console.error('Error fetching inactive users:', error);
+    } finally {
+      setLoadingInactive(false);
+    }
+  };
+
+  const handleDisableUser = async (orgId, userId, userName) => {
+    if (!window.confirm(`Disable user "${userName}"? They won't be able to log in.`)) return;
+    setActionLoading(prev => ({ ...prev, [`disable-${orgId}-${userId}`]: true }));
+    try {
+      await api.post(`/super-admin/inactive-users/${orgId}/${userId}/disable`);
+      setInactiveUsers(prev => prev.filter(u => !(u.org_id === orgId && u.id === userId)));
+    } catch (error) {
+      alert('Error disabling user');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`disable-${orgId}-${userId}`]: false }));
+    }
+  };
+
+  const handleDeleteUser = async (orgId, userId, userName) => {
+    if (!window.confirm(`Permanently delete user "${userName}"? This cannot be undone.`)) return;
+    setActionLoading(prev => ({ ...prev, [`delete-${orgId}-${userId}`]: true }));
+    try {
+      await api.delete(`/super-admin/inactive-users/${orgId}/${userId}`);
+      setInactiveUsers(prev => prev.filter(u => !(u.org_id === orgId && u.id === userId)));
+    } catch (error) {
+      alert('Error deleting user');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`delete-${orgId}-${userId}`]: false }));
+    }
+  };
+
+  const handleSendReminder = async (orgId, userId) => {
+    setActionLoading(prev => ({ ...prev, [`remind-${orgId}-${userId}`]: true }));
+    try {
+      await api.post(`/super-admin/inactive-users/${orgId}/${userId}/remind`);
+      alert('Reminder sent successfully!');
+    } catch (error) {
+      alert('Error sending reminder');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`remind-${orgId}-${userId}`]: false }));
     }
   };
 
@@ -106,17 +161,24 @@ const SuperAdminDashboard = () => {
 
       {/* Tabs */}
       <div className="flex gap-2 border-b">
-        {['overview', 'organizations'].map((tab) => (
+        {['overview', 'organizations', 'inactive-users'].map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => {
+              setActiveTab(tab);
+              if (tab === 'inactive-users' && inactiveUsers.length === 0) {
+                fetchInactiveUsers(inactiveDays);
+              }
+            }}
             className={`px-6 py-3 font-semibold capitalize transition ${
               activeTab === tab
                 ? 'border-b-2 border-brand-500 text-brand-500'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            {tab}
+            {tab === 'inactive-users'
+              ? intl.formatMessage({ id: 'superAdmin.inactiveUsers', defaultMessage: 'Inactive Users' })
+              : tab}
           </button>
         ))}
       </div>
@@ -209,6 +271,131 @@ const SuperAdminDashboard = () => {
               </span>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Inactive Users Tab */}
+      {activeTab === 'inactive-users' && (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="px-6 py-4 bg-orange-50 border-b-2 border-orange-500 flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-gray-800">
+              <FormattedMessage id="superAdmin.inactiveUsers" defaultMessage="Inactive Users" />
+            </h2>
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-gray-600">
+                <FormattedMessage id="superAdmin.inactiveDays" defaultMessage="Inactive for" />:
+              </label>
+              <select
+                value={inactiveDays}
+                onChange={(e) => {
+                  const d = parseInt(e.target.value);
+                  setInactiveDays(d);
+                  fetchInactiveUsers(d);
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg shadow-sm bg-white font-semibold text-gray-700 text-sm"
+              >
+                <option value={30}>30+ {intl.formatMessage({ id: 'superAdmin.days', defaultMessage: 'days' })}</option>
+                <option value={60}>60+ {intl.formatMessage({ id: 'superAdmin.days', defaultMessage: 'days' })}</option>
+                <option value={90}>90+ {intl.formatMessage({ id: 'superAdmin.days', defaultMessage: 'days' })}</option>
+                <option value={180}>180+ {intl.formatMessage({ id: 'superAdmin.days', defaultMessage: 'days' })}</option>
+              </select>
+              <button
+                onClick={() => fetchInactiveUsers(inactiveDays)}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition"
+              >
+                🔄 <FormattedMessage id="dashboard.refresh" defaultMessage="Refresh" />
+              </button>
+            </div>
+          </div>
+          {loadingInactive ? (
+            <div className="flex justify-center items-center h-32">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500"></div>
+            </div>
+          ) : inactiveUsers.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-100 border-b">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700">#</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.name" defaultMessage="Name" /></th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.email" defaultMessage="Email" /></th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="superAdmin.organization" defaultMessage="Organization" /></th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="dashboard.status" defaultMessage="Role" /></th>
+                    <th className="px-4 py-3 text-center font-semibold text-gray-700"><FormattedMessage id="superAdmin.daysInactive" defaultMessage="Days Inactive" /></th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="superAdmin.lastActive" defaultMessage="Last Active" /></th>
+                    <th className="px-4 py-3 text-center font-semibold text-gray-700"><FormattedMessage id="superAdmin.actions" defaultMessage="Actions" /></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inactiveUsers.map((user, idx) => (
+                    <tr key={`${user.org_id}-${user.id}`} className="border-b hover:bg-gray-50">
+                      <td className="px-4 py-3 font-medium">{idx + 1}</td>
+                      <td className="px-4 py-3 font-medium">{user.name}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{user.email}</td>
+                      <td className="px-4 py-3">
+                        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+                          {user.org_name}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${
+                          user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                          user.days_inactive > 90 ? 'bg-red-100 text-red-700' :
+                          user.days_inactive > 60 ? 'bg-orange-100 text-orange-700' :
+                          'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {user.days_inactive}d
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500">
+                        {user.last_active
+                          ? new Date(user.last_active).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                          : intl.formatMessage({ id: 'superAdmin.neverLoggedIn', defaultMessage: 'Never logged in' })}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex gap-1 justify-center">
+                          <button
+                            onClick={() => handleSendReminder(user.org_id, user.id)}
+                            disabled={actionLoading[`remind-${user.org_id}-${user.id}`]}
+                            className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold transition disabled:opacity-50"
+                            title={intl.formatMessage({ id: 'superAdmin.sendReminder', defaultMessage: 'Send Reminder' })}
+                          >
+                            {actionLoading[`remind-${user.org_id}-${user.id}`] ? '⏳' : '📧'}
+                          </button>
+                          <button
+                            onClick={() => handleDisableUser(user.org_id, user.id, user.name)}
+                            disabled={actionLoading[`disable-${user.org_id}-${user.id}`]}
+                            className="bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs font-semibold transition disabled:opacity-50"
+                            title={intl.formatMessage({ id: 'superAdmin.disableUser', defaultMessage: 'Disable User' })}
+                          >
+                            {actionLoading[`disable-${user.org_id}-${user.id}`] ? '⏳' : '🚫'}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user.org_id, user.id, user.name)}
+                            disabled={actionLoading[`delete-${user.org_id}-${user.id}`]}
+                            className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-semibold transition disabled:opacity-50"
+                            title={intl.formatMessage({ id: 'superAdmin.deleteUser', defaultMessage: 'Delete User' })}
+                          >
+                            {actionLoading[`delete-${user.org_id}-${user.id}`] ? '⏳' : '🗑️'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="p-6 text-center text-gray-500">
+              <FormattedMessage id="superAdmin.noInactiveUsers" defaultMessage="No inactive users found" />
+            </p>
+          )}
         </div>
       )}
     </div>

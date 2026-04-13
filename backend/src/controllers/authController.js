@@ -105,6 +105,14 @@ const login = async (req, res) => {
     if (orgId) tokenPayload.orgId = orgId;
     
     const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '8h' });
+
+    // Update last_active timestamp
+    if (orgId) {
+      try {
+        const orgPool = await dbManager.getOrgPool(orgId);
+        await orgPool.query('UPDATE users SET last_active = NOW() WHERE id = $1', [user.id]);
+      } catch (e) { /* ignore if column doesn't exist yet */ }
+    }
     
     // Get org info if applicable
     let orgInfo = null;
