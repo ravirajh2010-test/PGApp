@@ -55,11 +55,6 @@ const createCheckoutSession = async (req, res) => {
       return res.status(400).json({ message: 'Organization slug is already taken' });
     }
 
-    // Check if admin email already has an org with same slug
-    const existingMapping = await dbManager.pool.query(
-      'SELECT id FROM user_org_map WHERE email = $1', [adminEmail]
-    );
-
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
     const session = await stripe.checkout.sessions.create({
@@ -96,7 +91,7 @@ const createCheckoutSession = async (req, res) => {
     res.json({ url: session.url, sessionId: session.id });
   } catch (error) {
     console.error('Stripe checkout error:', error.message);
-    res.status(500).json({ message: 'Failed to create checkout session' });
+    res.status(500).json({ message: error.message || 'Failed to create checkout session' });
   }
 };
 
