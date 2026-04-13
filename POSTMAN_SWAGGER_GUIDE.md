@@ -1,4 +1,4 @@
-# PG Stay API - Swagger & Postman Documentation
+﻿# PG Stay API - Swagger & Postman Documentation
 
 ## Quick Start
 
@@ -19,7 +19,7 @@ Features:
 
 ### Option 2: Import Postman Collection
 
-1. **Open Postman** → Click "Import"
+1. **Open Postman** â†’ Click "Import"
 2. **Upload** `POSTMAN_COLLECTION.json` from project root
 3. Set environment variable:
    - `baseUrl`: `http://localhost:5000/api`
@@ -96,7 +96,7 @@ In Postman, use the `{{token}}` variable which is set globally.
 ## Default Credentials
 
 ### Super Admin
-- Email: `superadmin@pgstay.com`
+- Email: `superadmin@roomipilot.com`
 - Password: `superadmin123`
 
 ### Test Admin
@@ -132,7 +132,7 @@ Should return: `{ "status": "ok", "database": "connected" }`
 POST /auth/login
 Body: { "email": "admin@test.com", "password": "admin123" }
 ```
-Copy the token from response → Update `{{token}}` variable
+Copy the token from response â†’ Update `{{token}}` variable
 
 ### 3. Test Admin Endpoints (With Auth)
 ```
@@ -141,25 +141,25 @@ Header: Authorization: Bearer {{token}}
 ```
 
 ### 4. Create Resources
-Start with buildings → rooms → beds → tenants
+Start with buildings â†’ rooms â†’ beds â†’ tenants
 
 ## Common Issues & Solutions
 
 ### 401 Unauthorized
-- ❌ Problem: Missing or invalid token
-- ✅ Solution: Login again and copy fresh token
+- âŒ Problem: Missing or invalid token
+- âœ… Solution: Login again and copy fresh token
 
 ### 403 Forbidden
-- ❌ Problem: User role doesn't have access
-- ✅ Solution: Use correct credentials for role (admin, tenant, super_admin)
+- âŒ Problem: User role doesn't have access
+- âœ… Solution: Use correct credentials for role (admin, tenant, super_admin)
 
 ### 404 Not Found
-- ❌ Problem: Resource ID is invalid
-- ✅ Solution: Get valid ID from LIST endpoint first
+- âŒ Problem: Resource ID is invalid
+- âœ… Solution: Get valid ID from LIST endpoint first
 
 ### 422 Unprocessable Entity
-- ❌ Problem: Invalid request body or constraint violation
-- ✅ Solution: Check request format and required fields
+- âŒ Problem: Invalid request body or constraint violation
+- âœ… Solution: Check request format and required fields
 
 ## Swagger/OpenAPI Files Location
 

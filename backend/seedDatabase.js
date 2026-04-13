@@ -1,4 +1,4 @@
-const { Pool } = require('pg');
+﻿const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
 const pool = new Pool({
@@ -7,7 +7,7 @@ const pool = new Pool({
 
 (async () => {
   try {
-    console.log('🌱 Seeding database...');
+    console.log('ðŸŒ± Seeding database...');
 
     // 1. Create super admin user
     const hashedPassword = await bcrypt.hash('superadmin123', 10);
@@ -17,9 +17,9 @@ const pool = new Pool({
       VALUES ($1, $2, $3, $4, $5)
       ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password
       RETURNING id, email, name, role;
-    `, ['superadmin@pgstay.com', hashedPassword, 'Super Admin', 'super_admin', 'active']);
+    `, ['superadmin@roomipilot.com', hashedPassword, 'Super Admin', 'super_admin', 'active']);
 
-    console.log('✅ Super admin user:', userResult.rows[0]);
+    console.log('âœ… Super admin user:', userResult.rows[0]);
 
     // 2. Create default organization
     const orgResult = await pool.query(`
@@ -40,7 +40,7 @@ const pool = new Pool({
       'pgstay_prod'
     ]);
 
-    console.log('✅ Organization created:', orgResult.rows[0]);
+    console.log('âœ… Organization created:', orgResult.rows[0]);
 
     // 3. Map user to organization
     await pool.query(`
@@ -49,15 +49,15 @@ const pool = new Pool({
       ON CONFLICT DO NOTHING;
     `, [userResult.rows[0].id, orgResult.rows[0].id, 'super_admin']);
 
-    console.log('✅ User mapped to organization');
+    console.log('âœ… User mapped to organization');
 
-    console.log('\n✅ Database seeded successfully!');
-    console.log(`   - Email: superadmin@pgstay.com`);
+    console.log('\nâœ… Database seeded successfully!');
+    console.log(`   - Email: superadmin@roomipilot.com`);
     console.log(`   - Password: superadmin123`);
 
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error seeding database:', error.message);
+    console.error('âŒ Error seeding database:', error.message);
     process.exit(1);
   } finally {
     pool.end();

@@ -1,4 +1,4 @@
-const { Pool } = require('pg');
+﻿const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
 (async () => {
@@ -20,34 +20,34 @@ const bcrypt = require('bcryptjs');
   
   try {
     // Get admin from pg_stay
-    const admin = await pgStay.query("SELECT * FROM users WHERE email = 'admin@pgstay.com'");
+    const admin = await pgStay.query("SELECT * FROM users WHERE email = 'admin@roomipilot.com'");
     if (admin.rows.length === 0) {
-      console.log('❌ Admin not found in pg_stay');
+      console.log('âŒ Admin not found in pg_stay');
       process.exit(1);
     }
     
     const adminUser = admin.rows[0];
-    console.log('✅ Found admin in pg_stay:', adminUser.name);
+    console.log('âœ… Found admin in pg_stay:', adminUser.name);
     
     // Delete existing admin if any, then insert
-    await hostel.query("DELETE FROM users WHERE email = 'admin@pgstay.com'");
-    console.log('ℹ️  Cleared any existing admin');
+    await hostel.query("DELETE FROM users WHERE email = 'admin@roomipilot.com'");
+    console.log('â„¹ï¸  Cleared any existing admin');
     
-    console.log('✅ Inserting admin into hostel_management');
+    console.log('âœ… Inserting admin into hostel_management');
     await hostel.query(
       "INSERT INTO users (name, email, password, role, is_first_login) VALUES ($1, $2, $3, $4, $5)",
       [adminUser.name, adminUser.email, adminUser.password, adminUser.role, adminUser.is_first_login]
     );
     
     // Verify
-    const verification = await hostel.query("SELECT id, name, email, role FROM users WHERE email = 'admin@pgstay.com'");
-    console.log('✅ Admin now in hostel_management:', verification.rows[0]);
+    const verification = await hostel.query("SELECT id, name, email, role FROM users WHERE email = 'admin@roomipilot.com'");
+    console.log('âœ… Admin now in hostel_management:', verification.rows[0]);
     
     hostel.end();
     pgStay.end();
     process.exit(0);
   } catch (err) {
-    console.error('❌ Error:', err.message);
+    console.error('âŒ Error:', err.message);
     process.exit(1);
   }
 })();

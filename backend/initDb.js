@@ -1,4 +1,4 @@
-const pool = require('./src/config/database');
+﻿const pool = require('./src/config/database');
 const fs = require('fs');
 const path = require('path');
 
@@ -8,7 +8,7 @@ const initDatabase = async () => {
     
     // Test connection first
     await pool.query('SELECT NOW()');
-    console.log('✅ Connected to PostgreSQL');
+    console.log('âœ… Connected to PostgreSQL');
     
     const schema = fs.readFileSync(path.join(__dirname, '../database/schema.sql'), 'utf8');
     
@@ -26,7 +26,7 @@ const initDatabase = async () => {
       }
     }
     
-    console.log('✅ Database tables created successfully!');
+    console.log('âœ… Database tables created successfully!');
     
     // Insert sample data
     await insertSampleData();
@@ -34,7 +34,7 @@ const initDatabase = async () => {
     await pool.end();
     process.exit(0);
   } catch (error) {
-    console.error('❌ Database initialization error:', error.message);
+    console.error('âŒ Database initialization error:', error.message);
     process.exit(1);
   }
 };
@@ -71,10 +71,10 @@ const insertSampleData = async () => {
     const hashedPassword = await bcrypt.hash('admin123', 10);
     await pool.query(
       "INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)",
-      ['Admin User', 'admin@pgstay.com', hashedPassword, 'admin']
+      ['Admin User', 'admin@roomipilot.com', hashedPassword, 'admin']
     );
     
-    console.log('✅ Sample data inserted successfully!');
+    console.log('âœ… Sample data inserted successfully!');
   } catch (error) {
     console.error('Error inserting sample data:', error.message);
   }

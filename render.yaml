@@ -1,4 +1,4 @@
-services:
+﻿services:
   - type: web
     name: pg-stay-backend
     runtime: node
@@ -27,7 +27,7 @@ services:
       - key: RAZORPAY_KEY_SECRET
         sync: false
       - key: SUPER_ADMIN_EMAIL
-        value: superadmin@pgstay.com
+        value: superadmin@roomipilot.com
       - key: SUPER_ADMIN_PASSWORD
         value: superadmin123
 

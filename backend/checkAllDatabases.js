@@ -1,4 +1,4 @@
-const { Pool } = require('pg');
+﻿const { Pool } = require('pg');
 
 (async () => {
   // List all databases
@@ -12,10 +12,10 @@ const { Pool } = require('pg');
   
   try {
     const dbs = await adminPool.query("SELECT datname FROM pg_database WHERE datistemplate = false;");
-    console.log('\n📊 All databases:');
+    console.log('\nðŸ“Š All databases:');
     dbs.rows.forEach(db => console.log('  -', db.datname));
     
-    // Check each database for admin@pgstay.com
+    // Check each database for admin@roomipilot.com
     for (const db of dbs.rows) {
       try {
         const testPool = new Pool({
@@ -26,11 +26,11 @@ const { Pool } = require('pg');
           database: db.datname
         });
         
-        const users = await testPool.query("SELECT COUNT(*) FROM users WHERE email = 'admin@pgstay.com';");
+        const users = await testPool.query("SELECT COUNT(*) FROM users WHERE email = 'admin@roomipilot.com';");
         const count = users.rows[0].count;
         if (count > 0) {
-          console.log(`\n✅ Found admin@pgstay.com in database: ${db.datname}`);
-          const userData = await testPool.query("SELECT id, name, email, role FROM users WHERE email = 'admin@pgstay.com';");
+          console.log(`\nâœ… Found admin@roomipilot.com in database: ${db.datname}`);
+          const userData = await testPool.query("SELECT id, name, email, role FROM users WHERE email = 'admin@roomipilot.com';");
           console.log('   User:', userData.rows[0]);
         }
         testPool.end();

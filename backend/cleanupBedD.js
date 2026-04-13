@@ -1,9 +1,9 @@
-const axios = require('axios');
+﻿const axios = require('axios');
 
 (async () => {
   try {
     const loginRes = await axios.post('http://localhost:5000/api/auth/login', {
-      email: 'admin@pgstay.com',
+      email: 'admin@roomipilot.com',
       password: 'admin123'
     });
     
@@ -26,7 +26,7 @@ const axios = require('axios');
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      console.log('✅ Bed D deleted successfully!\n');
+      console.log('âœ… Bed D deleted successfully!\n');
     }
     
     // Verify
@@ -35,10 +35,10 @@ const axios = require('axios');
     });
     
     const room101Beds = bedsRes2.data.filter(bed => bed.room_id === 1);
-    console.log(`📋 Room 101 beds after cleanup: ${room101Beds.length}/3`);
+    console.log(`ðŸ“‹ Room 101 beds after cleanup: ${room101Beds.length}/3`);
     console.log(`Beds: ${room101Beds.map(b => b.bed_identifier).join(', ')}`);
     
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('âŒ Error:', error.message);
   }
 })();

@@ -1,4 +1,4 @@
-const { Pool } = require('pg');
+﻿const { Pool } = require('pg');
 
 (async () => {
   const hostel = new Pool({
@@ -19,12 +19,12 @@ const { Pool } = require('pg');
   
   try {
     // Get admin from pg_stay
-    const admin = await pgStay.query("SELECT * FROM users WHERE email = 'admin@pgstay.com'");
+    const admin = await pgStay.query("SELECT * FROM users WHERE email = 'admin@roomipilot.com'");
     const adminUser = admin.rows[0];
-    console.log('✅ Admin from pg_stay:', adminUser.name, '(ID:', adminUser.id, ')');
+    console.log('âœ… Admin from pg_stay:', adminUser.name, '(ID:', adminUser.id, ')');
     
     // Just update the password for ID 1 in hostel_management
-    console.log('✅ Updating admin user in hostel_management');
+    console.log('âœ… Updating admin user in hostel_management');
     await hostel.query(
       "UPDATE users SET email = $1, password = $2, name = $3, role = $4, is_first_login = $5 WHERE id = 1",
       [adminUser.email, adminUser.password, adminUser.name, adminUser.role, adminUser.is_first_login]
@@ -32,13 +32,13 @@ const { Pool } = require('pg');
     
     // Verify
     const verification = await hostel.query("SELECT id, name, email, role FROM users WHERE id = 1");
-    console.log('✅ Updated user in hostel_management:', verification.rows[0]);
+    console.log('âœ… Updated user in hostel_management:', verification.rows[0]);
     
     hostel.end();
     pgStay.end();
     process.exit(0);
   } catch (err) {
-    console.error('❌ Error:', err.message);
+    console.error('âŒ Error:', err.message);
     process.exit(1);
   }
 })();

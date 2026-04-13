@@ -1,4 +1,4 @@
-const { Pool } = require('pg');
+﻿const { Pool } = require('pg');
 
 (async () => {
   const adminPool = new Pool({
@@ -24,9 +24,9 @@ const { Pool } = require('pg');
           database: db.datname
         });
         
-        const users = await dbPool.query("SELECT email, role FROM users WHERE email = 'admin@pgstay.com' LIMIT 1");
+        const users = await dbPool.query("SELECT email, role FROM users WHERE email = 'admin@roomipilot.com' LIMIT 1");
         if (users.rows.length > 0) {
-          console.log(`✅ Found admin user in database: ${db.datname}`);
+          console.log(`âœ… Found admin user in database: ${db.datname}`);
           
           // Also count all users
           const allUsers = await dbPool.query("SELECT COUNT(*) FROM users");
@@ -34,11 +34,11 @@ const { Pool } = require('pg');
         } else {
           // Still count users
           const allUsers = await dbPool.query("SELECT COUNT(*) FROM users");
-          console.log(`❌ No admin in ${db.datname} (has ${allUsers.rows[0].count} users)`);
+          console.log(`âŒ No admin in ${db.datname} (has ${allUsers.rows[0].count} users)`);
         }
         await dbPool.end();
       } catch(e) {
-        console.log(`⚠️  Error checking ${db.datname}:`, e.message);
+        console.log(`âš ï¸  Error checking ${db.datname}:`, e.message);
       }
     }
     

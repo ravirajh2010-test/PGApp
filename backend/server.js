@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
@@ -205,9 +205,9 @@ const initDatabase = async () => {
       const hashedPassword = await bcrypt.hash(process.env.SUPER_ADMIN_PASSWORD || 'superadmin123', 10);
       await pool.query(
         "INSERT INTO users (name, email, password, role, is_first_login) VALUES ($1, $2, $3, $4, $5)",
-        ['Super Admin', process.env.SUPER_ADMIN_EMAIL || 'superadmin@pgstay.com', hashedPassword, 'super_admin', false]
+        ['Super Admin', process.env.SUPER_ADMIN_EMAIL || 'superadmin@roomipilot.com', hashedPassword, 'super_admin', false]
       );
-      console.log('Default super admin created (superadmin@pgstay.com / superadmin123)');
+      console.log('Default super admin created (superadmin@roomipilot.com / superadmin123)');
     }
 
     // Check for existing orgs

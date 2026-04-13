@@ -1,4 +1,4 @@
-# Render Deployment - Complete Checklist
+﻿# Render Deployment - Complete Checklist
 
 Follow this checklist step-by-step to deploy your app.
 
@@ -27,7 +27,7 @@ Follow this checklist step-by-step to deploy your app.
   cd frontend && npm run dev
   ```
   - Verify login works at http://localhost:5173
-  - Admin: admin@pgstay.com / admin123
+  - Admin: admin@roomipilot.com / admin123
 
 - [ ] **Create .gitignore** (if not exists)
   ```bash
@@ -38,12 +38,12 @@ Follow this checklist step-by-step to deploy your app.
 - [ ] **Check All Files Are Ready**
   ```bash
   # Verify key files exist:
-  ls render.yaml                              # ✅ Should exist
-  ls RENDER_DEPLOYMENT_GUIDE.md              # ✅ Should exist
-  ls RENDER_QUICK_START.md                   # ✅ Should exist
-  ls backend/package.json                     # ✅ Should exist
-  ls frontend/package.json                    # ✅ Should exist
-  ls database/schema.sql                      # ✅ Should exist
+  ls render.yaml                              # âœ… Should exist
+  ls RENDER_DEPLOYMENT_GUIDE.md              # âœ… Should exist
+  ls RENDER_QUICK_START.md                   # âœ… Should exist
+  ls backend/package.json                     # âœ… Should exist
+  ls frontend/package.json                    # âœ… Should exist
+  ls database/schema.sql                      # âœ… Should exist
   ```
 
 ---
@@ -78,7 +78,7 @@ Follow this checklist step-by-step to deploy your app.
 
 - [ ] **Verify on GitHub**
   - Go to https://github.com/your_username/pg-stay
-  - See all your files? ✅
+  - See all your files? âœ…
 
 ---
 
@@ -101,7 +101,7 @@ Follow this checklist step-by-step to deploy your app.
 
 - [ ] **Create Blueprint**
   1. Go to https://render.com/dashboard
-  2. Click **"New +"** → **"Blueprint"**
+  2. Click **"New +"** â†’ **"Blueprint"**
   3. Select your `pg-stay` repository
   4. Click **"Create Blueprint"**
   5. Render will detect `render.yaml` automatically
@@ -110,26 +110,26 @@ Follow this checklist step-by-step to deploy your app.
 - [ ] **Wait for Deployment**
   - Should take 3-5 minutes
   - Watch the logs scroll by
-  - Look for: "✅ deployed successfully"
+  - Look for: "âœ… deployed successfully"
 
 ### Option B: Manual Deployment (If Blueprint fails)
 
 - [ ] **Deploy Backend**
-  1. Click **"New +"** → **"Web Service"**
+  1. Click **"New +"** â†’ **"Web Service"**
   2. Select repository
   3. Build Command: `cd backend && npm install`
   4. Start Command: `cd backend && npm start`
   5. Create Service
 
 - [ ] **Deploy Frontend**
-  1. Click **"New +"** → **"Static Site"**
+  1. Click **"New +"** â†’ **"Static Site"**
   2. Select repository
   3. Build Command: `cd frontend && npm install && npm run build`
   4. Publish Directory: `frontend/dist`
   5. Create Service
 
 - [ ] **Add PostgreSQL**
-  1. Click **"New +"** → **"PostgreSQL"**
+  1. Click **"New +"** â†’ **"PostgreSQL"**
   2. Database Name: `pg_stay_production`
   3. User: `pg_stay_user`
   4. Create Database
@@ -140,7 +140,7 @@ Follow this checklist step-by-step to deploy your app.
 
 ### For Backend Service
 
-Go to `pg-stay-backend` → Settings → Environment Variables
+Go to `pg-stay-backend` â†’ Settings â†’ Environment Variables
 
 - [ ] **Add Email Configuration**
   ```
@@ -161,7 +161,7 @@ Go to `pg-stay-backend` → Settings → Environment Variables
 
 ### For Frontend Service
 
-Go to `pg-stay-frontend` → Settings → Environment Variables
+Go to `pg-stay-frontend` â†’ Settings â†’ Environment Variables
 
 - [ ] **Add Backend URL**
   ```
@@ -191,7 +191,7 @@ Go to `pg-stay-frontend` → Settings → Environment Variables
   1. Visit frontend URL from Render
   2. Should see login page
   3. Try admin login:
-     - Email: `admin@pgstay.com`
+     - Email: `admin@roomipilot.com`
      - Password: `admin123`
   4. Should see Admin Dashboard
 
@@ -207,12 +207,12 @@ Go to `pg-stay-frontend` → Settings → Environment Variables
 
 - [ ] **Generate Gmail App Password**
   1. Go to https://myaccount.google.com/apppasswords
-  2. Select "Mail" → "Windows Computer"
+  2. Select "Mail" â†’ "Windows Computer"
   3. Generate password
   4. Copy 16-character password
 
 - [ ] **Update in Render**
-  1. Go to backend service → Settings
+  1. Go to backend service â†’ Settings
   2. Update `EMAIL_PASSWORD` with the 16-char password
   3. Save and restart service
 
@@ -226,16 +226,16 @@ Go to `pg-stay-frontend` → Settings → Environment Variables
 ## Phase 8: Post-Deployment Checklist
 
 - [ ] **Database Initialized**
-  - Admin user exists? ✅
-  - Can login? ✅
+  - Admin user exists? âœ…
+  - Can login? âœ…
 
 - [ ] **Email Working**
-  - Received welcome email? ✅
+  - Received welcome email? âœ…
   - Thank you email on checkout? (test later)
 
 - [ ] **Checkout Job Running**
   - Check backend logs
-  - Look for: `[SCHEDULER] ✅ Tenant checkout job scheduled`
+  - Look for: `[SCHEDULER] âœ… Tenant checkout job scheduled`
 
 - [ ] **Logs Monitored**
   - Set up Render alerts (optional)
@@ -248,42 +248,42 @@ Go to `pg-stay-frontend` → Settings → Environment Variables
 
 ---
 
-## 📊 Final Status
+## ðŸ“Š Final Status
 
 | Component | Status | URL |
 |-----------|--------|-----|
-| Frontend | ✅ | https://pg-stay-frontend.onrender.com |
-| Backend | ✅ | https://pg-stay-backend.onrender.com |
-| Database | ✅ | Auto-managed by Render |
-| Email | ✅ | Sending successfully |
+| Frontend | âœ… | https://pg-stay-frontend.onrender.com |
+| Backend | âœ… | https://pg-stay-backend.onrender.com |
+| Database | âœ… | Auto-managed by Render |
+| Email | âœ… | Sending successfully |
 
 ---
 
-## 🎉 Deployment Complete!
+## ðŸŽ‰ Deployment Complete!
 
 Your app is now LIVE on Render! 
 
 ### What's Next?
 
-1. ✅ Share the frontend URL with users
-2. ✅ Monitor logs for errors
-3. ✅ Set up backups (Render auto-does this)
-4. ✅ Add custom domain (if desired)
-5. ✅ Upgrade plan if needed after 90 days
+1. âœ… Share the frontend URL with users
+2. âœ… Monitor logs for errors
+3. âœ… Set up backups (Render auto-does this)
+4. âœ… Add custom domain (if desired)
+5. âœ… Upgrade plan if needed after 90 days
 
 ---
 
-## 📞 Support & Troubleshooting
+## ðŸ“ž Support & Troubleshooting
 
 See [RENDER_DEPLOYMENT_GUIDE.md](./RENDER_DEPLOYMENT_GUIDE.md) for:
-- ✅ Common issues and solutions
-- ✅ Detailed troubleshooting
-- ✅ FAQ
-- ✅ Performance optimization
+- âœ… Common issues and solutions
+- âœ… Detailed troubleshooting
+- âœ… FAQ
+- âœ… Performance optimization
 
 ---
 
-## 🆘 Emergency Issues
+## ðŸ†˜ Emergency Issues
 
 | Issue | Quick Fix |
 |-------|-----------|
@@ -294,8 +294,8 @@ See [RENDER_DEPLOYMENT_GUIDE.md](./RENDER_DEPLOYMENT_GUIDE.md) for:
 
 ---
 
-## ✅ Deployment Checklist Version: 1.0
+## âœ… Deployment Checklist Version: 1.0
 **Last Updated:** March 27, 2026
 **Status:** Ready for Deployment
 
-**You're all set! Start deploying now!** 🚀
+**You're all set! Start deploying now!** ðŸš€

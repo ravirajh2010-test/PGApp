@@ -1,4 +1,4 @@
-const swaggerJsdoc = require('swagger-jsdoc');
+﻿const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
 const options = {
@@ -10,7 +10,7 @@ const options = {
       description: 'API documentation for PG Stay - Paying Guest Management System',
       contact: {
         name: 'Support',
-        email: 'support@pgstay.com',
+        email: 'support@roomipilot.com',
       },
     },
     servers: [

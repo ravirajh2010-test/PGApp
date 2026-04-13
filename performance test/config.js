@@ -1,10 +1,10 @@
-// K6 Performance Test Configuration for PG Stay
+﻿// K6 Performance Test Configuration for PG Stay
 
 export const BASE_URL = __ENV.BASE_URL || 'https://pg-stay-backend-production.up.railway.app';
 
-// Test users — update these with real credentials from your local DB
+// Test users â€” update these with real credentials from your local DB
 export const ADMIN_CREDENTIALS = {
-  email: __ENV.ADMIN_EMAIL || 'admin@pgstay.com',
+  email: __ENV.ADMIN_EMAIL || 'admin@roomipilot.com',
   password: __ENV.ADMIN_PASSWORD || 'admin123',
 };
 
@@ -14,11 +14,11 @@ export const TENANT_CREDENTIALS = {
 };
 
 export const SUPER_ADMIN_CREDENTIALS = {
-  email: __ENV.SUPER_ADMIN_EMAIL || 'superadmin@pgstay.com',
+  email: __ENV.SUPER_ADMIN_EMAIL || 'superadmin@roomipilot.com',
   password: __ENV.SUPER_ADMIN_PASSWORD || 'superadmin123',
 };
 
-// Thresholds — define acceptable performance limits
+// Thresholds â€” define acceptable performance limits
 export const THRESHOLDS = {
   http_req_duration: ['p(95)<500', 'p(99)<1000'],   // 95% < 500ms, 99% < 1s
   http_req_failed: ['rate<0.01'],                     // <1% failure rate

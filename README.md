@@ -1,21 +1,21 @@
-# PG Stay — Multi-Tenant SaaS Platform
+﻿# PG Stay â€” Multi-Tenant SaaS Platform
 
-A full-stack SaaS web application for managing Paying Guest (PG) and hostel accommodations. Multiple PG owners can onboard their businesses, manage tenants, track payments, and more — all from a single platform.
+A full-stack SaaS web application for managing Paying Guest (PG) and hostel accommodations. Multiple PG owners can onboard their businesses, manage tenants, track payments, and more â€” all from a single platform.
 
 ## Features
 
 ### Multi-Tenancy (SaaS)
-- **Organization onboarding** — PG owners register their business with a unique slug
-- **Row-level tenant isolation** — each organization's data is fully isolated via `org_id`
-- **Plan-based limits** — Free, Starter, Pro, Enterprise plans with property/bed/user limits
-- **Subscription management** — billing, invoices, plan upgrades
-- **Super Admin panel** — platform-wide administration for managing all organizations
+- **Organization onboarding** â€” PG owners register their business with a unique slug
+- **Row-level tenant isolation** â€” each organization's data is fully isolated via `org_id`
+- **Plan-based limits** â€” Free, Starter, Pro, Enterprise plans with property/bed/user limits
+- **Subscription management** â€” billing, invoices, plan upgrades
+- **Super Admin panel** â€” platform-wide administration for managing all organizations
 
 ### User Roles
-- **Super Admin** — platform owner; manages all organizations, plans, subscriptions
-- **Admin** — PG/hostel owner; manages their properties, rooms, beds, tenants, payments
-- **Tenant** — PG resident; views profile, stay details, makes payments
-- **Guest** — public visitor; views available beds for a specific organization
+- **Super Admin** â€” platform owner; manages all organizations, plans, subscriptions
+- **Admin** â€” PG/hostel owner; manages their properties, rooms, beds, tenants, payments
+- **Tenant** â€” PG resident; views profile, stay details, makes payments
+- **Guest** â€” public visitor; views available beds for a specific organization
 
 ### Core Functionality
 - Property management (buildings, rooms, beds)
@@ -54,7 +54,7 @@ DATABASE_URL=postgresql://user:password@localhost:5432/pgstay
 JWT_SECRET=your-jwt-secret
 RAZORPAY_KEY_ID=your-razorpay-key
 RAZORPAY_KEY_SECRET=your-razorpay-secret
-SUPER_ADMIN_EMAIL=superadmin@pgstay.com
+SUPER_ADMIN_EMAIL=superadmin@roomipilot.com
 SUPER_ADMIN_PASSWORD=superadmin123
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASS=your-app-password
@@ -72,18 +72,18 @@ On first run, the system auto-creates:
 
 | Role | Email | Password | Org Slug |
 |------|-------|----------|----------|
-| Super Admin | superadmin@pgstay.com | superadmin123 | — |
-| Admin | admin@pgstay.com | admin123 | bajrang-hostels |
+| Super Admin | superadmin@roomipilot.com | superadmin123 | â€” |
+| Admin | admin@roomipilot.com | admin123 | bajrang-hostels |
 
 ## API Routes
 
 ### Public
-- `POST /api/auth/login` — Login (supports org slug)
-- `POST /api/auth/register` — Register user within org
-- `POST /api/auth/register-organization` — Onboard new organization
-- `GET /api/guest/:orgSlug/buildings` — Public building list
-- `GET /api/guest/:orgSlug/rooms/:buildingId` — Public room list
-- `GET /api/guest/:orgSlug/vacancies/:roomId` — Available beds
+- `POST /api/auth/login` â€” Login (supports org slug)
+- `POST /api/auth/register` â€” Register user within org
+- `POST /api/auth/register-organization` â€” Onboard new organization
+- `GET /api/guest/:orgSlug/buildings` â€” Public building list
+- `GET /api/guest/:orgSlug/rooms/:buildingId` â€” Public room list
+- `GET /api/guest/:orgSlug/vacancies/:roomId` â€” Available beds
 
 ### Admin (requires auth + org context)
 - `GET/POST /api/admin/buildings`
@@ -109,7 +109,7 @@ On first run, the system auto-creates:
 
 | Plan | Properties | Beds | Users | Price/mo |
 |------|-----------|------|-------|----------|
-| Free | 1 | 10 | 5 | ₹0 |
-| Starter | 3 | 50 | 20 | ₹499 |
-| Pro | 10 | 200 | 100 | ₹1,499 |
-| Enterprise | Unlimited | Unlimited | Unlimited | ₹4,999 |
+| Free | 1 | 10 | 5 | â‚¹0 |
+| Starter | 3 | 50 | 20 | â‚¹499 |
+| Pro | 10 | 200 | 100 | â‚¹1,499 |
+| Enterprise | Unlimited | Unlimited | Unlimited | â‚¹4,999 |
