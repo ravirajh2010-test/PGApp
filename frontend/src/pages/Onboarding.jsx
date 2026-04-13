@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FormattedMessage } from 'react-intl';
 import api, { setAuthData } from '../services/api';
@@ -20,10 +20,10 @@ const Onboarding = () => {
   });
 
   const plans = [
-    { id: 'free', name: 'Free', price: '₹0/mo', properties: 1, beds: 10, users: 5, desc: 'Get started for free' },
-    { id: 'starter', name: 'Starter', price: '₹499/mo', properties: 3, beds: 50, users: 20, desc: 'For small PGs' },
-    { id: 'pro', name: 'Pro', price: '₹1,499/mo', properties: 10, beds: 200, users: 100, desc: 'For growing businesses', popular: true },
-    { id: 'enterprise', name: 'Enterprise', price: '₹4,999/mo', properties: 'Unlimited', beds: 'Unlimited', users: 'Unlimited', desc: 'For large operations' },
+    { id: 'free', name: 'Free', price: 'â‚¹0/mo', properties: 1, beds: 10, users: 5, desc: 'Get started for free' },
+    { id: 'starter', name: 'Starter', price: 'â‚¹499/mo', properties: 3, beds: 50, users: 20, desc: 'For small PGs' },
+    { id: 'pro', name: 'Pro', price: 'â‚¹1,499/mo', properties: 10, beds: 200, users: 100, desc: 'For growing businesses', popular: true },
+    { id: 'enterprise', name: 'Enterprise', price: 'â‚¹4,999/mo', properties: 'Unlimited', beds: 'Unlimited', users: 'Unlimited', desc: 'For large operations' },
   ];
 
   const generateSlug = (name) => {
@@ -67,7 +67,7 @@ const Onboarding = () => {
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <img src="/images/aupl8-logo.svg" alt="RoomiPilot" className="h-10 w-10" />
+            <img src="/images/roomipilot-logo.png" alt="RoomiPilot" className="h-10 w-10" />
             <span className="text-4xl font-extrabold text-gray-800">Roomi<span className="text-brand-500">Pilot</span></span>
           </div>
           <p className="text-gray-600"><FormattedMessage id="onboarding.setupOrg" defaultMessage="Set up your organization on RoomiPilot in minutes" /></p>

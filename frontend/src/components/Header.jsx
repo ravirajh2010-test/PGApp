@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { FormattedMessage } from 'react-intl';
 import AvailabilityModal from './AvailabilityModal';
@@ -19,7 +19,7 @@ const Header = () => {
     <header className="bg-gradient-to-r from-dark-900 to-brand-950 text-white shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
         <Link to="/" className="flex items-center gap-2">
-          <img src="/images/aupl8-logo.svg" alt="RoomiPilot" className="h-9 w-9" />
+          <img src="/images/roomipilot-logo.png" alt="RoomiPilot" className="h-9 w-9" />
           <span className="text-xl font-extrabold">{org ? org.name : <span>Roomi<span className="text-brand-400">Pilot</span></span>}</span>
         </Link>
         <div className="flex items-center gap-6">

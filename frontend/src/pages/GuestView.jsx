@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { FormattedMessage } from 'react-intl';
 import api from '../services/api';
@@ -26,7 +26,7 @@ const GuestView = () => {
             <div className="flex flex-col md:flex-row items-center gap-12">
               <div className="flex-1 text-center md:text-left">
                 <div className="flex items-center gap-3 mb-6 justify-center md:justify-start">
-                  <img src="/images/aupl8-logo.svg" alt="RoomiPilot" className="h-14 w-14" />
+                  <img src="/images/roomipilot-logo.png" alt="RoomiPilot" className="h-14 w-14" />
                   <span className="text-4xl md:text-5xl font-extrabold tracking-tight">
                     Roomi<span className="text-brand-400">Pilot</span>
                   </span>
@@ -49,13 +49,13 @@ const GuestView = () => {
               <div className="flex-1 hidden md:flex justify-center">
                 <div className="relative">
                   <div className="w-80 h-80 bg-gradient-to-br from-brand-400/20 to-brand-600/20 rounded-3xl backdrop-blur-sm border border-brand-400/20 p-8 flex items-center justify-center">
-                    <img src="/images/aupl8-logo.svg" alt="RoomiPilot" className="w-48 h-48 drop-shadow-2xl" />
+                    <img src="/images/roomipilot-logo.png" alt="RoomiPilot" className="w-48 h-48 drop-shadow-2xl" />
                   </div>
                   <div className="absolute -top-4 -right-4 w-20 h-20 bg-brand-500 rounded-2xl flex items-center justify-center shadow-lg">
-                    <span className="text-3xl">🏢</span>
+                    <span className="text-3xl">ðŸ¢</span>
                   </div>
                   <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-brand-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    <span className="text-2xl">🔒</span>
+                    <span className="text-2xl">ðŸ”’</span>
                   </div>
                 </div>
               </div>
@@ -72,21 +72,21 @@ const GuestView = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="group bg-white rounded-2xl shadow-md hover:shadow-xl p-8 text-center transition border border-gray-100 hover:border-brand-200">
               <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:bg-brand-100 transition">
-                <span className="text-3xl">🏠</span>
+                <span className="text-3xl">ðŸ </span>
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-3"><FormattedMessage id="guest.propertyMgmt" defaultMessage="Property Management" /></h3>
               <p className="text-gray-500"><FormattedMessage id="guest.propertyMgmtDesc" defaultMessage="Manage buildings, rooms, and beds with real-time occupancy tracking" /></p>
             </div>
             <div className="group bg-white rounded-2xl shadow-md hover:shadow-xl p-8 text-center transition border border-gray-100 hover:border-brand-200">
               <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:bg-brand-100 transition">
-                <span className="text-3xl">👥</span>
+                <span className="text-3xl">ðŸ‘¥</span>
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-3"><FormattedMessage id="guest.tenantMgmt" defaultMessage="Tenant Management" /></h3>
               <p className="text-gray-500"><FormattedMessage id="guest.tenantMgmtDesc" defaultMessage="Onboard tenants, track stays, and manage check-ins/check-outs" /></p>
             </div>
             <div className="group bg-white rounded-2xl shadow-md hover:shadow-xl p-8 text-center transition border border-gray-100 hover:border-brand-200">
               <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:bg-brand-100 transition">
-                <span className="text-3xl">💰</span>
+                <span className="text-3xl">ðŸ’°</span>
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-3"><FormattedMessage id="guest.paymentTracking" defaultMessage="Payment Tracking" /></h3>
               <p className="text-gray-500"><FormattedMessage id="guest.paymentTrackingDesc" defaultMessage="Integrated Razorpay payments with automatic rent collection" /></p>
@@ -103,7 +103,7 @@ const GuestView = () => {
                 <div className="text-brand-200 text-sm">Data Isolation</div>
               </div>
               <div>
-                <div className="text-4xl font-extrabold mb-1">∞</div>
+                <div className="text-4xl font-extrabold mb-1">âˆž</div>
                 <div className="text-brand-200 text-sm">Organizations</div>
               </div>
               <div>
@@ -138,7 +138,7 @@ const GuestView = () => {
         <footer className="bg-dark-900 text-gray-400 py-8">
           <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <img src="/images/aupl8-logo.svg" alt="RoomiPilot" className="h-8 w-8" />
+              <img src="/images/roomipilot-logo.png" alt="RoomiPilot" className="h-8 w-8" />
               <span className="text-white font-bold text-lg">RoomiPilot</span>
             </div>
             <p className="text-sm">&copy; {new Date().getFullYear()} RoomiPilot. All rights reserved.</p>
@@ -199,7 +199,7 @@ const GuestView = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Buildings Section */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-brand-600 mb-4 pb-2 border-b-2 border-brand-500">🏢 <FormattedMessage id="guest.buildings" defaultMessage="Buildings" /></h2>
+          <h2 className="text-2xl font-bold text-brand-600 mb-4 pb-2 border-b-2 border-brand-500">ðŸ¢ <FormattedMessage id="guest.buildings" defaultMessage="Buildings" /></h2>
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {buildings.length > 0 ? (
               buildings.map((b) => (
@@ -223,7 +223,7 @@ const GuestView = () => {
 
         {/* Rooms Section */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-brand-600 mb-4 pb-2 border-b-2 border-brand-500">🚪 <FormattedMessage id="guest.rooms" defaultMessage="Rooms" /></h2>
+          <h2 className="text-2xl font-bold text-brand-600 mb-4 pb-2 border-b-2 border-brand-500">ðŸšª <FormattedMessage id="guest.rooms" defaultMessage="Rooms" /></h2>
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {selectedBuilding ? (
               rooms.length > 0 ? (
@@ -251,7 +251,7 @@ const GuestView = () => {
 
         {/* Vacant Beds Section */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-brand-600 mb-4 pb-2 border-b-2 border-brand-500">🛏️ <FormattedMessage id="guest.vacantBeds" defaultMessage="Vacant Beds" /></h2>
+          <h2 className="text-2xl font-bold text-brand-600 mb-4 pb-2 border-b-2 border-brand-500">ðŸ›ï¸ <FormattedMessage id="guest.vacantBeds" defaultMessage="Vacant Beds" /></h2>
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {selectedRoom ? (
               vacancies.length > 0 ? (

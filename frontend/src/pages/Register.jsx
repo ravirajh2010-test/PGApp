@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FormattedMessage } from 'react-intl';
 import api from '../services/api';
@@ -37,7 +37,7 @@ const Register = () => {
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md border border-gray-100">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <img src="/images/aupl8-logo.svg" alt="RoomiPilot" className="h-10 w-10" />
+            <img src="/images/roomipilot-logo.png" alt="RoomiPilot" className="h-10 w-10" />
             <span className="text-3xl font-extrabold text-gray-800">Roomi<span className="text-brand-500">Pilot</span></span>
           </div>
           <h2 className="text-2xl font-bold text-gray-800"><FormattedMessage id="auth.register" defaultMessage="Register" /></h2>
@@ -85,7 +85,7 @@ const Register = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1"><FormattedMessage id="auth.password" defaultMessage="Password" /></label>
             <input
               type="password"
-              placeholder="••••••••"
+              placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"

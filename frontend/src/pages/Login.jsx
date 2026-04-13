@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FormattedMessage } from 'react-intl';
 import api, { setAuthData } from '../services/api';
@@ -19,7 +19,7 @@ const Login = () => {
 
       const res = await api.post('/auth/login', payload);
 
-      // Multi-org response — user belongs to multiple orgs
+      // Multi-org response â€” user belongs to multiple orgs
       if (res.status === 300 || res.data.organizations) {
         setOrgList(res.data.organizations);
         setLoading(false);
@@ -68,7 +68,7 @@ const Login = () => {
             <div className="absolute top-10 left-10 w-40 h-40 bg-brand-400/10 rounded-full blur-2xl"></div>
             <div className="absolute bottom-10 right-10 w-56 h-56 bg-brand-600/10 rounded-full blur-2xl"></div>
             <div className="relative text-center text-white">
-              <img src="/images/aupl8-logo.svg" alt="RoomiPilot" className="h-24 w-24 mx-auto mb-6 drop-shadow-lg" />
+              <img src="/images/roomipilot-logo.png" alt="RoomiPilot" className="h-24 w-24 mx-auto mb-6 drop-shadow-lg" />
               <h2 className="text-3xl font-extrabold mb-2">Roomi<span className="text-brand-400">Pilot</span></h2>
               <p className="text-gray-300 text-lg">Manage your PG/Hostel business with ease</p>
               <div className="mt-8 flex gap-3 justify-center">
@@ -83,7 +83,7 @@ const Login = () => {
           <div className="p-8">
             <div className="text-center mb-8">
               <div className="flex items-center justify-center gap-2 mb-2 md:hidden">
-                <img src="/images/aupl8-logo.svg" alt="RoomiPilot" className="h-10 w-10" />
+                <img src="/images/roomipilot-logo.png" alt="RoomiPilot" className="h-10 w-10" />
                 <span className="text-3xl font-extrabold text-gray-800">Roomi<span className="text-brand-500">Pilot</span></span>
               </div>
               <h2 className="text-2xl font-bold text-gray-800">
@@ -111,7 +111,7 @@ const Login = () => {
                   onClick={() => setOrgList(null)}
                   className="text-sm text-gray-500 hover:text-gray-700"
                 >
-                  ← Back to login
+                  â† Back to login
                 </button>
               </div>
             ) : (
@@ -135,7 +135,7 @@ const Login = () => {
                   </label>
                   <input
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
