@@ -322,7 +322,7 @@ const sendOtp = async (req, res) => {
         </div>
       </div>
     `;
-    sendEmail(email, '🔒 Your Password Reset OTP - PG Stay', htmlContent)
+    sendEmail(email, '🔒 Your Password Reset OTP - RoomiPilot', htmlContent)
       .then(sent => console.log(sent ? `✅ OTP email sent to ${email}` : `⚠️ OTP email failed for ${email}`))
       .catch(err => console.error('❌ OTP email error:', err.message));
 
