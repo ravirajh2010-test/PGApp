@@ -115,7 +115,7 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo,
         <body>
           <div class="container">
             <div class="header">
-              <h1>ðŸ¢ ${orgName || 'RoomiPilot'}</h1>
+              <h1>🏢 ${orgName || 'RoomiPilot'}</h1>
               <p>Welcome to Your New Home</p>
             </div>
             
@@ -169,7 +169,7 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo,
       </html>
     `;
 
-    const subject = `ðŸŽ‰ Welcome to ${orgName || 'RoomiPilot'} - Your Login Credentials`;
+    const subject = `🎉 Welcome to ${orgName || 'RoomiPilot'} - Your Login Credentials`;
     const result = await sendEmail(tenantEmail, subject, htmlContent);
     if (result) console.log(`✅ Tenant credentials email sent to ${tenantEmail}`);
     return result;
@@ -201,7 +201,7 @@ const sendThankYouEmail = async (tenantEmail, tenantName, bedInfo, stayDuration,
         <body>
           <div class="container">
             <div class="header">
-              <h1>ðŸ¢ ${orgName || 'RoomiPilot'}</h1>
+              <h1>🏢 ${orgName || 'RoomiPilot'}</h1>
               <p>Thank You For Your Stay</p>
             </div>
             
@@ -209,7 +209,7 @@ const sendThankYouEmail = async (tenantEmail, tenantName, bedInfo, stayDuration,
               <p>Hello <strong>${tenantName}</strong>,</p>
               
               <div class="thank-you-box">
-                <h2>Thank You! ðŸ™</h2>
+                <h2>Thank You! 🙏</h2>
                 <p>We truly appreciate your stay with us. It was a pleasure hosting you!</p>
               </div>
               
@@ -251,7 +251,7 @@ const sendThankYouEmail = async (tenantEmail, tenantName, bedInfo, stayDuration,
       </html>
     `;
 
-    const subject = `ðŸ™ Thank You For Your Stay - ${orgName || 'RoomiPilot'}`;
+    const subject = `🙏 Thank You For Your Stay - ${orgName || 'RoomiPilot'}`;
     const result = await sendEmail(tenantEmail, subject, htmlContent);
     if (result) console.log(`✅ Thank you email sent to ${tenantEmail}`);
     return result;
@@ -280,7 +280,7 @@ const sendPaymentReminder = async (tenantEmail, tenantName, rent, bedInfo, month
         <body>
           <div class="container">
             <div class="header">
-              <h1>ðŸ¢ ${orgName || 'RoomiPilot'}</h1>
+              <h1>🏢 ${orgName || 'RoomiPilot'}</h1>
               <p>Payment Reminder</p>
             </div>
             <div class="content">
@@ -355,7 +355,7 @@ const sendRentReceipt = async (tenantEmail, tenantName, rent, bedInfo, monthName
         <body>
           <div class="container">
             <div class="header">
-              <h1>ðŸ’° Rent Payment Receipt</h1>
+              <h1>💰 Rent Payment Receipt</h1>
               <p>${orgName || 'RoomiPilot'}</p>
             </div>
             
@@ -389,11 +389,11 @@ const sendRentReceipt = async (tenantEmail, tenantName, rent, bedInfo, monthName
               <div class="amount-box">
                 <div class="amount-label">Amount Paid</div>
                 <div class="amount">₹${rent}</div>
-                <div class="verified">âœ“ Payment Verified</div>
+                <div class="verified">✔ Payment Verified</div>
               </div>
               
               <div class="info-box">
-                <strong>ðŸ“Œ Information:</strong>
+                <strong>📌 Information:</strong>
                 <ul style="margin: 10px 0 0 0; padding-left: 20px;">
                   <li>This receipt serves as proof of your rent payment for ${monthName}</li>
                   <li>Please keep this receipt for your records</li>
@@ -416,12 +416,12 @@ const sendRentReceipt = async (tenantEmail, tenantName, rent, bedInfo, monthName
       </html>
     `;
 
-    const subject = `ðŸ’° Rent Receipt - ${monthName} - ${orgName || 'RoomiPilot'}`;
+    const subject = `💰 Rent Receipt - ${monthName} - ${orgName || 'RoomiPilot'}`;
     const result = await sendEmail(tenantEmail, subject, htmlContent);
-    if (result) console.log(`âœ… Rent receipt sent to ${tenantEmail}`);
+    if (result) console.log(`✅ Rent receipt sent to ${tenantEmail}`);
     return result;
   } catch (error) {
-    console.error('âŒ Error sending rent receipt:', error.message);
+    console.error('❌ Error sending rent receipt:', error.message);
     return false;
   }
 };
@@ -449,7 +449,7 @@ const sendOrgWelcomeEmail = async (orgEmail, orgName, adminName, adminEmail, pla
         <body>
           <div class="container">
             <div class="header">
-              <h1>ðŸ¢ RoomiPilot</h1>
+              <h1>🏢 RoomiPilot</h1>
               <p>Welcome to RoomiPilot Platform</p>
             </div>
             
@@ -457,7 +457,7 @@ const sendOrgWelcomeEmail = async (orgEmail, orgName, adminName, adminEmail, pla
               <p>Hello <strong>${adminName}</strong>,</p>
               
               <div class="welcome-box">
-                <h2>ðŸŽ‰ Congratulations!</h2>
+                <h2>🎉 Congratulations!</h2>
                 <p>Your PG <strong>${orgName}</strong> has been successfully registered on RoomiPilot!</p>
               </div>
               
@@ -502,12 +502,12 @@ const sendOrgWelcomeEmail = async (orgEmail, orgName, adminName, adminEmail, pla
       </html>
     `;
 
-    const subject = 'ðŸŽ‰ Welcome to RoomiPilot - Your PG is Registered!';
+    const subject = '🎉 Welcome to RoomiPilot - Your PG is Registered!';
     const result = await sendEmail(orgEmail, subject, htmlContent);
-    if (result) console.log(`âœ… Organization welcome email sent to ${orgEmail}`);
+    if (result) console.log(`✅ Organization welcome email sent to ${orgEmail}`);
     return result;
   } catch (error) {
-    console.error('âŒ Error sending organization welcome email:', error.message);
+    console.error('❌ Error sending organization welcome email:', error.message);
     return false;
   }
 };
@@ -533,14 +533,14 @@ const sendDeactivationEmail = async (tenantEmail, tenantName, bedInfo, orgName) 
         <body>
           <div class="container">
             <div class="header">
-              <h1>ðŸ¢ ${orgName || 'RoomiPilot'}</h1>
+              <h1>🏢 ${orgName || 'RoomiPilot'}</h1>
               <p>Thank You For Your Stay</p>
             </div>
             <div class="content">
               <p>Dear <strong>${tenantName}</strong>,</p>
 
               <div class="thank-you-box">
-                <h2>ðŸ™ Thank You!</h2>
+                <h2>🙏 Thank You!</h2>
                 <p>We sincerely appreciate your stay with us. It was a pleasure having you as part of our community!</p>
               </div>
 
@@ -551,7 +551,7 @@ const sendDeactivationEmail = async (tenantEmail, tenantName, bedInfo, orgName) 
               </div>
 
               <div class="review-box">
-                <h3 style="margin-top: 0; color: #f57c00;">â­ We'd Love Your Feedback!</h3>
+                <h3 style="margin-top: 0; color: #f57c00;">⭐ We'd Love Your Feedback!</h3>
                 <p>Your feedback means the world to us. If you had a good experience, we'd really appreciate it if you could leave us a review on <strong>Google Reviews</strong>. It helps other tenants find a great place to stay!</p>
               </div>
 
@@ -569,17 +569,17 @@ const sendDeactivationEmail = async (tenantEmail, tenantName, bedInfo, orgName) 
       </html>
     `;
 
-    const subject = `ðŸ™ Thank You For Your Stay - ${orgName || 'RoomiPilot'}`;
+    const subject = `🙏 Thank You For Your Stay - ${orgName || 'RoomiPilot'}`;
     const result = await sendEmail(tenantEmail, subject, htmlContent);
-    if (result) console.log(`âœ… Deactivation email sent to ${tenantEmail}`);
+    if (result) console.log(`✅ Deactivation email sent to ${tenantEmail}`);
     return result;
   } catch (error) {
-    console.error('âŒ Error sending deactivation email:', error.message);
+    console.error('❌ Error sending deactivation email:', error.message);
     return false;
   }
 };
 
-// â”€â”€ Stay Extension Reminder (3 days before end_date) â”€â”€â”€â”€â”€â”€â”€
+// ── Stay Extension Reminder (3 days before end_date) ───────
 const sendStayExtensionReminder = async (tenantEmail, tenantName, bedInfo, endDate, orgName) => {
   try {
     const formattedEndDate = new Date(endDate).toLocaleDateString('en-IN', {
@@ -607,34 +607,34 @@ const sendStayExtensionReminder = async (tenantEmail, tenantName, bedInfo, endDa
         <body>
           <div class="container">
             <div class="header">
-              <h1>â° Stay Ending Soon</h1>
+              <h1>⏰ Stay Ending Soon</h1>
             </div>
             <div class="content">
               <p>Dear <strong>${tenantName}</strong>,</p>
               
               <div class="alert-box">
-                <strong>âš ï¸ Your stay is ending in 3 days!</strong>
+                <strong>⚠️ Your stay is ending in 3 days!</strong>
                 <p style="margin: 5px 0 0 0;">Your current stay at <strong>${orgName || 'RoomiPilot'}</strong> is scheduled to end on <strong>${formattedEndDate}</strong>.</p>
               </div>
 
               <div class="detail-box">
                 <div class="detail-item">
-                  <span class="detail-label">ðŸ  Bed:</span> ${bedInfo}
+                  <span class="detail-label">🏠 Bed:</span> ${bedInfo}
                 </div>
                 <div class="detail-item">
-                  <span class="detail-label">ðŸ“… End Date:</span> ${formattedEndDate}
+                  <span class="detail-label">📅 End Date:</span> ${formattedEndDate}
                 </div>
               </div>
 
               <div class="cta-box">
-                <h3>ðŸ”„ Want to Continue Your Stay?</h3>
+                <h3>🔄 Want to Continue Your Stay?</h3>
                 <p>Please contact your admin <strong>before ${formattedEndDate}</strong> to extend your stay and avoid release of your bed.</p>
                 <p style="margin-top: 10px; font-size: 14px; color: #555;">
                   Early confirmation helps us ensure your bed is reserved for you.
                 </p>
               </div>
 
-              <p><strong>ðŸ“Œ What happens if you don't respond?</strong></p>
+              <p><strong>📌 What happens if you don't respond?</strong></p>
               <ul>
                 <li>Your bed will be released on ${formattedEndDate}</li>
                 <li>Your account will be deactivated</li>
@@ -655,12 +655,12 @@ const sendStayExtensionReminder = async (tenantEmail, tenantName, bedInfo, endDa
       </html>
     `;
 
-    const subject = `â° Stay Ending Soon - Action Required - ${orgName || 'RoomiPilot'}`;
+    const subject = `⏰ Stay Ending Soon - Action Required - ${orgName || 'RoomiPilot'}`;
     const result = await sendEmail(tenantEmail, subject, htmlContent);
-    if (result) console.log(`âœ… Stay extension reminder sent to ${tenantEmail}`);
+    if (result) console.log(`✅ Stay extension reminder sent to ${tenantEmail}`);
     return result;
   } catch (error) {
-    console.error('âŒ Error sending stay extension reminder:', error.message);
+    console.error('❌ Error sending stay extension reminder:', error.message);
     return false;
   }
 };
