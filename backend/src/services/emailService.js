@@ -53,6 +53,19 @@ const getTransporter = () => {
 };
 
 // Unified send function: tries Resend first, falls back to SMTP
+const sendViaSMTP = async (to, subject, html) => {
+  const mailer = getTransporter();
+  if (!mailer) return false;
+  try {
+    await mailer.sendMail({ from: process.env.EMAIL_USER, to, subject, html });
+    console.log(`✅ Email sent via SMTP to ${to}`);
+    return true;
+  } catch (err) {
+    console.error('❌ SMTP error:', err.message);
+    return false;
+  }
+};
+
 const sendEmail = async (to, subject, html) => {
   const provider = getEmailProvider();
   if (!provider) return false;
@@ -67,28 +80,18 @@ const sendEmail = async (to, subject, html) => {
         html,
       });
       if (error) {
-        console.error('❌ Resend error:', error);
-        return false;
+        console.error('❌ Resend error:', error, '— falling back to SMTP');
+        return sendViaSMTP(to, subject, html);
       }
       console.log(`✅ Email sent via Resend to ${to} (id: ${data.id})`);
       return true;
     } catch (err) {
-      console.error('❌ Resend exception:', err.message);
-      return false;
+      console.error('❌ Resend exception:', err.message, '— falling back to SMTP');
+      return sendViaSMTP(to, subject, html);
     }
   }
 
-  // SMTP fallback
-  const mailer = getTransporter();
-  if (!mailer) return false;
-  try {
-    await mailer.sendMail({ from: process.env.EMAIL_USER, to, subject, html });
-    console.log(`✅ Email sent via SMTP to ${to}`);
-    return true;
-  } catch (err) {
-    console.error('❌ SMTP error:', err.message);
-    return false;
-  }
+  return sendViaSMTP(to, subject, html);
 };
 
 const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo, orgName) => {
