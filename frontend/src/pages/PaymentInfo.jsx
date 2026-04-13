@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FormattedMessage } from 'react-intl';
+import { FormattedMessage, useIntl } from 'react-intl';
 import api from '../services/api';
 import { exportPaymentData } from '../services/exportUtils';
 
 const PaymentInfo = () => {
   const navigate = useNavigate();
+  const intl = useIntl();
   const [tenants, setTenants] = useState([]);
   const [monthName, setMonthName] = useState('');
   const [loading, setLoading] = useState(true);
@@ -153,7 +154,7 @@ const PaymentInfo = () => {
           <h1 className="text-3xl font-bold text-gray-800">💰 <FormattedMessage id="payment.paymentInfo" defaultMessage="Payment Info" /></h1>
           <div className="mt-3 flex items-center gap-4">
             <p className="text-gray-600">
-              Payment status for <span className="font-semibold text-brand-600">{monthName}</span>
+              <FormattedMessage id="payment.paymentStatusFor" defaultMessage="Payment status for" /> <span className="font-semibold text-brand-600">{monthName}</span>
             </p>
             <div className="flex items-center gap-2">
               <select
@@ -198,7 +199,7 @@ const PaymentInfo = () => {
         </div>
         {naCount > 0 && (
           <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-gray-400">
-            <h3 className="text-sm font-semibold text-gray-600 uppercase">NA</h3>
+            <h3 className="text-sm font-semibold text-gray-600 uppercase"><FormattedMessage id="payment.naLabel" defaultMessage="NA" /></h3>
             <p className="text-3xl font-bold text-gray-500">{naCount}</p>
           </div>
         )}
@@ -208,15 +209,15 @@ const PaymentInfo = () => {
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="px-6 py-4 bg-brand-50 border-b-2 border-brand-500 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-gray-800">Payment Status — {monthName}</h2>
+            <h2 className="text-xl font-bold text-gray-800"><FormattedMessage id="payment.paymentStatusTitle" defaultMessage="Payment Status" /> — {monthName}</h2>
             <select
               value={roomFilter}
               onChange={(e) => setRoomFilter(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white font-semibold text-gray-700 text-sm"
             >
-              <option value="">All Rooms</option>
+              <option value="">{intl.formatMessage({ id: 'payment.allRooms', defaultMessage: 'All Rooms' })}</option>
               {roomOptions.map(room => (
-                <option key={room} value={room}>Room {room}</option>
+                <option key={room} value={room}>{intl.formatMessage({ id: 'payment.roomLabel', defaultMessage: 'Room {room}' }, { room })}</option>
               ))}
             </select>
           </div>
@@ -225,13 +226,13 @@ const PaymentInfo = () => {
               onClick={() => navigate('/tenant-payment-search')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition"
             >
-              🔍 Search Tenant
+              🔍 <FormattedMessage id="payment.searchTenant" defaultMessage="Search Tenant" />
             </button>
             <button
               onClick={() => setShowExportModal(true)}
               className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold transition"
             >
-              📊 Export
+              📊 <FormattedMessage id="payment.export" defaultMessage="Export" />
             </button>
             <button
               onClick={() => setShowOfflineModal(true)}
@@ -243,7 +244,7 @@ const PaymentInfo = () => {
               onClick={() => fetchPaymentInfo(selectedMonth, selectedYear)}
               className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg font-semibold transition"
             >
-              🔄 Refresh
+              🔄 <FormattedMessage id="payment.refresh" defaultMessage="Refresh" />
             </button>
           </div>
         </div>
@@ -253,13 +254,13 @@ const PaymentInfo = () => {
               <thead className="bg-gray-100 border-b">
                 <tr>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700">#</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Tenant Name</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Email</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Bed Info</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Rent (₹)</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Month</th>
-                  <th className="px-6 py-3 text-center font-semibold text-gray-700">Status</th>
-                  <th className="px-6 py-3 text-center font-semibold text-gray-700">Action</th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="payment.tenantName" defaultMessage="Tenant Name" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="payment.emailHeader" defaultMessage="Email" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="payment.bedInfo" defaultMessage="Bed Info" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="payment.rentHeader" defaultMessage="Rent (₹)" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="payment.monthHeader" defaultMessage="Month" /></th>
+                  <th className="px-6 py-3 text-center font-semibold text-gray-700"><FormattedMessage id="payment.statusHeader" defaultMessage="Status" /></th>
+                  <th className="px-6 py-3 text-center font-semibold text-gray-700"><FormattedMessage id="payment.actionHeader" defaultMessage="Action" /></th>
                 </tr>
               </thead>
               <tbody>
@@ -285,18 +286,18 @@ const PaymentInfo = () => {
                     <td className="px-6 py-3 text-center">
                       {tenant.payment_status === 'Paid' ? (
                         <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
-                          ✅ Paid
+                          ✅ <FormattedMessage id="payment.paidStatus" defaultMessage="Paid" />
                         </span>
                       ) : tenant.payment_status === 'NA' ? (
                         <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-semibold">
-                          — NA
+                          — <FormattedMessage id="payment.naLabel" defaultMessage="NA" />
                         </span>
                       ) : (
                         <span
                           title={`Bill Generated: ₹${tenant.billAmount} due`}
                           className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold cursor-help inline-block"
                         >
-                          📄 Bill Generated
+                          📄 <FormattedMessage id="payment.billGenerated" defaultMessage="Bill Generated" />
                         </span>
                       )}
                     </td>
@@ -305,7 +306,7 @@ const PaymentInfo = () => {
                         <div className="relative inline-block">
                           {sendingReminder[tenant.id] ? (
                             <span className="bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-semibold">
-                              ⏳ Sending...
+                              ⏳ <FormattedMessage id="payment.sending" defaultMessage="Sending..." />
                             </span>
                           ) : (
                             <>
@@ -313,7 +314,7 @@ const PaymentInfo = () => {
                                 onClick={(e) => { e.stopPropagation(); setReminderDropdown(reminderDropdown === tenant.id ? null : tenant.id); }}
                                 className="bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold transition"
                               >
-                                🔔 Remind ▾
+                                🔔 <FormattedMessage id="payment.remind" defaultMessage="Remind" /> ▾
                               </button>
                               {reminderDropdown === tenant.id && (
                                 <div className="absolute right-0 bottom-full mb-1 w-40 bg-white rounded-md shadow-xl border z-50">
@@ -321,13 +322,13 @@ const PaymentInfo = () => {
                                     onClick={() => handleSendReminder(tenant.id, tenant.name, 'email')}
                                     className="w-full text-left px-3 py-2 hover:bg-brand-50 text-gray-700 text-xs font-medium rounded-t-md transition flex items-center gap-1.5"
                                   >
-                                    📧 Email
+                                    📧 <FormattedMessage id="payment.emailMethod" defaultMessage="Email" />
                                   </button>
                                   <button
                                     onClick={() => handleSendReminder(tenant.id, tenant.name, 'whatsapp')}
                                     className="w-full text-left px-3 py-2 hover:bg-green-50 text-gray-700 text-xs font-medium rounded-b-md transition flex items-center gap-1.5 border-t"
                                   >
-                                    💬 WhatsApp
+                                    💬 <FormattedMessage id="payment.whatsappMethod" defaultMessage="WhatsApp" />
                                   </button>
                                 </div>
                               )}
@@ -341,7 +342,7 @@ const PaymentInfo = () => {
               </tbody>
             </table>
           ) : (
-            <p className="p-6 text-center text-gray-500">No tenants found</p>
+            <p className="p-6 text-center text-gray-500"><FormattedMessage id="payment.noTenantsFound" defaultMessage="No tenants found" /></p>
           )}
         </div>
       </div>
@@ -351,7 +352,7 @@ const PaymentInfo = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="px-6 py-4 bg-purple-50 border-b-2 border-purple-500 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-800">📊 Export Payment Data</h2>
+              <h2 className="text-xl font-bold text-gray-800">📊 <FormattedMessage id="payment.exportTitle" defaultMessage="Export Payment Data" /></h2>
               <button
                 onClick={() => setShowExportModal(false)}
                 className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
@@ -361,7 +362,7 @@ const PaymentInfo = () => {
             </div>
             <div className="px-6 py-6 space-y-3">
               <p className="text-gray-600 mb-4">
-                Export Payment Status for <span className="font-semibold">{monthName}</span>
+                <FormattedMessage id="payment.exportStatusFor" defaultMessage="Export Payment Status for" /> <span className="font-semibold">{monthName}</span>
               </p>
               <button
                 onClick={() => handleExport('csv')}
@@ -372,7 +373,7 @@ const PaymentInfo = () => {
                     : 'bg-blue-600 hover:bg-blue-700'
                 } text-white px-4 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2`}
               >
-                📄 {exporting ? 'Exporting...' : 'Export as CSV'}
+                📄 {exporting ? intl.formatMessage({ id: 'payment.exporting', defaultMessage: 'Exporting...' }) : intl.formatMessage({ id: 'payment.exportCsv', defaultMessage: 'Export as CSV' })}
               </button>
               <button
                 onClick={() => handleExport('excel')}
@@ -383,7 +384,7 @@ const PaymentInfo = () => {
                     : 'bg-green-600 hover:bg-green-700'
                 } text-white px-4 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2`}
               >
-                📊 {exporting ? 'Exporting...' : 'Export as Excel'}
+                📊 {exporting ? intl.formatMessage({ id: 'payment.exporting', defaultMessage: 'Exporting...' }) : intl.formatMessage({ id: 'payment.exportExcel', defaultMessage: 'Export as Excel' })}
               </button>
               <button
                 onClick={() => handleExport('pdf')}
@@ -394,7 +395,7 @@ const PaymentInfo = () => {
                     : 'bg-red-600 hover:bg-red-700'
                 } text-white px-4 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2`}
               >
-                🔴 {exporting ? 'Exporting...' : 'Export as PDF'}
+                🔴 {exporting ? intl.formatMessage({ id: 'payment.exporting', defaultMessage: 'Exporting...' }) : intl.formatMessage({ id: 'payment.exportPdf', defaultMessage: 'Export as PDF' })}
               </button>
             </div>
             <div className="px-6 py-4 border-t bg-gray-50 flex justify-end">
@@ -402,7 +403,7 @@ const PaymentInfo = () => {
                 onClick={() => setShowExportModal(false)}
                 className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition"
               >
-                Cancel
+                <FormattedMessage id="common.cancel" defaultMessage="Cancel" />
               </button>
             </div>
           </div>
@@ -414,7 +415,7 @@ const PaymentInfo = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] overflow-hidden">
             <div className="px-6 py-4 bg-green-50 border-b-2 border-green-500 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-800">💵 Mark Offline Payment — {monthName}</h2>
+              <h2 className="text-xl font-bold text-gray-800">💵 <FormattedMessage id="payment.markOfflineTitle" defaultMessage="Mark Offline Payment" /> — {monthName}</h2>
               <button
                 onClick={() => setShowOfflineModal(false)}
                 className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
@@ -428,11 +429,11 @@ const PaymentInfo = () => {
                   <thead className="bg-gray-100 border-b sticky top-0">
                     <tr>
                       <th className="px-6 py-3 text-left font-semibold text-gray-700">#</th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700">Tenant</th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700">Bed Info</th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700">Rent</th>
-                      <th className="px-6 py-3 text-center font-semibold text-gray-700">Status</th>
-                      <th className="px-6 py-3 text-center font-semibold text-gray-700">Action</th>
+                      <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="payment.tenant" defaultMessage="Tenant" /></th>
+                      <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="payment.bedInfo" defaultMessage="Bed Info" /></th>
+                      <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="payment.rentHeader" defaultMessage="Rent" /></th>
+                      <th className="px-6 py-3 text-center font-semibold text-gray-700"><FormattedMessage id="payment.statusHeader" defaultMessage="Status" /></th>
+                      <th className="px-6 py-3 text-center font-semibold text-gray-700"><FormattedMessage id="payment.actionHeader" defaultMessage="Action" /></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -445,11 +446,11 @@ const PaymentInfo = () => {
                         <td className="px-6 py-3 text-center">
                           {tenant.payment_status === 'Paid' ? (
                             <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
-                              ✅ Paid
+                              ✅ <FormattedMessage id="payment.paidStatus" defaultMessage="Paid" />
                             </span>
                           ) : (
                             <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">
-                              ❌ Not Paid
+                              ❌ <FormattedMessage id="payment.notPaidStatus" defaultMessage="Not Paid" />
                             </span>
                           )}
                         </td>
@@ -464,7 +465,7 @@ const PaymentInfo = () => {
                                   : 'bg-green-600 hover:bg-green-700'
                               } text-white px-3 py-1 rounded-md text-xs font-semibold transition`}
                             >
-                              {markingPaid[tenant.id] ? '⏳...' : '✅ Paid'}
+                              {markingPaid[tenant.id] ? '⏳...' : '✅ ' + intl.formatMessage({ id: 'payment.paidStatus', defaultMessage: 'Paid' })}
                             </button>
                           ) : (
                             <span className="text-gray-400 text-sm">—</span>
@@ -475,7 +476,7 @@ const PaymentInfo = () => {
                   </tbody>
                 </table>
               ) : (
-                <p className="p-6 text-center text-gray-500">No tenants found</p>
+                <p className="p-6 text-center text-gray-500"><FormattedMessage id="payment.noTenantsFound" defaultMessage="No tenants found" /></p>
               )}
             </div>
             <div className="px-6 py-4 border-t bg-gray-50 flex justify-end">
@@ -483,7 +484,7 @@ const PaymentInfo = () => {
                 onClick={() => setShowOfflineModal(false)}
                 className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition"
               >
-                Close
+                <FormattedMessage id="payment.close" defaultMessage="Close" />
               </button>
             </div>
           </div>

@@ -26,6 +26,9 @@ const Header = () => {
           <nav className="flex items-center gap-4">
             {!user ? (
               <>
+                <Link to="/contact" className="hover:bg-white/10 px-4 py-2 rounded-lg transition">
+                  <FormattedMessage id="header.contactUs" defaultMessage="Contact Us" />
+                </Link>
                 <Link to="/login" className="hover:bg-white/10 px-4 py-2 rounded-lg transition">
                   <FormattedMessage id="auth.login" defaultMessage="Login" />
                 </Link>
