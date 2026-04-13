@@ -37,8 +37,8 @@ const Register = () => {
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md border border-gray-100">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <img src="/images/aupl8-logo.svg" alt="Aupl8" className="h-10 w-10" />
-            <span className="text-3xl font-extrabold text-gray-800">Aupl8 <span className="text-brand-500">Stay</span></span>
+            <img src="/images/aupl8-logo.svg" alt="RoomiPilot" className="h-10 w-10" />
+            <span className="text-3xl font-extrabold text-gray-800">Roomi<span className="text-brand-500">Pilot</span></span>
           </div>
           <h2 className="text-2xl font-bold text-gray-800"><FormattedMessage id="auth.register" defaultMessage="Register" /></h2>
         </div>

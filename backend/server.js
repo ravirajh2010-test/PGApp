@@ -6,7 +6,16 @@ const bcrypt = require('bcryptjs');
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://aupl8.vercel.app',
+    'https://www.roomipilot.com',
+    'https://roomipilot.com'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // Initialize DatabaseManager and master pool

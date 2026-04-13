@@ -26,9 +26,9 @@ const GuestView = () => {
             <div className="flex flex-col md:flex-row items-center gap-12">
               <div className="flex-1 text-center md:text-left">
                 <div className="flex items-center gap-3 mb-6 justify-center md:justify-start">
-                  <img src="/images/aupl8-logo.svg" alt="Aupl8" className="h-14 w-14" />
+                  <img src="/images/aupl8-logo.svg" alt="RoomiPilot" className="h-14 w-14" />
                   <span className="text-4xl md:text-5xl font-extrabold tracking-tight">
-                    Aupl8 <span className="text-brand-400">Stay</span>
+                    Roomi<span className="text-brand-400">Pilot</span>
                   </span>
                 </div>
                 <h1 className="text-3xl md:text-5xl font-bold mb-6 leading-tight">
@@ -49,7 +49,7 @@ const GuestView = () => {
               <div className="flex-1 hidden md:flex justify-center">
                 <div className="relative">
                   <div className="w-80 h-80 bg-gradient-to-br from-brand-400/20 to-brand-600/20 rounded-3xl backdrop-blur-sm border border-brand-400/20 p-8 flex items-center justify-center">
-                    <img src="/images/aupl8-logo.svg" alt="Aupl8 Stay" className="w-48 h-48 drop-shadow-2xl" />
+                    <img src="/images/aupl8-logo.svg" alt="RoomiPilot" className="w-48 h-48 drop-shadow-2xl" />
                   </div>
                   <div className="absolute -top-4 -right-4 w-20 h-20 bg-brand-500 rounded-2xl flex items-center justify-center shadow-lg">
                     <span className="text-3xl">🏢</span>
@@ -138,10 +138,10 @@ const GuestView = () => {
         <footer className="bg-dark-900 text-gray-400 py-8">
           <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <img src="/images/aupl8-logo.svg" alt="Aupl8" className="h-8 w-8" />
-              <span className="text-white font-bold text-lg">Aupl8 Stay</span>
+              <img src="/images/aupl8-logo.svg" alt="RoomiPilot" className="h-8 w-8" />
+              <span className="text-white font-bold text-lg">RoomiPilot</span>
             </div>
-            <p className="text-sm">&copy; {new Date().getFullYear()} Aupl8 Stay. All rights reserved.</p>
+            <p className="text-sm">&copy; {new Date().getFullYear()} RoomiPilot. All rights reserved.</p>
           </div>
         </footer>
       </div>

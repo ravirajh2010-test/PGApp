@@ -1,5 +1,5 @@
 {
-  "app.title": "Aupl8 Stay - మల్టీ-టెనెంట్ ప్రాపర్టీ మేనేజ్‌మెంట్",
+  "app.title": "RoomiPilot - మల్టీ-టెనెంట్ ప్రాపర్టీ మేనేజ్‌మెంట్",
   "app.listYourPG": "మీ PG జాబితా చేయండి",
 
   "auth.login": "లాగిన్",
@@ -147,7 +147,7 @@
   "superAdmin.noInactiveUsers": "నిష్క్రియ వినియోగదారులు కనుగొనబడలేదు",
 
   "onboarding.registerBusiness": "మీ PG వ్యాపారాన్ని నమోదు చేయండి",
-  "onboarding.setupOrg": "కొన్ని నిమిషాల్లో Aupl8 Stay లో మీ సంస్థను ఏర్పాటు చేయండి",
+  "onboarding.setupOrg": "కొన్ని నిమిషాల్లో RoomiPilot లో మీ సంస్థను ఏర్పాటు చేయండి",
   "onboarding.choosePlan": "మీ ప్లాన్ ఎంచుకోండి",
   "onboarding.orgDetails": "సంస్థ వివరాలు",
   "onboarding.createAdmin": "నిర్వాహక ఖాతా సృష్టించండి",
@@ -177,7 +177,7 @@
   "onboarding.fillRequired": "దయచేసి అన్ని అవసరమైన ఫీల్డ్‌లను నింపండి",
   "onboarding.enterAddress": "మీ వ్యాపార చిరునామాను నమోదు చేయండి",
 
-  "guest.pageTitle": "Aupl8 Stay",
+  "guest.pageTitle": "RoomiPilot",
   "guest.tagline": "మీ PG & హాస్టల్ వ్యాపారాన్ని నిర్వహించడానికి సులభమైన మార్గం",
   "guest.taglineSub": "PG యజమానులు మరియు హాస్టల్ నిర్వాహకుల కోసం మల్టీ-టెనెంట్ SaaS ప్లాట్‌ఫాం",
   "guest.propertyMgmt": "ఆస్తి నిర్వహణ",

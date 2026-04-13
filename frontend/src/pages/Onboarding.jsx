@@ -67,10 +67,10 @@ const Onboarding = () => {
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <img src="/images/aupl8-logo.svg" alt="Aupl8" className="h-10 w-10" />
-            <span className="text-4xl font-extrabold text-gray-800">Aupl8 <span className="text-brand-500">Stay</span></span>
+            <img src="/images/aupl8-logo.svg" alt="RoomiPilot" className="h-10 w-10" />
+            <span className="text-4xl font-extrabold text-gray-800">Roomi<span className="text-brand-500">Pilot</span></span>
           </div>
-          <p className="text-gray-600"><FormattedMessage id="onboarding.setupOrg" defaultMessage="Set up your organization on Aupl8 Stay in minutes" /></p>
+          <p className="text-gray-600"><FormattedMessage id="onboarding.setupOrg" defaultMessage="Set up your organization on RoomiPilot in minutes" /></p>
         </div>
 
         {/* Progress Steps */}
@@ -149,7 +149,7 @@ const Onboarding = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1"><FormattedMessage id="onboarding.orgUrlSlug" defaultMessage="Organization URL Slug" /> *</label>
                   <div className="flex items-center">
-                    <span className="text-gray-500 text-sm mr-2">aupl8stay.com/</span>
+                    <span className="text-gray-500 text-sm mr-2">roomipilot.com/</span>
                     <input
                       type="text"
                       value={form.orgSlug}

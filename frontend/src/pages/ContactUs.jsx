@@ -135,8 +135,8 @@ const ContactUs = () => {
                   <h3 className="font-semibold text-gray-800">
                     <FormattedMessage id="contact.emailUs" defaultMessage="Email Us" />
                   </h3>
-                  <a href="mailto:support@aupl8.com" className="text-brand-600 hover:underline font-medium">
-                    support@aupl8.com
+                  <a href="mailto:support@roomipilot.com" className="text-brand-600 hover:underline font-medium">
+                    support@roomipilot.com
                   </a>
                 </div>
               </div>
@@ -156,7 +156,7 @@ const ContactUs = () => {
 
           {/* Quick info card */}
           <div className="bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl shadow-md p-8 text-white">
-            <h3 className="text-xl font-bold mb-3">Aupl8 Stay</h3>
+            <h3 className="text-xl font-bold mb-3">RoomiPilot</h3>
             <p className="opacity-90 text-sm leading-relaxed">
               <FormattedMessage
                 id="guest.tagline"
@@ -164,7 +164,7 @@ const ContactUs = () => {
               />
             </p>
             <div className="mt-6 space-y-2 text-sm opacity-90">
-              <p>📧 support@aupl8.com</p>
+              <p>📧 support@roomipilot.com</p>
               <p>📱 +91 98765 43210</p>
             </div>
           </div>

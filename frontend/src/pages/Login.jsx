@@ -68,8 +68,8 @@ const Login = () => {
             <div className="absolute top-10 left-10 w-40 h-40 bg-brand-400/10 rounded-full blur-2xl"></div>
             <div className="absolute bottom-10 right-10 w-56 h-56 bg-brand-600/10 rounded-full blur-2xl"></div>
             <div className="relative text-center text-white">
-              <img src="/images/aupl8-logo.svg" alt="Aupl8 Stay" className="h-24 w-24 mx-auto mb-6 drop-shadow-lg" />
-              <h2 className="text-3xl font-extrabold mb-2">Aupl8 <span className="text-brand-400">Stay</span></h2>
+              <img src="/images/aupl8-logo.svg" alt="RoomiPilot" className="h-24 w-24 mx-auto mb-6 drop-shadow-lg" />
+              <h2 className="text-3xl font-extrabold mb-2">Roomi<span className="text-brand-400">Pilot</span></h2>
               <p className="text-gray-300 text-lg">Manage your PG/Hostel business with ease</p>
               <div className="mt-8 flex gap-3 justify-center">
                 <div className="w-2 h-2 bg-brand-400 rounded-full"></div>
@@ -83,8 +83,8 @@ const Login = () => {
           <div className="p-8">
             <div className="text-center mb-8">
               <div className="flex items-center justify-center gap-2 mb-2 md:hidden">
-                <img src="/images/aupl8-logo.svg" alt="Aupl8" className="h-10 w-10" />
-                <span className="text-3xl font-extrabold text-gray-800">Aupl8 <span className="text-brand-500">Stay</span></span>
+                <img src="/images/aupl8-logo.svg" alt="RoomiPilot" className="h-10 w-10" />
+                <span className="text-3xl font-extrabold text-gray-800">Roomi<span className="text-brand-500">Pilot</span></span>
               </div>
               <h2 className="text-2xl font-bold text-gray-800">
                 <FormattedMessage id="auth.loginTitle" defaultMessage="Admin Login" />
