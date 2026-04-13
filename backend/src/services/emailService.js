@@ -9,21 +9,21 @@ const getEmailProvider = () => {
   if (process.env.RESEND_API_KEY) {
     if (!resendClient) {
       resendClient = new Resend(process.env.RESEND_API_KEY);
-      console.log('âœ… Resend email client initialized');
+      console.log('✅ Resend email client initialized');
     }
     return 'resend';
   }
   if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
     return 'smtp';
   }
-  console.error('âŒ No email provider configured. Set RESEND_API_KEY or EMAIL_USER/EMAIL_PASSWORD');
+  console.error('❌ No email provider configured. Set RESEND_API_KEY or EMAIL_USER/EMAIL_PASSWORD');
   return null;
 };
 
 const getTransporter = () => {
   if (!transporter) {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-      console.error('âŒ EMAIL_USER or EMAIL_PASSWORD not set in environment variables');
+      console.error('❌ EMAIL_USER or EMAIL_PASSWORD not set in environment variables');
       return null;
     }
     try {
@@ -43,9 +43,9 @@ const getTransporter = () => {
           rejectUnauthorized: false
         }
       });
-      console.log(`âœ… SMTP transporter initialized for: ${process.env.EMAIL_USER}`);
+      console.log(`✅ SMTP transporter initialized for: ${process.env.EMAIL_USER}`);
     } catch (error) {
-      console.error('âŒ Error creating SMTP transporter:', error.message);
+      console.error('❌ Error creating SMTP transporter:', error.message);
       return null;
     }
   }
@@ -67,13 +67,13 @@ const sendEmail = async (to, subject, html) => {
         html,
       });
       if (error) {
-        console.error('âŒ Resend error:', error);
+        console.error('❌ Resend error:', error);
         return false;
       }
-      console.log(`âœ… Email sent via Resend to ${to} (id: ${data.id})`);
+      console.log(`✅ Email sent via Resend to ${to} (id: ${data.id})`);
       return true;
     } catch (err) {
-      console.error('âŒ Resend exception:', err.message);
+      console.error('❌ Resend exception:', err.message);
       return false;
     }
   }
@@ -83,10 +83,10 @@ const sendEmail = async (to, subject, html) => {
   if (!mailer) return false;
   try {
     await mailer.sendMail({ from: process.env.EMAIL_USER, to, subject, html });
-    console.log(`âœ… Email sent via SMTP to ${to}`);
+    console.log(`✅ Email sent via SMTP to ${to}`);
     return true;
   } catch (err) {
-    console.error('âŒ SMTP error:', err.message);
+    console.error('❌ SMTP error:', err.message);
     return false;
   }
 };
@@ -137,7 +137,7 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo,
               </div>
               
               <div class="important">
-                <strong>âš ï¸ Important Information:</strong>
+                <strong>⚠️ Important Information:</strong>
                 <ul>
                   <li>Use the above credentials to login to your account</li>
                   <li>On your first login, you will be prompted to change your password for security</li>
@@ -171,10 +171,10 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo,
 
     const subject = `ðŸŽ‰ Welcome to ${orgName || 'RoomiPilot'} - Your Login Credentials`;
     const result = await sendEmail(tenantEmail, subject, htmlContent);
-    if (result) console.log(`âœ… Tenant credentials email sent to ${tenantEmail}`);
+    if (result) console.log(`✅ Tenant credentials email sent to ${tenantEmail}`);
     return result;
   } catch (error) {
-    console.error('âŒ Error sending email:', error.message);
+    console.error('❌ Error sending email:', error.message);
     return false;
   }
 };
@@ -253,10 +253,10 @@ const sendThankYouEmail = async (tenantEmail, tenantName, bedInfo, stayDuration,
 
     const subject = `ðŸ™ Thank You For Your Stay - ${orgName || 'RoomiPilot'}`;
     const result = await sendEmail(tenantEmail, subject, htmlContent);
-    if (result) console.log(`âœ… Thank you email sent to ${tenantEmail}`);
+    if (result) console.log(`✅ Thank you email sent to ${tenantEmail}`);
     return result;
   } catch (error) {
-    console.error('âŒ Error sending thank you email:', error.message);
+    console.error('❌ Error sending thank you email:', error.message);
     return false;
   }
 };
@@ -290,7 +290,7 @@ const sendPaymentReminder = async (tenantEmail, tenantName, rent, bedInfo, month
                 <h3 style="margin-top: 0; color: #ff6b35;">Payment Details</h3>
                 <p><strong>Month:</strong> ${monthName}</p>
                 <p><strong>Accommodation:</strong> ${bedInfo}</p>
-                <p><strong>Amount Due:</strong> <span class="amount">â‚¹${rent}</span></p>
+                <p><strong>Amount Due:</strong> <span class="amount">₹${rent}</span></p>
               </div>
               <p>Please make the payment at the earliest to avoid any inconvenience.</p>
               <p>If you have already made the payment, please disregard this email.</p>
@@ -305,12 +305,12 @@ const sendPaymentReminder = async (tenantEmail, tenantName, rent, bedInfo, month
       </html>
     `;
 
-    const subject = `âš ï¸ Rent Payment Reminder for ${monthName} - ${orgName || 'RoomiPilot'}`;
+    const subject = `⚠️ Rent Payment Reminder for ${monthName} - ${orgName || 'RoomiPilot'}`;
     const result = await sendEmail(tenantEmail, subject, htmlContent);
-    if (result) console.log(`âœ… Payment reminder sent to ${tenantEmail}`);
+    if (result) console.log(`✅ Payment reminder sent to ${tenantEmail}`);
     return result;
   } catch (error) {
-    console.error('âŒ Error sending payment reminder:', error.message);
+    console.error('❌ Error sending payment reminder:', error.message);
     return false;
   }
 };
@@ -364,7 +364,7 @@ const sendRentReceipt = async (tenantEmail, tenantName, rent, bedInfo, monthName
               <p>Your rent payment has been successfully recorded. Please find your receipt details below:</p>
               
               <div class="receipt-number">
-                <strong>âœ“ Receipt Number:</strong> ${receiptNumber}
+                <strong>✔ Receipt Number:</strong> ${receiptNumber}
               </div>
               
               <div class="receipt-box">
@@ -388,7 +388,7 @@ const sendRentReceipt = async (tenantEmail, tenantName, rent, bedInfo, monthName
               
               <div class="amount-box">
                 <div class="amount-label">Amount Paid</div>
-                <div class="amount">â‚¹${rent}</div>
+                <div class="amount">₹${rent}</div>
                 <div class="verified">âœ“ Payment Verified</div>
               </div>
               

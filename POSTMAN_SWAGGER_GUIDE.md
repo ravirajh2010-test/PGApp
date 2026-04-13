@@ -132,7 +132,7 @@ Should return: `{ "status": "ok", "database": "connected" }`
 POST /auth/login
 Body: { "email": "admin@test.com", "password": "admin123" }
 ```
-Copy the token from response â†’ Update `{{token}}` variable
+Copy the token from response → Update `{{token}}` variable
 
 ### 3. Test Admin Endpoints (With Auth)
 ```
@@ -146,20 +146,20 @@ Start with buildings â†’ rooms â†’ beds â†’ tenants
 ## Common Issues & Solutions
 
 ### 401 Unauthorized
-- âŒ Problem: Missing or invalid token
-- âœ… Solution: Login again and copy fresh token
+- ❌ Problem: Missing or invalid token
+- ✅ Solution: Login again and copy fresh token
 
 ### 403 Forbidden
-- âŒ Problem: User role doesn't have access
-- âœ… Solution: Use correct credentials for role (admin, tenant, super_admin)
+- ❌ Problem: User role doesn't have access
+- ✅ Solution: Use correct credentials for role (admin, tenant, super_admin)
 
 ### 404 Not Found
-- âŒ Problem: Resource ID is invalid
-- âœ… Solution: Get valid ID from LIST endpoint first
+- ❌ Problem: Resource ID is invalid
+- ✅ Solution: Get valid ID from LIST endpoint first
 
 ### 422 Unprocessable Entity
-- âŒ Problem: Invalid request body or constraint violation
-- âœ… Solution: Check request format and required fields
+- ❌ Problem: Invalid request body or constraint violation
+- ✅ Solution: Check request format and required fields
 
 ## Swagger/OpenAPI Files Location
 

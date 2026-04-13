@@ -38,12 +38,12 @@ Follow this checklist step-by-step to deploy your app.
 - [ ] **Check All Files Are Ready**
   ```bash
   # Verify key files exist:
-  ls render.yaml                              # âœ… Should exist
-  ls RENDER_DEPLOYMENT_GUIDE.md              # âœ… Should exist
-  ls RENDER_QUICK_START.md                   # âœ… Should exist
-  ls backend/package.json                     # âœ… Should exist
-  ls frontend/package.json                    # âœ… Should exist
-  ls database/schema.sql                      # âœ… Should exist
+  ls render.yaml                              # ✅ Should exist
+  ls RENDER_DEPLOYMENT_GUIDE.md              # ✅ Should exist
+  ls RENDER_QUICK_START.md                   # ✅ Should exist
+  ls backend/package.json                     # ✅ Should exist
+  ls frontend/package.json                    # ✅ Should exist
+  ls database/schema.sql                      # ✅ Should exist
   ```
 
 ---
@@ -78,7 +78,7 @@ Follow this checklist step-by-step to deploy your app.
 
 - [ ] **Verify on GitHub**
   - Go to https://github.com/your_username/pg-stay
-  - See all your files? âœ…
+  - See all your files? ✅
 
 ---
 
@@ -101,7 +101,7 @@ Follow this checklist step-by-step to deploy your app.
 
 - [ ] **Create Blueprint**
   1. Go to https://render.com/dashboard
-  2. Click **"New +"** â†’ **"Blueprint"**
+  2. Click **"New +"** → **"Blueprint"**
   3. Select your `pg-stay` repository
   4. Click **"Create Blueprint"**
   5. Render will detect `render.yaml` automatically
@@ -110,26 +110,26 @@ Follow this checklist step-by-step to deploy your app.
 - [ ] **Wait for Deployment**
   - Should take 3-5 minutes
   - Watch the logs scroll by
-  - Look for: "âœ… deployed successfully"
+  - Look for: "✅ deployed successfully"
 
 ### Option B: Manual Deployment (If Blueprint fails)
 
 - [ ] **Deploy Backend**
-  1. Click **"New +"** â†’ **"Web Service"**
+  1. Click **"New +"** → **"Web Service"**
   2. Select repository
   3. Build Command: `cd backend && npm install`
   4. Start Command: `cd backend && npm start`
   5. Create Service
 
 - [ ] **Deploy Frontend**
-  1. Click **"New +"** â†’ **"Static Site"**
+  1. Click **"New +"** → **"Static Site"**
   2. Select repository
   3. Build Command: `cd frontend && npm install && npm run build`
   4. Publish Directory: `frontend/dist`
   5. Create Service
 
 - [ ] **Add PostgreSQL**
-  1. Click **"New +"** â†’ **"PostgreSQL"**
+  1. Click **"New +"** → **"PostgreSQL"**
   2. Database Name: `pg_stay_production`
   3. User: `pg_stay_user`
   4. Create Database
@@ -140,7 +140,7 @@ Follow this checklist step-by-step to deploy your app.
 
 ### For Backend Service
 
-Go to `pg-stay-backend` â†’ Settings â†’ Environment Variables
+Go to `pg-stay-backend` → Settings → Environment Variables
 
 - [ ] **Add Email Configuration**
   ```
@@ -161,7 +161,7 @@ Go to `pg-stay-backend` â†’ Settings â†’ Environment Variables
 
 ### For Frontend Service
 
-Go to `pg-stay-frontend` â†’ Settings â†’ Environment Variables
+Go to `pg-stay-frontend` → Settings → Environment Variables
 
 - [ ] **Add Backend URL**
   ```
