@@ -54,7 +54,9 @@ const TenantPaymentSearch = () => {
     setMarkingPaid(prev => ({ ...prev, [key]: true }));
     try {
       // Convert 1-based DB month back to 0-based JS month for the API
-      await api.post(`/admin/mark-offline-pay/${tenantId}`, { month: month - 1, year });
+      const response = await api.post(`/admin/mark-offline-pay/${tenantId}`, { month: month - 1, year });
+      const emailInfo = response.data?.emailSent ? ' 📧 Receipt sent!' : '';
+      alert((response.data?.message || 'Marked as paid!') + emailInfo);
       // Refresh history
       const res = await api.get(`/admin/tenant-payment-history/${tenantId}`);
       setSelectedTenant(res.data.tenant);

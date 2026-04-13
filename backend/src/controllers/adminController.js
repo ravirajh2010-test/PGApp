@@ -78,14 +78,8 @@ const createTenant = async (req, res) => {
       console.warn('Warning: Could not add org mapping:', e.message);
     }
 
-    // Respond immediately - don't wait for email
-    res.status(201).json({ 
-      message: 'Tenant created successfully',
-      tenant: { id: tenant.id, name, email, bedId, startDate, endDate, rent },
-      credentials: { email, password }
-    });
-
-    // Send email in background (fire and forget)
+    // Send welcome email before responding
+    let emailSent = false;
     try {
       const bedQuery = `
         SELECT b.id, r.room_number, bl.name as building_name 
@@ -98,12 +92,17 @@ const createTenant = async (req, res) => {
       const bedInfo = bedResult.rows[0] 
         ? `${bedResult.rows[0].building_name} - Room ${bedResult.rows[0].room_number}`
         : 'Bed assigned';
-      sendTenantCredentials(email, name, password, bedInfo, req.orgName)
-        .then(sent => console.log(sent ? `✅ Email sent to ${email}` : `⚠️ Email failed for ${email}`))
-        .catch(err => console.error('❌ Email error:', err.message));
+      emailSent = await sendTenantCredentials(email, name, password, bedInfo, req.orgName);
     } catch (emailErr) {
-      console.error('❌ Email prep error:', emailErr.message);
+      console.error('❌ Email error:', emailErr.message);
     }
+
+    res.status(201).json({ 
+      message: 'Tenant created successfully',
+      tenant: { id: tenant.id, name, email, bedId, startDate, endDate, rent },
+      credentials: { email, password },
+      emailSent
+    });
   } catch (error) {
     await client.query('ROLLBACK').catch(e => console.error('Rollback error:', e));
     console.error('❌ Error creating tenant:', error.message, error.detail);
@@ -320,6 +319,15 @@ const createRoom = async (req, res) => {
     if (!buildingId || !roomNumber || !capacity) {
       return res.status(400).json({ message: 'Building, room number, and capacity are required' });
     }
+
+    // Check for duplicate room number in the same building
+    const existing = await req.pool.query(
+      'SELECT id FROM rooms WHERE building_id = $1 AND room_number = $2',
+      [buildingId, roomNumber]
+    );
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ message: `Room ${roomNumber} already exists in this building` });
+    }
     
     const Room = require('../models/Room');
     const room = await Room.create(req.pool, buildingId, roomNumber, capacity);
@@ -336,6 +344,15 @@ const updateRoom = async (req, res) => {
     const { buildingId, roomNumber, capacity } = req.body;
     if (!buildingId || !roomNumber || !capacity) {
       return res.status(400).json({ message: 'Building, room number, and capacity are required' });
+    }
+
+    // Check for duplicate room number in the same building (exclude current room)
+    const existing = await req.pool.query(
+      'SELECT id FROM rooms WHERE building_id = $1 AND room_number = $2 AND id != $3',
+      [buildingId, roomNumber, id]
+    );
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ message: `Room ${roomNumber} already exists in this building` });
     }
     
     const Room = require('../models/Room');
@@ -686,20 +703,23 @@ const markOfflinePay = async (req, res) => {
       [tenantId, tenant.name, tenantEmail, tenant.phone || null, tenant.rent, dbMonth, payYear, 'OFFLINE_' + Date.now()]
     );
 
-    // Respond immediately
-    res.json({ 
-      message: `Offline payment marked for ${monthName}`
-    });
-
-    // Send rent receipt email in background (fire and forget)
+    // Send rent receipt email before responding
+    let emailSent = false;
     if (tenantEmail) {
-      console.log(`📧 Sending rent receipt to ${tenantEmail} for ${monthName}...`);
-      sendRentReceipt(tenantEmail, tenant.name, tenant.rent, bedInfo, monthName, new Date(), req.orgName)
-        .then(sent => console.log(sent ? `✅ Receipt sent to ${tenantEmail}` : `⚠️ Receipt failed for ${tenantEmail}`))
-        .catch(err => console.error('❌ Receipt email error:', err.message));
+      try {
+        console.log(`📧 Sending rent receipt to ${tenantEmail} for ${monthName}...`);
+        emailSent = await sendRentReceipt(tenantEmail, tenant.name, tenant.rent, bedInfo, monthName, new Date(), req.orgName);
+      } catch (err) {
+        console.error('❌ Receipt email error:', err.message);
+      }
     } else {
       console.warn(`⚠️ No email found for tenant ${tenantId}, skipping receipt`);
     }
+
+    res.json({ 
+      message: `Offline payment marked for ${monthName}`,
+      emailSent
+    });
   } catch (error) {
     console.error('Error marking offline payment:', error);
     res.status(500).json({ message: 'Server error' });

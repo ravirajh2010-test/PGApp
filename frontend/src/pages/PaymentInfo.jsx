@@ -78,7 +78,9 @@ const PaymentInfo = () => {
         month: selectedMonth,
         year: selectedYear
       });
-      alert(res.data.message || 'Marked as paid!');
+      const msg = res.data.message || 'Marked as paid!';
+      const emailInfo = res.data.emailSent ? '\n📧 Receipt email sent!' : '\n⚠️ Receipt email could not be sent.';
+      alert(msg + emailInfo);
       await fetchPaymentInfo(selectedMonth, selectedYear);
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to mark payment');

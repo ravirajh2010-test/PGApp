@@ -199,7 +199,7 @@ const AdminDashboard = () => {
         password: formData.password
       };
 
-      await api.post('/admin/tenants', {
+      const response = await api.post('/admin/tenants', {
         name: formData.name,
         email: formData.email,
         password: formData.password,
@@ -209,6 +209,8 @@ const AdminDashboard = () => {
         endDate: formData.endDate || null,
         rent: parseFloat(formData.rent)
       });
+
+      const emailSent = response.data?.emailSent;
 
       // Clear form and hide it
       setFormData({
@@ -226,7 +228,10 @@ const AdminDashboard = () => {
       setShowTenantForm(false);
 
       // Show modal immediately
-      setCreatedCredentials(savedCredentials);
+      setCreatedCredentials({
+        ...savedCredentials,
+        emailSent
+      });
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.message || 'Error creating tenant';
       setTenantError(errorMsg);

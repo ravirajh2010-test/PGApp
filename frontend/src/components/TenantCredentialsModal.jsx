@@ -52,9 +52,19 @@ const TenantCredentialsModal = ({ credentials, onClose }) => {
         </div>
 
         {/* Important Notice */}
-        <p className="text-xs text-blue-800 bg-blue-50 p-2 rounded mb-3">
+        <p className="text-xs text-blue-800 bg-blue-50 p-2 rounded mb-1">
           📌 Tenant must change password on first login.
         </p>
+        {credentials.emailSent === true && (
+          <p className="text-xs text-green-800 bg-green-50 p-2 rounded mb-3">
+            📧 Welcome email with credentials sent to {credentials.email}
+          </p>
+        )}
+        {credentials.emailSent === false && (
+          <p className="text-xs text-orange-800 bg-orange-50 p-2 rounded mb-3">
+            ⚠️ Email could not be sent. Please share credentials manually.
+          </p>
+        )}
 
         {/* Buttons */}
         <div className="flex gap-2">
