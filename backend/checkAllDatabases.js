@@ -12,7 +12,7 @@
   
   try {
     const dbs = await adminPool.query("SELECT datname FROM pg_database WHERE datistemplate = false;");
-    console.log('\nðŸ“Š All databases:');
+    console.log('\n📊 All databases:');
     dbs.rows.forEach(db => console.log('  -', db.datname));
     
     // Check each database for admin@roomipilot.com
@@ -29,7 +29,7 @@
         const users = await testPool.query("SELECT COUNT(*) FROM users WHERE email = 'admin@roomipilot.com';");
         const count = users.rows[0].count;
         if (count > 0) {
-          console.log(`\nâœ… Found admin@roomipilot.com in database: ${db.datname}`);
+          console.log(`\n✅ Found admin@roomipilot.com in database: ${db.datname}`);
           const userData = await testPool.query("SELECT id, name, email, role FROM users WHERE email = 'admin@roomipilot.com';");
           console.log('   User:', userData.rows[0]);
         }

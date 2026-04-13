@@ -207,12 +207,12 @@ Go to `pg-stay-frontend` → Settings → Environment Variables
 
 - [ ] **Generate Gmail App Password**
   1. Go to https://myaccount.google.com/apppasswords
-  2. Select "Mail" â†’ "Windows Computer"
+  2. Select "Mail" → "Windows Computer"
   3. Generate password
   4. Copy 16-character password
 
 - [ ] **Update in Render**
-  1. Go to backend service â†’ Settings
+  1. Go to backend service → Settings
   2. Update `EMAIL_PASSWORD` with the 16-char password
   3. Save and restart service
 
@@ -226,16 +226,16 @@ Go to `pg-stay-frontend` → Settings → Environment Variables
 ## Phase 8: Post-Deployment Checklist
 
 - [ ] **Database Initialized**
-  - Admin user exists? âœ…
-  - Can login? âœ…
+  - Admin user exists? ✅
+  - Can login? ✅
 
 - [ ] **Email Working**
-  - Received welcome email? âœ…
+  - Received welcome email? ✅
   - Thank you email on checkout? (test later)
 
 - [ ] **Checkout Job Running**
   - Check backend logs
-  - Look for: `[SCHEDULER] âœ… Tenant checkout job scheduled`
+  - Look for: `[SCHEDULER] ✅ Tenant checkout job scheduled`
 
 - [ ] **Logs Monitored**
   - Set up Render alerts (optional)
@@ -248,42 +248,42 @@ Go to `pg-stay-frontend` → Settings → Environment Variables
 
 ---
 
-## ðŸ“Š Final Status
+## 📊 Final Status
 
 | Component | Status | URL |
 |-----------|--------|-----|
-| Frontend | âœ… | https://pg-stay-frontend.onrender.com |
-| Backend | âœ… | https://pg-stay-backend.onrender.com |
-| Database | âœ… | Auto-managed by Render |
-| Email | âœ… | Sending successfully |
+| Frontend | ✅ | https://pg-stay-frontend.onrender.com |
+| Backend | ✅ | https://pg-stay-backend.onrender.com |
+| Database | ✅ | Auto-managed by Render |
+| Email | ✅ | Sending successfully |
 
 ---
 
-## ðŸŽ‰ Deployment Complete!
+## 🎉 Deployment Complete!
 
 Your app is now LIVE on Render! 
 
 ### What's Next?
 
-1. âœ… Share the frontend URL with users
-2. âœ… Monitor logs for errors
-3. âœ… Set up backups (Render auto-does this)
-4. âœ… Add custom domain (if desired)
-5. âœ… Upgrade plan if needed after 90 days
+1. ✅ Share the frontend URL with users
+2. ✅ Monitor logs for errors
+3. ✅ Set up backups (Render auto-does this)
+4. ✅ Add custom domain (if desired)
+5. ✅ Upgrade plan if needed after 90 days
 
 ---
 
-## ðŸ“ž Support & Troubleshooting
+## 📞 Support & Troubleshooting
 
 See [RENDER_DEPLOYMENT_GUIDE.md](./RENDER_DEPLOYMENT_GUIDE.md) for:
-- âœ… Common issues and solutions
-- âœ… Detailed troubleshooting
-- âœ… FAQ
-- âœ… Performance optimization
+- ✅ Common issues and solutions
+- ✅ Detailed troubleshooting
+- ✅ FAQ
+- ✅ Performance optimization
 
 ---
 
-## ðŸ†˜ Emergency Issues
+## 🆘 Emergency Issues
 
 | Issue | Quick Fix |
 |-------|-----------|
@@ -294,8 +294,8 @@ See [RENDER_DEPLOYMENT_GUIDE.md](./RENDER_DEPLOYMENT_GUIDE.md) for:
 
 ---
 
-## âœ… Deployment Checklist Version: 1.0
+## ✅ Deployment Checklist Version: 1.0
 **Last Updated:** March 27, 2026
 **Status:** Ready for Deployment
 
-**You're all set! Start deploying now!** ðŸš€
+**You're all set! Start deploying now!** 🚀

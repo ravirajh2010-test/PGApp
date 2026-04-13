@@ -19,7 +19,7 @@ const Login = () => {
 
       const res = await api.post('/auth/login', payload);
 
-      // Multi-org response â€” user belongs to multiple orgs
+      // Multi-org response — user belongs to multiple orgs
       if (res.status === 300 || res.data.organizations) {
         setOrgList(res.data.organizations);
         setLoading(false);

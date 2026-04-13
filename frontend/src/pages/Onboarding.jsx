@@ -20,10 +20,10 @@ const Onboarding = () => {
   });
 
   const plans = [
-    { id: 'free', name: 'Free', price: 'â‚¹0/mo', properties: 1, beds: 10, users: 5, desc: 'Get started for free' },
-    { id: 'starter', name: 'Starter', price: 'â‚¹499/mo', properties: 3, beds: 50, users: 20, desc: 'For small PGs' },
-    { id: 'pro', name: 'Pro', price: 'â‚¹1,499/mo', properties: 10, beds: 200, users: 100, desc: 'For growing businesses', popular: true },
-    { id: 'enterprise', name: 'Enterprise', price: 'â‚¹4,999/mo', properties: 'Unlimited', beds: 'Unlimited', users: 'Unlimited', desc: 'For large operations' },
+    { id: 'free', name: 'Free', price: '₹0/mo', properties: 1, beds: 10, users: 5, desc: 'Get started for free' },
+    { id: 'starter', name: 'Starter', price: '₹499/mo', properties: 3, beds: 50, users: 20, desc: 'For small PGs' },
+    { id: 'pro', name: 'Pro', price: '₹1,499/mo', properties: 10, beds: 200, users: 100, desc: 'For growing businesses', popular: true },
+    { id: 'enterprise', name: 'Enterprise', price: '₹4,999/mo', properties: 'Unlimited', beds: 'Unlimited', users: 'Unlimited', desc: 'For large operations' },
   ];
 
   const generateSlug = (name) => {

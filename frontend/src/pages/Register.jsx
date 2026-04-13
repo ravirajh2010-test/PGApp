@@ -85,7 +85,7 @@ const Register = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1"><FormattedMessage id="auth.password" defaultMessage="Password" /></label>
             <input
               type="password"
-              placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+              placeholder="••••••••"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
