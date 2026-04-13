@@ -13,6 +13,7 @@ import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import OrgSettings from './pages/OrgSettings';
 import TenantPaymentSearch from './pages/TenantPaymentSearch';
 import ContactUs from './pages/ContactUs';
+import Messenger from './pages/Messenger';
 import './App.css';
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
               <Route path="/tenant" element={<TenantDashboard />} />
               <Route path="/super_admin" element={<SuperAdminDashboard />} />
               <Route path="/org-settings" element={<OrgSettings />} />
+              <Route path="/messenger" element={<Messenger />} />
               <Route path="/contact" element={<ContactUs />} />
               <Route path="/:orgSlug" element={<GuestView />} />
             </Routes>

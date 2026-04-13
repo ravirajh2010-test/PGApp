@@ -320,6 +320,12 @@ const AdminDashboard = () => {
           >
             <FormattedMessage id="dashboard.modifyProperties" defaultMessage="⚙️ Modify Properties" />
           </button>
+          <button
+            onClick={() => navigate('/messenger')}
+            className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-lg font-semibold transition"
+          >
+            💬 <FormattedMessage id="messenger.title" defaultMessage="Messenger" />
+          </button>
         </div>
         
         <div className="flex items-center gap-3">

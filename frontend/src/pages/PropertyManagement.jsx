@@ -459,6 +459,10 @@ const PropertyManagement = () => {
 
         {showRoomForm && (
           <div className="px-6 py-4 bg-purple-100 border-b">
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mb-3 rounded text-sm text-blue-800">
+              💡 <strong><FormattedMessage id="property.roomHintTitle" defaultMessage="Tip:" /></strong>{' '}
+              <FormattedMessage id="property.roomHintBody" defaultMessage="The first digit of the room number determines the floor. For example: {ex1} = Ground Floor, Room 01 | {ex2} = 1st Floor, Room 01 | {ex3} = 2nd Floor, Room 03. No need to create floors separately." values={{ ex1: <strong>001</strong>, ex2: <strong>101</strong>, ex3: <strong>203</strong> }} />
+            </div>
             {roomError && <p className="text-red-600 mb-3">⚠️ {roomError}</p>}
             <form onSubmit={handleAddRoom} className="flex gap-2 flex-wrap">
               <select

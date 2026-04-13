@@ -929,4 +929,161 @@ const deactivateUser = async (req, res) => {
   }
 };
 
-module.exports = { getTenants, createTenant, updateTenant, deleteTenant, processCheckouts, getOccupancy, getAvailableBeds, getFloorLayout, getFloorLayoutWithBeds, getBuildings, createBuilding, updateBuilding, deleteBuilding, getRooms, createRoom, updateRoom, deleteRoom, getBeds, createBed, updateBed, deleteBed, getPaymentInfo, sendPaymentReminderEmail, markOfflinePay, searchTenants, getTenantPaymentHistory, deactivateUser };
+// Get tenant groups for messenger
+const getMessengerGroups = async (req, res) => {
+  try {
+    // Get all buildings
+    const buildingsResult = await req.pool.query('SELECT id, name FROM buildings ORDER BY name');
+    
+    // Get all rooms with building info
+    const roomsResult = await req.pool.query(`
+      SELECT r.id, r.room_number, r.floor_number, r.building_id, bl.name as building_name
+      FROM rooms r
+      JOIN buildings bl ON r.building_id = bl.id
+      ORDER BY bl.name, r.room_number
+    `);
+    
+    // Get distinct floors per building
+    const floorsResult = await req.pool.query(`
+      SELECT DISTINCT r.floor_number, r.building_id, bl.name as building_name
+      FROM rooms r
+      JOIN buildings bl ON r.building_id = bl.id
+      ORDER BY bl.name, r.floor_number
+    `);
+    
+    res.json({
+      buildings: buildingsResult.rows,
+      rooms: roomsResult.rows,
+      floors: floorsResult.rows
+    });
+  } catch (error) {
+    console.error('Error fetching messenger groups:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Send message to tenant group via email
+const sendGroupMessage = async (req, res) => {
+  try {
+    const { groupType, groupId, subject, message } = req.body;
+    
+    if (!subject || !message) {
+      return res.status(400).json({ message: 'Subject and message are required' });
+    }
+    
+    let tenantsQuery;
+    let queryParams = [];
+    
+    switch (groupType) {
+      case 'all':
+        tenantsQuery = `
+          SELECT DISTINCT u.name, u.email
+          FROM tenants t
+          JOIN users u ON t.user_id = u.id
+          WHERE u.email IS NOT NULL
+        `;
+        break;
+      case 'building':
+        tenantsQuery = `
+          SELECT DISTINCT u.name, u.email
+          FROM tenants t
+          JOIN users u ON t.user_id = u.id
+          JOIN beds b ON t.bed_id = b.id
+          JOIN rooms r ON b.room_id = r.id
+          WHERE r.building_id = $1 AND u.email IS NOT NULL
+        `;
+        queryParams = [groupId];
+        break;
+      case 'floor':
+        const [buildingId, floorNumber] = groupId.split('-');
+        tenantsQuery = `
+          SELECT DISTINCT u.name, u.email
+          FROM tenants t
+          JOIN users u ON t.user_id = u.id
+          JOIN beds b ON t.bed_id = b.id
+          JOIN rooms r ON b.room_id = r.id
+          WHERE r.building_id = $1 AND r.floor_number = $2 AND u.email IS NOT NULL
+        `;
+        queryParams = [buildingId, floorNumber];
+        break;
+      case 'room':
+        tenantsQuery = `
+          SELECT DISTINCT u.name, u.email
+          FROM tenants t
+          JOIN users u ON t.user_id = u.id
+          JOIN beds b ON t.bed_id = b.id
+          WHERE b.room_id = $1 AND u.email IS NOT NULL
+        `;
+        queryParams = [groupId];
+        break;
+      default:
+        return res.status(400).json({ message: 'Invalid group type' });
+    }
+    
+    const tenantsResult = await req.pool.query(tenantsQuery, queryParams);
+    const tenants = tenantsResult.rows;
+    
+    if (tenants.length === 0) {
+      return res.status(404).json({ message: 'No tenants found in the selected group' });
+    }
+    
+    // Get org name for email branding
+    const orgName = req.orgName || 'PG Stay';
+    
+    // Import sendEmail
+    const { sendEmail } = require('../services/emailService');
+    
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (const tenant of tenants) {
+      const htmlContent = `
+        <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; border-radius: 8px; }
+              .header { background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+              .header h1 { margin: 0; font-size: 24px; }
+              .content { background: white; padding: 30px; border-radius: 0 0 8px 8px; }
+              .message-box { background: #f8f9fa; border-left: 4px solid #ff6b35; padding: 20px; margin: 20px 0; border-radius: 4px; white-space: pre-wrap; }
+              .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>\uD83C\uDFE2 ${orgName}</h1>
+                <p>Communication from Management</p>
+              </div>
+              <div class="content">
+                <p>Dear <strong>${tenant.name}</strong>,</p>
+                <div class="message-box">${message.replace(/\n/g, '<br/>')}</div>
+                <p style="margin-top: 20px; color: #666; font-size: 14px;">If you have any questions, please contact the management.</p>
+              </div>
+              <div class="footer">
+                <p>This message was sent by ${orgName} management.</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `;
+      
+      const sent = await sendEmail(tenant.email, subject, htmlContent);
+      if (sent) successCount++;
+      else failCount++;
+    }
+    
+    res.json({
+      message: `Message sent to ${successCount} tenant(s)${failCount > 0 ? `, ${failCount} failed` : ''}`,
+      successCount,
+      failCount,
+      totalTenants: tenants.length
+    });
+  } catch (error) {
+    console.error('Error sending group message:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getTenants, createTenant, updateTenant, deleteTenant, processCheckouts, getOccupancy, getAvailableBeds, getFloorLayout, getFloorLayoutWithBeds, getBuildings, createBuilding, updateBuilding, deleteBuilding, getRooms, createRoom, updateRoom, deleteRoom, getBeds, createBed, updateBed, deleteBed, getPaymentInfo, sendPaymentReminderEmail, markOfflinePay, searchTenants, getTenantPaymentHistory, deactivateUser, getMessengerGroups, sendGroupMessage };
