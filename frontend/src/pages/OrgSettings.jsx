@@ -201,19 +201,19 @@ const OrgSettings = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-gray-50 rounded-lg p-4 text-center">
                   <p className="text-sm text-gray-600">Buildings</p>
-                  <p className="text-2xl font-bold text-gray-800">{org.stats.building_count || 0}</p>
+                  <p className="text-2xl font-bold text-gray-800">{org.stats.buildings || 0}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 text-center">
                   <p className="text-sm text-gray-600">Beds</p>
-                  <p className="text-2xl font-bold text-gray-800">{org.stats.bed_count || 0}</p>
+                  <p className="text-2xl font-bold text-gray-800">{org.stats.totalBeds || 0}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 text-center">
                   <p className="text-sm text-gray-600">Users</p>
-                  <p className="text-2xl font-bold text-gray-800">{org.stats.user_count || 0}</p>
+                  <p className="text-2xl font-bold text-gray-800">{org.stats.users || 0}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 text-center">
                   <p className="text-sm text-gray-600">Tenants</p>
-                  <p className="text-2xl font-bold text-gray-800">{org.stats.tenant_count || 0}</p>
+                  <p className="text-2xl font-bold text-gray-800">{org.stats.tenants || 0}</p>
                 </div>
               </div>
             </div>
