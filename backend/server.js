@@ -45,6 +45,7 @@ const tenantRoutes = require('./src/routes/tenantRoutes');
 const guestRoutes = require('./src/routes/guestRoutes');
 const superAdminRoutes = require('./src/routes/superAdminRoutes');
 const organizationRoutes = require('./src/routes/organizationRoutes');
+const stripeRoutes = require('./src/routes/stripeRoutes');
 const debugEmailRoutes = require('./src/routes/debugEmailRoutes');
 
 // Swagger setup
@@ -71,6 +72,7 @@ app.use('/api/tenant', tenantRoutes);
 app.use('/api/guest', guestRoutes);
 app.use('/api/super-admin', superAdminRoutes);
 app.use('/api/organization', organizationRoutes);
+app.use('/api/stripe', stripeRoutes);
 app.use('/api/debug/email', debugEmailRoutes);
 
 const PORT = process.env.PORT || 5000;
@@ -129,9 +131,9 @@ const initDatabase = async () => {
       await pool.query(`
         INSERT INTO plan_limits (plan, max_properties, max_beds, max_users, price_monthly, price_yearly, features) VALUES
           ('free', 1, 10, 5, 0, 0, '{"email_notifications": false, "payment_gateway": false, "reports": false}'),
-          ('starter', 3, 50, 20, 499, 4990, '{"email_notifications": true, "payment_gateway": true, "reports": false}'),
-          ('pro', 10, 200, 100, 1499, 14990, '{"email_notifications": true, "payment_gateway": true, "reports": true}'),
-          ('enterprise', -1, -1, -1, 4999, 49990, '{"email_notifications": true, "payment_gateway": true, "reports": true, "api_access": true}')
+          ('starter', 3, 50, 20, 5, 50, '{"email_notifications": true, "payment_gateway": true, "reports": false}'),
+          ('pro', 10, 200, 100, 15, 150, '{"email_notifications": true, "payment_gateway": true, "reports": true}'),
+          ('enterprise', -1, -1, -1, 50, 500, '{"email_notifications": true, "payment_gateway": true, "reports": true, "api_access": true}')
       `);
       console.log('Plan limits seeded');
     }
@@ -148,10 +150,18 @@ const initDatabase = async () => {
         current_period_start TIMESTAMP,
         current_period_end TIMESTAMP,
         razorpay_subscription_id VARCHAR(255),
+        stripe_subscription_id VARCHAR(255),
+        stripe_customer_id VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // Add Stripe columns if missing (migration for existing DBs)
+    await pool.query(`
+      ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS stripe_subscription_id VARCHAR(255);
+      ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(255);
+    `).catch(() => {});
 
     // Invoices
     await pool.query(`

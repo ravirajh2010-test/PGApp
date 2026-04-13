@@ -9,6 +9,7 @@ import PaymentInfo from './pages/PaymentInfo';
 import TenantDashboard from './pages/TenantDashboard';
 import GuestView from './pages/GuestView';
 import Onboarding from './pages/Onboarding';
+import OnboardingSuccess from './pages/OnboardingSuccess';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import OrgSettings from './pages/OrgSettings';
 import TenantPaymentSearch from './pages/TenantPaymentSearch';
@@ -28,6 +29,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/onboarding/success" element={<OnboardingSuccess />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/property-management" element={<PropertyManagement />} />
               <Route path="/payment-info" element={<PaymentInfo />} />

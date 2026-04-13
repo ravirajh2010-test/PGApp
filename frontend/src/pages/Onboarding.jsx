@@ -20,10 +20,10 @@ const Onboarding = () => {
   });
 
   const plans = [
-    { id: 'free', name: 'Free', price: '₹0/mo', properties: 1, beds: 10, users: 5, desc: 'Get started for free' },
-    { id: 'starter', name: 'Starter', price: '₹499/mo', properties: 3, beds: 50, users: 20, desc: 'For small PGs' },
-    { id: 'pro', name: 'Pro', price: '₹1,499/mo', properties: 10, beds: 200, users: 100, desc: 'For growing businesses', popular: true },
-    { id: 'enterprise', name: 'Enterprise', price: '₹4,999/mo', properties: 'Unlimited', beds: 'Unlimited', users: 'Unlimited', desc: 'For large operations' },
+    { id: 'free', name: 'Free', price: '£0/mo', properties: 1, beds: 10, users: 5, desc: 'Get started for free' },
+    { id: 'starter', name: 'Starter', price: '£5/mo', properties: 3, beds: 50, users: 20, desc: 'For small PGs' },
+    { id: 'pro', name: 'Pro', price: '£15/mo', properties: 10, beds: 200, users: 100, desc: 'For growing businesses', popular: true },
+    { id: 'enterprise', name: 'Enterprise', price: '£50/mo', properties: 'Unlimited', beds: 'Unlimited', users: 'Unlimited', desc: 'For large operations' },
   ];
 
   const generateSlug = (name) => {
@@ -41,6 +41,25 @@ const Onboarding = () => {
     setLoading(true);
 
     try {
+      // For paid plans, redirect to Stripe Checkout
+      if (form.plan !== 'free') {
+        const stripeRes = await api.post('/stripe/create-checkout-session', {
+          orgName: form.orgName,
+          orgSlug: form.orgSlug,
+          orgEmail: form.orgEmail,
+          orgPhone: form.orgPhone,
+          orgAddress: form.orgAddress,
+          adminName: form.adminName,
+          adminEmail: form.adminEmail,
+          adminPassword: form.adminPassword,
+          plan: form.plan,
+        });
+        // Redirect to Stripe Checkout
+        window.location.href = stripeRes.data.url;
+        return;
+      }
+
+      // Free plan — create org directly
       const res = await api.post('/auth/register-organization', {
         orgName: form.orgName,
         orgSlug: form.orgSlug,

@@ -526,7 +526,7 @@ const AdminDashboard = () => {
                         {tenant.building_name} - Room {tenant.room_number} - Bed {tenant.bed_identifier}
                       </span>
                     </td>
-                    <td className="px-6 py-3">₹{tenant.rent}</td>
+                    <td className="px-6 py-3">£{tenant.rent}</td>
                     <td className="px-6 py-3">{new Date(tenant.start_date).toLocaleDateString()}</td>
                     <td className="px-6 py-3">
                       {editingCheckout === tenant.id ? (

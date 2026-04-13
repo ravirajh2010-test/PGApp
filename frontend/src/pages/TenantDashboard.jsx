@@ -141,7 +141,7 @@ const TenantDashboard = () => {
           </div>
           <div>
             <p className="text-sm text-gray-600"><FormattedMessage id="tenant.monthlyRent" defaultMessage="Monthly Rent" /></p>
-            <p className="text-2xl font-bold text-green-600">₹{stay.rent || 'N/A'}</p>
+            <p className="text-2xl font-bold text-green-600">£{stay.rent || 'N/A'}</p>
           </div>
         </div>
       </div>
@@ -171,7 +171,7 @@ const TenantDashboard = () => {
                 {payments.map((p) => (
                   <tr key={p.id} className="border-b hover:bg-gray-50">
                     <td className="px-4 py-3">{new Date(p.payment_date).toLocaleDateString()}</td>
-                    <td className="px-4 py-3 font-semibold">₹{p.amount}</td>
+                    <td className="px-4 py-3 font-semibold">£{p.amount}</td>
                     <td className="px-4 py-3">
                       <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
                         p.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'

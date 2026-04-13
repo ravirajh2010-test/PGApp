@@ -146,8 +146,8 @@ const ContactUs = () => {
                   <h3 className="font-semibold text-gray-800">
                     <FormattedMessage id="contact.callUs" defaultMessage="Call Us" />
                   </h3>
-                  <a href="tel:+919876543210" className="text-brand-600 hover:underline font-medium">
-                    +91 98765 43210
+                  <a href="tel:+917719427089" className="text-brand-600 hover:underline font-medium">
+                    07719427089
                   </a>
                 </div>
               </div>
@@ -165,7 +165,7 @@ const ContactUs = () => {
             </p>
             <div className="mt-6 space-y-2 text-sm opacity-90">
               <p>📧 support@roomipilot.com</p>
-              <p>📱 +91 98765 43210</p>
+              <p>📱 07719427089</p>
             </div>
           </div>
         </div>

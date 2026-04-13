@@ -109,7 +109,7 @@ On first run, the system auto-creates:
 
 | Plan | Properties | Beds | Users | Price/mo |
 |------|-----------|------|-------|----------|
-| Free | 1 | 10 | 5 | ₹0 |
-| Starter | 3 | 50 | 20 | ₹499 |
-| Pro | 10 | 200 | 100 | ₹1,499 |
-| Enterprise | Unlimited | Unlimited | Unlimited | ₹4,999 |
+| Free | 1 | 10 | 5 | £0 |
+| Starter | 3 | 50 | 20 | £5 |
+| Pro | 10 | 200 | 100 | £15 |
+| Enterprise | Unlimited | Unlimited | Unlimited | £50 |

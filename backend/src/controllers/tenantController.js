@@ -47,7 +47,7 @@ const createPaymentOrder = async (req, res) => {
     const amount = tenant.rent * 100;
     const options = {
       amount,
-      currency: 'INR',
+      currency: 'GBP',
       receipt: `receipt_${tenant.id}`,
     };
     const order = await razorpay.orders.create(options);

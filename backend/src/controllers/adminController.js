@@ -634,7 +634,7 @@ const sendPaymentReminderEmail = async (req, res) => {
       // Strip non-digits, ensure country code
       let phone = tenant.phone.replace(/[^0-9]/g, '');
       if (phone.length === 10) phone = '91' + phone; // Default India country code
-      const message = `Hi ${tenant.name}, this is a friendly reminder that your rent of ₹${tenant.rent} for ${prevMonthName} is pending. Your accommodation: ${bedInfo}. Please make the payment at your earliest convenience. Thank you!`;
+      const message = `Hi ${tenant.name}, this is a friendly reminder that your rent of £${tenant.rent} for ${prevMonthName} is pending. Your accommodation: ${bedInfo}. Please make the payment at your earliest convenience. Thank you!`;
       const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
       return res.json({ message: 'WhatsApp link generated', whatsappUrl });
     }

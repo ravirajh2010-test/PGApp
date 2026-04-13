@@ -160,9 +160,9 @@ CREATE TABLE plan_limits (
 
 INSERT INTO plan_limits (plan, max_properties, max_beds, max_users, price_monthly, price_yearly, features) VALUES
   ('free', 1, 10, 5, 0, 0, '{"email_notifications": false, "payment_gateway": false, "reports": false}'),
-  ('starter', 3, 50, 20, 499, 4990, '{"email_notifications": true, "payment_gateway": true, "reports": false}'),
-  ('pro', 10, 200, 100, 1499, 14990, '{"email_notifications": true, "payment_gateway": true, "reports": true}'),
-  ('enterprise', -1, -1, -1, 4999, 49990, '{"email_notifications": true, "payment_gateway": true, "reports": true, "api_access": true}');
+  ('starter', 3, 50, 20, 5, 50, '{"email_notifications": true, "payment_gateway": true, "reports": false}'),
+  ('pro', 10, 200, 100, 15, 150, '{"email_notifications": true, "payment_gateway": true, "reports": true}'),
+  ('enterprise', -1, -1, -1, 50, 500, '{"email_notifications": true, "payment_gateway": true, "reports": true, "api_access": true}');
 
 -- ============================================
 -- Indexes for performance
