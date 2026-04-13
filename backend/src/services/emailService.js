@@ -579,4 +579,90 @@ const sendDeactivationEmail = async (tenantEmail, tenantName, bedInfo, orgName) 
   }
 };
 
-module.exports = { sendEmail, sendTenantCredentials, sendThankYouEmail, sendPaymentReminder, sendRentReceipt, sendOrgWelcomeEmail, sendDeactivationEmail };
+// ── Stay Extension Reminder (3 days before end_date) ───────
+const sendStayExtensionReminder = async (tenantEmail, tenantName, bedInfo, endDate, orgName) => {
+  try {
+    const formattedEndDate = new Date(endDate).toLocaleDateString('en-IN', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    const htmlContent = `
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; border-radius: 8px; }
+            .header { background: linear-gradient(135deg, #ff9800 0%, #ff6d00 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; }
+            .content { background: white; padding: 30px; border-radius: 0 0 8px 8px; }
+            .alert-box { background: #fff3e0; border-left: 4px solid #ff9800; padding: 15px; margin: 20px 0; border-radius: 4px; }
+            .detail-box { background: #f5f5f5; padding: 15px; margin: 15px 0; border-radius: 4px; }
+            .detail-item { margin: 8px 0; }
+            .detail-label { font-weight: bold; color: #555; }
+            .cta-box { background: #e8f5e9; border: 2px solid #4caf50; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center; }
+            .cta-box h3 { color: #2e7d32; margin: 0 0 10px 0; }
+            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>⏰ Stay Ending Soon</h1>
+            </div>
+            <div class="content">
+              <p>Dear <strong>${tenantName}</strong>,</p>
+              
+              <div class="alert-box">
+                <strong>⚠️ Your stay is ending in 3 days!</strong>
+                <p style="margin: 5px 0 0 0;">Your current stay at <strong>${orgName || 'PG Stay'}</strong> is scheduled to end on <strong>${formattedEndDate}</strong>.</p>
+              </div>
+
+              <div class="detail-box">
+                <div class="detail-item">
+                  <span class="detail-label">🏠 Bed:</span> ${bedInfo}
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">📅 End Date:</span> ${formattedEndDate}
+                </div>
+              </div>
+
+              <div class="cta-box">
+                <h3>🔄 Want to Continue Your Stay?</h3>
+                <p>Please contact your admin <strong>before ${formattedEndDate}</strong> to extend your stay and avoid release of your bed.</p>
+                <p style="margin-top: 10px; font-size: 14px; color: #555;">
+                  Early confirmation helps us ensure your bed is reserved for you.
+                </p>
+              </div>
+
+              <p><strong>📌 What happens if you don't respond?</strong></p>
+              <ul>
+                <li>Your bed will be released on ${formattedEndDate}</li>
+                <li>Your account will be deactivated</li>
+                <li>The bed may be assigned to a new tenant</li>
+              </ul>
+
+              <p>If you have already spoken with the admin, you can ignore this email.</p>
+
+              <p>Warm regards,<br/>
+              <strong>${orgName || 'PG Stay'} Team</strong></p>
+            </div>
+            <div class="footer">
+              <p>&copy; ${new Date().getFullYear()} ${orgName || 'PG Stay'}. All rights reserved.</p>
+              <p>This is an automated reminder. Please do not reply directly.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const subject = `⏰ Stay Ending Soon - Action Required - ${orgName || 'PG Stay'}`;
+    const result = await sendEmail(tenantEmail, subject, htmlContent);
+    if (result) console.log(`✅ Stay extension reminder sent to ${tenantEmail}`);
+    return result;
+  } catch (error) {
+    console.error('❌ Error sending stay extension reminder:', error.message);
+    return false;
+  }
+};
+
+module.exports = { sendEmail, sendTenantCredentials, sendThankYouEmail, sendPaymentReminder, sendRentReceipt, sendOrgWelcomeEmail, sendDeactivationEmail, sendStayExtensionReminder };

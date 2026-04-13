@@ -4,7 +4,7 @@ export const BASE_URL = __ENV.BASE_URL || 'https://pg-stay-backend-production.up
 
 // Test users — update these with real credentials from your local DB
 export const ADMIN_CREDENTIALS = {
-  email: __ENV.ADMIN_EMAIL || 'admin@test.com',
+  email: __ENV.ADMIN_EMAIL || 'admin@pgstay.com',
   password: __ENV.ADMIN_PASSWORD || 'admin123',
 };
 

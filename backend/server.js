@@ -13,13 +13,19 @@ app.use(express.json());
 const dbManager = require('./src/services/DatabaseManager');
 const pool = dbManager.initMasterPool();
 
-// Initialize checkout scheduler in production
+// Initialize schedulers in production
 if (process.env.NODE_ENV === 'production') {
   try {
     const { scheduleCheckoutJob } = require('./src/services/checkoutScheduler');
     scheduleCheckoutJob();
   } catch (error) {
     console.warn('Warning: Could not initialize checkout scheduler:', error.message);
+  }
+  try {
+    const { scheduleStayExtensionReminder } = require('./src/services/stayExtensionScheduler');
+    scheduleStayExtensionReminder();
+  } catch (error) {
+    console.warn('Warning: Could not initialize stay extension reminder:', error.message);
   }
 }
 

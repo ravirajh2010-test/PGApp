@@ -311,23 +311,23 @@ const PaymentInfo = () => {
                             <>
                               <button
                                 onClick={(e) => { e.stopPropagation(); setReminderDropdown(reminderDropdown === tenant.id ? null : tenant.id); }}
-                                className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
+                                className="bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold transition"
                               >
                                 🔔 Remind ▾
                               </button>
                               {reminderDropdown === tenant.id && (
-                                <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-xl border z-50">
+                                <div className="absolute right-0 bottom-full mb-1 w-40 bg-white rounded-md shadow-xl border z-50">
                                   <button
                                     onClick={() => handleSendReminder(tenant.id, tenant.name, 'email')}
-                                    className="w-full text-left px-4 py-3 hover:bg-brand-50 text-gray-700 font-medium rounded-t-lg transition flex items-center gap-2"
+                                    className="w-full text-left px-3 py-2 hover:bg-brand-50 text-gray-700 text-xs font-medium rounded-t-md transition flex items-center gap-1.5"
                                   >
-                                    📧 Email Reminder
+                                    📧 Email
                                   </button>
                                   <button
                                     onClick={() => handleSendReminder(tenant.id, tenant.name, 'whatsapp')}
-                                    className="w-full text-left px-4 py-3 hover:bg-green-50 text-gray-700 font-medium rounded-b-lg transition flex items-center gap-2 border-t"
+                                    className="w-full text-left px-3 py-2 hover:bg-green-50 text-gray-700 text-xs font-medium rounded-b-md transition flex items-center gap-1.5 border-t"
                                   >
-                                    💬 WhatsApp Reminder
+                                    💬 WhatsApp
                                   </button>
                                 </div>
                               )}
@@ -462,10 +462,9 @@ const PaymentInfo = () => {
                                 markingPaid[tenant.id]
                                   ? 'bg-gray-400 cursor-not-allowed'
                                   : 'bg-green-600 hover:bg-green-700'
-                              } text-white px-4 py-2 rounded-lg text-sm font-semibold transition`}
+                              } text-white px-3 py-1 rounded-md text-xs font-semibold transition`}
                             >
-                              {markingPaid[tenant.id] ? '⏳ Marking...' : '✅ Mark Paid'}
-                            </button>
+                              {markingPaid[tenant.id] ? '⏳...' : '✅ Paid'}
                           ) : (
                             <span className="text-gray-400 text-sm">—</span>
                           )}
