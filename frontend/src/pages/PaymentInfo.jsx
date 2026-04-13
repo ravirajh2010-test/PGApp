@@ -465,6 +465,7 @@ const PaymentInfo = () => {
                               } text-white px-3 py-1 rounded-md text-xs font-semibold transition`}
                             >
                               {markingPaid[tenant.id] ? '⏳...' : '✅ Paid'}
+                            </button>
                           ) : (
                             <span className="text-gray-400 text-sm">—</span>
                           )}
