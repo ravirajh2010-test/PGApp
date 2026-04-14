@@ -83,10 +83,30 @@ const activateOrganization = async (req, res) => {
 const deleteOrganization = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Verify org exists
+    const org = await Organization.findById(id);
+    if (!org) {
+      return res.status(404).json({ message: 'Organization not found' });
+    }
+
+    // 1. Remove all user_org_map entries for this org
+    await pool.query('DELETE FROM user_org_map WHERE org_id = $1', [id]);
+
+    // 2. Remove subscriptions and invoices
+    await pool.query('DELETE FROM invoices WHERE org_id = $1', [id]);
+    await pool.query('DELETE FROM subscriptions WHERE org_id = $1', [id]);
+
+    // 3. Drop the org database/schema
+    await dbManager.deleteOrgDatabase(parseInt(id));
+
+    // 4. Delete org from master DB
     await Organization.delete(id);
-    res.json({ message: 'Organization deleted' });
+
+    res.json({ message: 'Organization deleted permanently' });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error deleting organization:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 

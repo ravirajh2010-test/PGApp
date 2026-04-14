@@ -173,6 +173,20 @@ const registerOrganization = async (req, res) => {
       return res.status(400).json({ message: 'Organization slug is already taken' });
     }
 
+    // Check if business email is already registered
+    if (orgEmail) {
+      const existingByBizEmail = await Organization.findByEmail(orgEmail);
+      if (existingByBizEmail) {
+        return res.status(400).json({ message: 'An organization with this business email already exists' });
+      }
+    }
+
+    // Check if admin email is already used by another organization
+    const existingAdminOrgs = await User.findOrgsByEmail(adminEmail);
+    if (existingAdminOrgs && existingAdminOrgs.length > 0) {
+      return res.status(400).json({ message: 'This admin email is already registered with another organization' });
+    }
+
     // Create organization in master DB
     const org = await Organization.create(orgName, orgSlug, orgEmail, orgPhone, orgAddress, plan);
     

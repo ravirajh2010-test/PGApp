@@ -60,6 +60,17 @@ const SuperAdminDashboard = () => {
     }
   };
 
+  const handleDeleteOrg = async (orgId, orgName) => {
+    if (!window.confirm(`Are you sure you want to PERMANENTLY DELETE "${orgName}"?\n\nThis will remove all data including users, tenants, buildings, rooms, beds, and payments.\n\nThis action CANNOT be undone.`)) return;
+    if (!window.confirm(`FINAL WARNING: Type OK to confirm deletion of "${orgName}". All organization data will be lost forever.`)) return;
+    try {
+      await api.delete(`/super-admin/organizations/${orgId}`);
+      fetchData();
+    } catch (error) {
+      alert('Error deleting organization: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
   const fetchInactiveUsers = async (days) => {
     setLoadingInactive(true);
     try {
@@ -227,21 +238,29 @@ const SuperAdminDashboard = () => {
                       <td className="px-6 py-3">{org.bed_count || 0}</td>
                       <td className="px-6 py-3">{org.user_count || 0}</td>
                       <td className="px-6 py-3 text-center">
-                        {org.status === 'active' ? (
+                        <div className="flex gap-1 justify-center">
+                          {org.status === 'active' ? (
+                            <button
+                              onClick={() => handleSuspendOrg(org.id)}
+                              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition"
+                            >
+                              <FormattedMessage id="superAdmin.suspend" defaultMessage="Suspend" />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleActivateOrg(org.id)}
+                              className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition"
+                            >
+                              <FormattedMessage id="superAdmin.activate" defaultMessage="Activate" />
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleSuspendOrg(org.id)}
-                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition"
+                            onClick={() => handleDeleteOrg(org.id, org.name)}
+                            className="bg-gray-700 hover:bg-gray-900 text-white px-3 py-1 rounded text-sm transition"
                           >
-                            <FormattedMessage id="superAdmin.suspend" defaultMessage="Suspend" />
+                            <FormattedMessage id="superAdmin.delete" defaultMessage="Delete" />
                           </button>
-                        ) : (
-                          <button
-                            onClick={() => handleActivateOrg(org.id)}
-                            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition"
-                          >
-                            <FormattedMessage id="superAdmin.activate" defaultMessage="Activate" />
-                          </button>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   ))}

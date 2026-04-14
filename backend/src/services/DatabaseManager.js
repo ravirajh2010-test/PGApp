@@ -434,6 +434,43 @@ class DatabaseManager {
   }
 
   /**
+   * Delete an organization's database (multi-DB) or schema (single-DB).
+   * Must be called BEFORE deleting the org row from master DB.
+   */
+  async deleteOrgDatabase(orgId) {
+    const master = this.getMasterPool();
+
+    // Close cached pool first
+    await this.destroyOrgPool(orgId);
+
+    if (this.singleDbMode) {
+      const schemaName = this._getSchemaName(orgId);
+      await master.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+      console.log(`[DB_MANAGER] Dropped schema "${schemaName}" for org ${orgId}`);
+    } else {
+      // Multi-DB mode: look up and drop the database
+      const result = await master.query(
+        'SELECT database_name FROM organizations WHERE id = $1',
+        [orgId]
+      );
+      if (result.rows.length > 0 && result.rows[0].database_name) {
+        const dbName = result.rows[0].database_name;
+        try {
+          // Terminate active connections to the database
+          await master.query(
+            `SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1 AND pid <> pg_backend_pid()`,
+            [dbName]
+          );
+          await master.query(`DROP DATABASE IF EXISTS "${dbName}"`);
+          console.log(`[DB_MANAGER] Dropped database "${dbName}" for org ${orgId}`);
+        } catch (err) {
+          console.error(`[DB_MANAGER] Error dropping database "${dbName}":`, err.message);
+        }
+      }
+    }
+  }
+
+  /**
    * Graceful shutdown - destroy all pools
    */
   async destroyAll() {

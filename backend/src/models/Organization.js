@@ -23,6 +23,11 @@ class Organization {
     return result.rows[0];
   }
 
+  static async findByEmail(email) {
+    const result = await pool.query('SELECT * FROM organizations WHERE email = $1', [email]);
+    return result.rows[0];
+  }
+
   static async findAll() {
     const result = await pool.query('SELECT * FROM organizations ORDER BY created_at DESC');
     return result.rows;
