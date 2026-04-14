@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormattedMessage, useIntl } from 'react-intl';
 import api from '../services/api';
+import { useCurrency } from '../context/LanguageContext';
 
 const TenantPaymentSearch = () => {
   const navigate = useNavigate();
   const intl = useIntl();
+  const { currencySymbol } = useCurrency();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -148,7 +150,7 @@ const TenantPaymentSearch = () => {
                   <span>📧 {selectedTenant.email}</span>
                   {selectedTenant.phone && <span>📱 {selectedTenant.phone}</span>}
                   <span>🛏️ {selectedTenant.bed_info}</span>
-                  <span>💰 {intl.formatMessage({ id: 'tenantSearch.perMonth', defaultMessage: '£{rent}/month' }, { rent: selectedTenant.rent })}</span>
+                  <span>💰 {intl.formatMessage({ id: 'tenantSearch.perMonth', defaultMessage: '{symbol}{rent}/month' }, { symbol: currencySymbol, rent: selectedTenant.rent })}</span>
                   <span>📅 {intl.formatMessage({ id: 'tenantSearch.since', defaultMessage: 'Since {date}' }, { date: new Date(selectedTenant.start_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) })}</span>
                   {selectedTenant.end_date && <span>📅 {intl.formatMessage({ id: 'tenantSearch.until', defaultMessage: 'Until {date}' }, { date: new Date(selectedTenant.end_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) })}</span>}
                 </div>
@@ -194,7 +196,7 @@ const TenantPaymentSearch = () => {
                     <tr>
                       <th className="px-6 py-3 text-left font-semibold text-gray-700">#</th>
                       <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="tenantSearch.month" defaultMessage="Month" /></th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="tenantSearch.rent" defaultMessage="Rent (£)" /></th>
+                      <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="tenantSearch.rent" defaultMessage={`Rent (${currencySymbol})`} /></th>
                       <th className="px-6 py-3 text-center font-semibold text-gray-700"><FormattedMessage id="payment.statusHeader" defaultMessage="Status" /></th>
                       <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="tenantSearch.paymentDate" defaultMessage="Payment Date" /></th>
                       <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="tenantSearch.reference" defaultMessage="Reference" /></th>
@@ -208,13 +210,13 @@ const TenantPaymentSearch = () => {
                         <tr key={key} className="border-b hover:bg-gray-50">
                           <td className="px-6 py-3 font-medium">{idx + 1}</td>
                           <td className="px-6 py-3 font-medium">{m.monthName}</td>
-                          <td className="px-6 py-3 font-semibold">£{m.billAmount}</td>
+                          <td className="px-6 py-3 font-semibold">{currencySymbol}{m.billAmount}</td>
                           <td className="px-6 py-3 text-center">
                             {m.status === 'Paid' ? (
                               <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">✅ <FormattedMessage id="payment.paidStatus" defaultMessage="Paid" /></span>
                             ) : (
                               <span
-                                title={`Bill Generated: £${m.billAmount} due`}
+                                title={`Bill Generated: ${currencySymbol}${m.billAmount} due`}
                                 className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold cursor-help inline-block"
                               >
                                 📄 <FormattedMessage id="payment.billGenerated" defaultMessage="Bill Generated" />

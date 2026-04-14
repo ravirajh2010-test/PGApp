@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { FormattedMessage, useIntl } from 'react-intl';
 import api from '../services/api';
 import { exportPaymentData } from '../services/exportUtils';
+import { useCurrency } from '../context/LanguageContext';
 
 const PaymentInfo = () => {
   const navigate = useNavigate();
+  const { currencySymbol } = useCurrency();
   const intl = useIntl();
   const [tenants, setTenants] = useState([]);
   const [monthName, setMonthName] = useState('');
@@ -103,7 +105,7 @@ const PaymentInfo = () => {
         na: naCount,
       };
 
-      await exportPaymentData(format, tenants, monthName, summaryStats);
+      await exportPaymentData(format, tenants, monthName, summaryStats, currencySymbol);
       alert(`✅ Payment data exported as ${format.toUpperCase()} successfully!`);
       setShowExportModal(false);
     } catch (error) {
@@ -261,7 +263,7 @@ const PaymentInfo = () => {
                   <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="payment.tenantName" defaultMessage="Tenant Name" /></th>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="payment.emailHeader" defaultMessage="Email" /></th>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="payment.bedInfo" defaultMessage="Bed Info" /></th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="payment.rentHeader" defaultMessage="Rent (£)" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="payment.rentHeader" defaultMessage={`Rent (${currencySymbol})`} /></th>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="payment.monthHeader" defaultMessage="Month" /></th>
                   <th className="px-6 py-3 text-center font-semibold text-gray-700"><FormattedMessage id="payment.statusHeader" defaultMessage="Status" /></th>
                   <th className="px-6 py-3 text-center font-semibold text-gray-700"><FormattedMessage id="payment.actionHeader" defaultMessage="Action" /></th>
@@ -279,10 +281,10 @@ const PaymentInfo = () => {
                       </span>
                     </td>
                     <td className="px-6 py-3 font-semibold">
-                      £{tenant.billAmount}
+                      {currencySymbol}{tenant.billAmount}
                       {tenant.isProrated && (
                         <span className="block text-xs text-gray-500 font-normal">
-                          ({tenant.daysStayed}/{tenant.daysInMonth} days × £{tenant.rent})
+                          ({tenant.daysStayed}/{tenant.daysInMonth} days × {currencySymbol}{tenant.rent})
                         </span>
                       )}
                     </td>
@@ -298,7 +300,7 @@ const PaymentInfo = () => {
                         </span>
                       ) : (
                         <span
-                          title={`Bill Generated: £${tenant.billAmount} due`}
+                          title={`Bill Generated: ${currencySymbol}${tenant.billAmount} due`}
                           className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold cursor-help inline-block"
                         >
                           📄 <FormattedMessage id="payment.billGenerated" defaultMessage="Bill Generated" />
@@ -446,7 +448,7 @@ const PaymentInfo = () => {
                         <td className="px-6 py-3">{idx + 1}</td>
                         <td className="px-6 py-3 font-medium">{tenant.name}</td>
                         <td className="px-6 py-3 text-sm">{tenant.bed_info}</td>
-                        <td className="px-6 py-3 font-semibold">£{tenant.rent}</td>
+                        <td className="px-6 py-3 font-semibold">{currencySymbol}{tenant.rent}</td>
                         <td className="px-6 py-3 text-center">
                           {tenant.payment_status === 'Paid' ? (
                             <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">

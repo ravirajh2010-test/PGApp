@@ -4,10 +4,12 @@ import { FormattedMessage } from 'react-intl';
 import api, { getUser, getOrganization } from '../services/api';
 import Toast from '../components/Toast';
 import ChangePasswordModal from '../components/ChangePasswordModal';
+import { useCurrency } from '../context/LanguageContext';
 
 const OrgSettings = () => {
   const navigate = useNavigate();
   const user = getUser();
+  const { currencySymbol } = useCurrency();
   const [org, setOrg] = useState(null);
   const [subscription, setSubscription] = useState(null);
   const [users, setUsers] = useState([]);
@@ -237,7 +239,7 @@ const OrgSettings = () => {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-3xl font-bold text-brand-500">£{subscription.current?.amount || 0}</p>
+                    <p className="text-3xl font-bold text-brand-500">{currencySymbol}{subscription.current?.amount || 0}</p>
                     <p className="text-sm text-gray-500">/{subscription.current?.billing_cycle || 'month'}</p>
                   </div>
                 </div>
@@ -281,7 +283,7 @@ const OrgSettings = () => {
                               {plan.max_beds === -1 ? 'Unlimited' : plan.max_beds} beds
                             </p>
                           </div>
-                          <p className="font-bold text-brand-500">£{plan.price_monthly}/mo</p>
+                          <p className="font-bold text-brand-500">{currencySymbol}{plan.price_monthly}/mo</p>
                         </div>
                         {plan.plan === (org?.plan || subscription.current?.plan) && (
                           <span className="text-xs bg-brand-500 text-white px-2 py-1 rounded mt-2 inline-block">Current Plan</span>

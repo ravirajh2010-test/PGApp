@@ -6,8 +6,8 @@
 /**
  * Export data as CSV
  */
-export const exportAsCSV = (data, filename) => {
-  const headers = ['#', 'Tenant Name', 'Email', 'Bed Info', 'Rent (£)', 'Bill Amount (£)', 'Status'];
+export const exportAsCSV = (data, filename, currencySymbol = '₹') => {
+  const headers = ['#', 'Tenant Name', 'Email', 'Bed Info', `Rent (${currencySymbol})`, `Bill Amount (${currencySymbol})`, 'Status'];
   const rows = data.map((item, idx) => [
     idx + 1,
     item.name,
@@ -34,7 +34,7 @@ export const exportAsCSV = (data, filename) => {
  * Export data as Excel (XLSX)
  * Using: npm install xlsx
  */
-export const exportAsExcel = async (data, filename, monthName) => {
+export const exportAsExcel = async (data, filename, monthName, currencySymbol = '₹') => {
   try {
     // Import dynamically to reduce bundle size
     const XLSX = await import('xlsx');
@@ -49,8 +49,8 @@ export const exportAsExcel = async (data, filename, monthName) => {
       'Tenant Name': item.name,
       'Email': item.email,
       'Bed Info': item.bed_info,
-      'Rent (£)': item.rent,
-      'Bill Amount (£)': item.billAmount,
+      [`Rent (${currencySymbol})`]: item.rent,
+      [`Bill Amount (${currencySymbol})`]: item.billAmount,
       'Status': item.payment_status,
     }));
 
@@ -77,7 +77,7 @@ export const exportAsExcel = async (data, filename, monthName) => {
  * Export data as PDF - Simple text-based approach
  * This is more reliable than html2canvas approach
  */
-export const exportAsPDF = async (data, filename, monthName, summaryStats) => {
+export const exportAsPDF = async (data, filename, monthName, summaryStats, currencySymbol = '₹') => {
   try {
     // Import jsPDF
     const jsPDFModule = await import('jspdf');
@@ -138,7 +138,7 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats) => {
     yPosition += 20;
 
     // Table column config
-    const headers = ['#', 'Tenant Name', 'Email', 'Bed Info', 'Rent (GBP)', 'Bill (GBP)', 'Month', 'Status'];
+    const headers = ['#', 'Tenant Name', 'Email', 'Bed Info', `Rent (${currencySymbol})`, `Bill (${currencySymbol})`, 'Month', 'Status'];
     const colWidths = [10, 35, 50, 35, 25, 25, 30, 30];
     const tableWidth = colWidths.reduce((a, b) => a + b, 0);
     const rowHeight = 8;
@@ -189,8 +189,8 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats) => {
         String(item.name || ''),
         String(item.email || ''),
         String(item.bed_info || ''),
-        'GBP ' + String(item.rent || 0),
-        'GBP ' + String(item.billAmount || 0),
+        currencySymbol + ' ' + String(item.rent || 0),
+        currencySymbol + ' ' + String(item.billAmount || 0),
         String(monthName || ''),
         String(item.payment_status || ''),
       ];
@@ -253,23 +253,23 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats) => {
 /**
  * Main export function that handles all formats
  */
-export const exportPaymentData = async (format, data, monthName, summaryStats) => {
+export const exportPaymentData = async (format, data, monthName, summaryStats, currencySymbol = '₹') => {
   try {
     const timestamp = new Date().toISOString().split('T')[0];
     const filename = `Payment_Status_${monthName.replace(/\s+/g, '_')}_${timestamp}`;
 
     switch (format.toLowerCase()) {
       case 'csv':
-        exportAsCSV(data, filename);
+        exportAsCSV(data, filename, currencySymbol);
         return { success: true, message: 'CSV exported successfully' };
 
       case 'excel':
       case 'xlsx':
-        await exportAsExcel(data, filename, monthName);
+        await exportAsExcel(data, filename, monthName, currencySymbol);
         return { success: true, message: 'Excel file exported successfully' };
 
       case 'pdf':
-        await exportAsPDF(data, filename, monthName, summaryStats);
+        await exportAsPDF(data, filename, monthName, summaryStats, currencySymbol);
         return { success: true, message: 'PDF exported successfully' };
 
       default:

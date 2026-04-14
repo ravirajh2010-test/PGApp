@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormattedMessage, useIntl } from 'react-intl';
 import api, { getUser } from '../services/api';
+import { useCurrency } from '../context/LanguageContext';
 
 const SuperAdminDashboard = () => {
   const navigate = useNavigate();
   const user = getUser();
+  const { currencySymbol } = useCurrency();
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState(null);
   const [organizations, setOrganizations] = useState([]);
@@ -150,7 +152,7 @@ const SuperAdminDashboard = () => {
           </div>
           <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
             <h3 className="text-sm font-semibold text-gray-600 uppercase"><FormattedMessage id="superAdmin.monthlyRevenue" defaultMessage="Monthly Revenue" /></h3>
-            <p className="text-3xl font-bold text-purple-500">£{stats.monthly_revenue || 0}</p>
+            <p className="text-3xl font-bold text-purple-500">{currencySymbol}{stats.monthly_revenue || 0}</p>
           </div>
         </div>
       )}

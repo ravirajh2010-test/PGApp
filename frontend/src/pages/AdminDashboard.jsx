@@ -4,9 +4,11 @@ import { FormattedMessage } from 'react-intl';
 import api from '../services/api';
 import FloorOccupancyVisual from '../components/FloorOccupancyVisual';
 import TenantCredentialsModal from '../components/TenantCredentialsModal';
+import { useCurrency } from '../context/LanguageContext';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { currencySymbol } = useCurrency();
   const [tenants, setTenants] = useState([]);
   const [buildings, setBuildings] = useState([]);
   const [rooms, setRooms] = useState([]);
@@ -39,6 +41,7 @@ const AdminDashboard = () => {
   });
   const [editingCheckout, setEditingCheckout] = useState(null); // tenant id being edited
   const [editCheckoutDate, setEditCheckoutDate] = useState('');
+  const [floorRefreshKey, setFloorRefreshKey] = useState(0);
 
   // Refresh all data
   const refreshAllData = async () => {
@@ -51,6 +54,7 @@ const AdminDashboard = () => {
       fetchAvailableBeds()
     ]);
     setLastRefreshTime(new Date().toLocaleTimeString());
+    setFloorRefreshKey(prev => prev + 1);
   };
 
   useEffect(() => {
@@ -245,6 +249,7 @@ const AdminDashboard = () => {
       try {
         await api.delete(`/admin/tenants/${id}`);
         await Promise.all([fetchTenants(), fetchOccupancy(), fetchAvailableBeds(), fetchBeds()]);
+        setFloorRefreshKey(prev => prev + 1);
       } catch (error) {
         alert('Error deleting tenant');
       }
@@ -255,6 +260,7 @@ const AdminDashboard = () => {
     setCreatedCredentials(null);
     // Refresh data when modal closes so tenant appears in list
     await Promise.all([fetchTenants(), fetchOccupancy(), fetchAvailableBeds(), fetchBeds()]).catch(() => {});
+    setFloorRefreshKey(prev => prev + 1);
   };
 
   return (
@@ -493,7 +499,7 @@ const AdminDashboard = () => {
       )}
 
       {/* Floor-wise Occupancy Visual */}
-      <FloorOccupancyVisual buildings={buildings} />
+      <FloorOccupancyVisual buildings={buildings} refreshKey={floorRefreshKey} />
 
       {/* Tenants Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -526,7 +532,7 @@ const AdminDashboard = () => {
                         {tenant.building_name} - Room {tenant.room_number} - Bed {tenant.bed_identifier}
                       </span>
                     </td>
-                    <td className="px-6 py-3">£{tenant.rent}</td>
+                    <td className="px-6 py-3">{currencySymbol}{tenant.rent}</td>
                     <td className="px-6 py-3">{new Date(tenant.start_date).toLocaleDateString()}</td>
                     <td className="px-6 py-3">
                       {editingCheckout === tenant.id ? (

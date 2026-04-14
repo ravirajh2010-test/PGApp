@@ -293,7 +293,7 @@ const sendPaymentReminder = async (tenantEmail, tenantName, rent, bedInfo, month
                 <h3 style="margin-top: 0; color: #ff6b35;">Payment Details</h3>
                 <p><strong>Month:</strong> ${monthName}</p>
                 <p><strong>Accommodation:</strong> ${bedInfo}</p>
-                <p><strong>Amount Due:</strong> <span class="amount">£${rent}</span></p>
+                <p><strong>Amount Due:</strong> <span class="amount">₹${rent}</span></p>
               </div>
               <p>Please make the payment at the earliest to avoid any inconvenience.</p>
               <p>If you have already made the payment, please disregard this email.</p>
@@ -391,7 +391,7 @@ const sendRentReceipt = async (tenantEmail, tenantName, rent, bedInfo, monthName
               
               <div class="amount-box">
                 <div class="amount-label">Amount Paid</div>
-                <div class="amount">£${rent}</div>
+                <div class="amount">₹${rent}</div>
                 <div class="verified">✔ Payment Verified</div>
               </div>
               

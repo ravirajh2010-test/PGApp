@@ -27,6 +27,18 @@ export const useLanguage = () => {
   return context;
 };
 
+// Region → currency mapping
+const REGION_CURRENCY = {
+  IN: { symbol: '₹', code: 'INR' },
+  UK: { symbol: '£', code: 'GBP' },
+};
+
+export const useCurrency = () => {
+  const { region } = useLanguage();
+  const { symbol, code } = REGION_CURRENCY[region] || REGION_CURRENCY.IN;
+  return { currencySymbol: symbol, currencyCode: code, region };
+};
+
 const allMessages = {
   en: flattenMessages(enMessages),
   te: flattenMessages(teMessages),
@@ -38,9 +50,17 @@ export const LanguageProvider = ({ children }) => {
     return localStorage.getItem('language') || 'en';
   });
 
+  const [region, setRegion] = useState(() => {
+    return localStorage.getItem('region') || 'IN';
+  });
+
   useEffect(() => {
     localStorage.setItem('language', language);
   }, [language]);
+
+  useEffect(() => {
+    localStorage.setItem('region', region);
+  }, [region]);
 
   const changeLanguage = (lang) => {
     if (allMessages[lang]) {
@@ -48,8 +68,14 @@ export const LanguageProvider = ({ children }) => {
     }
   };
 
+  const changeRegion = (r) => {
+    if (REGION_CURRENCY[r]) {
+      setRegion(r);
+    }
+  };
+
   return (
-    <LanguageContext.Provider value={{ language, changeLanguage }}>
+    <LanguageContext.Provider value={{ language, changeLanguage, region, changeRegion }}>
       <IntlProvider messages={allMessages[language]} locale={language} defaultLocale="en">
         {children}
       </IntlProvider>

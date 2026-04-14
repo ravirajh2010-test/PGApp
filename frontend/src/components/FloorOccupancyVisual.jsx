@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import api from '../services/api';
 
-const FloorOccupancyVisual = ({ buildings }) => {
+const FloorOccupancyVisual = ({ buildings, refreshKey }) => {
   const [selectedBuilding, setSelectedBuilding] = useState('');
   const [floors, setFloors] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -15,7 +15,7 @@ const FloorOccupancyVisual = ({ buildings }) => {
     } else {
       setFloors([]);
     }
-  }, [selectedBuilding]);
+  }, [selectedBuilding, refreshKey]);
 
   const fetchFloorData = async (buildingId) => {
     setLoading(true);
