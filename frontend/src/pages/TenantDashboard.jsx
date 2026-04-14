@@ -100,17 +100,17 @@ const TenantDashboard = () => {
       )}
 
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-2">👤 <FormattedMessage id="tenant.tenantDashboard" defaultMessage="Tenant Dashboard" /></h1>
-        <p className="text-gray-600"><FormattedMessage id="tenant.stayDetails" defaultMessage="Manage your stay and payments" /></p>
+        <h1 className="text-2xl sm:text-4xl font-bold text-gray-800 mb-2">👤 <FormattedMessage id="tenant.tenantDashboard" defaultMessage="Tenant Dashboard" /></h1>
+        <p className="text-gray-600 text-sm sm:text-base"><FormattedMessage id="tenant.stayDetails" defaultMessage="Manage your stay and payments" /></p>
       </div>
 
       {/* Profile Section */}
       <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-brand-500">
-        <div className="flex justify-between items-start mb-4">
-          <h2 className="text-2xl font-bold text-gray-800"><FormattedMessage id="tenant.myProfile" defaultMessage="Profile Information" /></h2>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800"><FormattedMessage id="tenant.myProfile" defaultMessage="Profile Information" /></h2>
           <button
             onClick={() => setShowPasswordModal(true)}
-            className="bg-brand-500 hover:bg-brand-600 text-white font-semibold py-2 px-4 rounded-lg transition text-sm"
+            className="bg-brand-500 hover:bg-brand-600 text-white font-semibold py-2 px-4 rounded-lg transition text-sm shrink-0"
           >
             🔒 <FormattedMessage id="tenant.resetPassword" defaultMessage="Reset Password" />
           </button>
@@ -148,8 +148,8 @@ const TenantDashboard = () => {
 
       {/* Payments Section */}
       <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-800"><FormattedMessage id="tenant.paymentHistory" defaultMessage="Payment History" /></h2>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800"><FormattedMessage id="tenant.paymentHistory" defaultMessage="Payment History" /></h2>
           <button 
             onClick={handlePay} 
             className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-2 px-6 rounded-lg transition"

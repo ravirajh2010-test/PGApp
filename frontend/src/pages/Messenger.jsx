@@ -153,18 +153,18 @@ const Messenger = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
             💬 <FormattedMessage id="messenger.title" defaultMessage="Messenger" />
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">
             <FormattedMessage id="messenger.subtitle" defaultMessage="Send communications to your tenants" />
           </p>
         </div>
         <button
           onClick={() => navigate('/admin')}
-          className="text-brand-600 hover:text-brand-700 font-semibold"
+          className="text-brand-600 hover:text-brand-700 font-semibold text-sm shrink-0"
         >
           <FormattedMessage id="messenger.backToDashboard" defaultMessage="← Back to Dashboard" />
         </button>

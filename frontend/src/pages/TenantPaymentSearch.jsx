@@ -74,28 +74,28 @@ const TenantPaymentSearch = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-800">🔍 <FormattedMessage id="tenantSearch.title" defaultMessage="Search Tenant Payments" /></h1>
-        <button onClick={() => navigate('/payment-info')} className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">🔍 <FormattedMessage id="tenantSearch.title" defaultMessage="Search Tenant Payments" /></h1>
+        <button onClick={() => navigate('/payment-info')} className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition text-sm shrink-0">
           <FormattedMessage id="tenantSearch.backToPayments" defaultMessage="← Back to Payment Info" />
         </button>
       </div>
 
       {/* Search Bar */}
       <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             placeholder={intl.formatMessage({ id: 'tenantSearch.placeholder', defaultMessage: 'Search by tenant name, email, or mobile number...' })}
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-lg"
+            className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-base sm:text-lg"
           />
           <button
             onClick={handleSearch}
             disabled={searching || query.trim().length < 2}
-            className="bg-brand-500 hover:bg-brand-600 text-white font-bold px-8 py-3 rounded-xl transition shadow-lg shadow-brand-500/20 disabled:opacity-50"
+            className="bg-brand-500 hover:bg-brand-600 text-white font-bold px-6 sm:px-8 py-3 rounded-xl transition shadow-lg shadow-brand-500/20 disabled:opacity-50 shrink-0"
           >
             {searching ? '⏳ ' + intl.formatMessage({ id: 'tenantSearch.searching', defaultMessage: 'Searching...' }) : '🔍 ' + intl.formatMessage({ id: 'tenantSearch.search', defaultMessage: 'Search' })}
           </button>
@@ -119,8 +119,8 @@ const TenantPaymentSearch = () => {
                   className="px-6 py-4 hover:bg-brand-50 cursor-pointer transition flex items-center justify-between"
                 >
                   <div>
-                    <p className="font-semibold text-gray-800 text-lg">{tenant.name}</p>
-                    <div className="flex gap-4 text-sm text-gray-500 mt-1">
+                    <p className="font-semibold text-gray-800 text-base sm:text-lg">{tenant.name}</p>
+                    <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500 mt-1">
                       <span>📧 {tenant.email}</span>
                       {tenant.phone && <span>📱 {tenant.phone}</span>}
                       <span>🛏️ {tenant.bed_info}</span>

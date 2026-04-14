@@ -6,6 +6,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #f8fafc;
+  overflow-x: hidden;
 }
 
 code {
@@ -15,6 +16,23 @@ code {
 .App {
   min-height: 100vh;
   background: #f8fafc;
+  overflow-x: hidden;
+}
+
+/* Prevent horizontal overflow on mobile */
+html {
+  overflow-x: hidden;
+}
+
+/* Make tables scroll horizontally on mobile */
+@media (max-width: 640px) {
+  table {
+    font-size: 0.8rem;
+  }
+  table th,
+  table td {
+    padding: 0.5rem 0.75rem;
+  }
 }
 
 /* RoomiPilot brand theme */

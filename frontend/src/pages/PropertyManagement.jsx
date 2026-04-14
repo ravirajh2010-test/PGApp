@@ -300,17 +300,17 @@ const PropertyManagement = () => {
       {loading && <div className="bg-blue-100 border border-blue-500 p-4 rounded-lg text-blue-800">Loading data...</div>}
       
       {/* Controls */}
-      <div className="flex flex-wrap gap-3 items-center justify-between bg-gray-50 p-4 rounded-lg">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center justify-between bg-gray-50 p-4 rounded-lg">
         <button
           onClick={() => navigate('/admin')}
-          className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition"
+          className="bg-gray-500 hover:bg-gray-600 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition text-sm"
         >
           <FormattedMessage id="property.backToDashboard" defaultMessage="← Back to Admin Dashboard" />
         </button>
         
         <button
           onClick={refreshAllData}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold transition flex items-center gap-2"
+          className="bg-blue-500 hover:bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition flex items-center gap-2 text-sm"
         >
           🔄 Refresh All
         </button>
@@ -333,7 +333,7 @@ const PropertyManagement = () => {
 
       {/* Buildings Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="px-6 py-4 bg-blue-50 border-b-2 border-blue-500 flex justify-between items-center">
+        <div className="px-4 sm:px-6 py-4 bg-blue-50 border-b-2 border-blue-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <h2 className="text-2xl font-bold text-gray-800">🏢 <FormattedMessage id="property.buildings" defaultMessage="Buildings" /></h2>
           <div className="flex gap-2">
             <button
@@ -358,7 +358,7 @@ const PropertyManagement = () => {
         {showBuildingForm && (
           <div className="px-6 py-4 bg-blue-100 border-b">
             {buildingError && <p className="text-red-600 mb-3">⚠️ {buildingError}</p>}
-            <form onSubmit={handleAddBuilding} className="flex gap-2">
+            <form onSubmit={handleAddBuilding} className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
                 placeholder="Building Name"
@@ -435,7 +435,7 @@ const PropertyManagement = () => {
 
       {/* Rooms Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="px-6 py-4 bg-purple-50 border-b-2 border-purple-500 flex justify-between items-center">
+        <div className="px-4 sm:px-6 py-4 bg-purple-50 border-b-2 border-purple-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <h2 className="text-2xl font-bold text-gray-800">🚪 <FormattedMessage id="property.rooms" defaultMessage="Rooms" /></h2>
           <div className="flex gap-2">
             <button
@@ -553,7 +553,7 @@ const PropertyManagement = () => {
 
       {/* Beds Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="px-6 py-4 bg-green-50 border-b-2 border-green-500 flex justify-between items-center">
+        <div className="px-4 sm:px-6 py-4 bg-green-50 border-b-2 border-green-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <h2 className="text-2xl font-bold text-gray-800">🛏️ <FormattedMessage id="property.beds" defaultMessage="Beds" /></h2>
           <div className="flex gap-2">
             <button

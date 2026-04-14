@@ -229,7 +229,7 @@ const OrgSettings = () => {
           {subscription && (
             <div className="space-y-6">
               <div className="bg-brand-50 rounded-lg p-6 border-2 border-brand-200">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div>
                     <h3 className="text-2xl font-bold text-gray-800 capitalize">{subscription.current?.plan || org?.plan} Plan</h3>
                     <p className="text-gray-600">

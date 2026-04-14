@@ -268,8 +268,8 @@ const AdminDashboard = () => {
       )}
 
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-2">📊 <FormattedMessage id="dashboard.adminDashboard" defaultMessage="Admin Dashboard" /></h1>
-        <p className="text-gray-600"><FormattedMessage id="dashboard.subtitle" defaultMessage="Manage tenants and view property overview" /></p>
+        <h1 className="text-2xl sm:text-4xl font-bold text-gray-800 mb-2">📊 <FormattedMessage id="dashboard.adminDashboard" defaultMessage="Admin Dashboard" /></h1>
+        <p className="text-gray-600 text-sm sm:text-base"><FormattedMessage id="dashboard.subtitle" defaultMessage="Manage tenants and view property overview" /></p>
       </div>
 
       {/* Occupancy Stats */}
@@ -289,8 +289,8 @@ const AdminDashboard = () => {
       </div>
 
       {/* Controls */}
-      <div className="flex flex-wrap gap-3 items-center justify-between bg-gray-50 p-4 rounded-lg">
-        <div className="flex flex-wrap gap-3">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center justify-between bg-gray-50 p-4 rounded-lg">
+        <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
           <button
             onClick={() => {
               setShowTenantForm(!showTenantForm);
@@ -309,25 +309,25 @@ const AdminDashboard = () => {
                 setSelectedRoomBeds([]);
               }
             }}
-            className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-2 rounded-lg font-semibold transition"
+            className="bg-brand-500 hover:bg-brand-600 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition text-sm"
           >
             {showTenantForm ? '✕ Close' : <><FormattedMessage id="dashboard.addNewTenant" defaultMessage="+ Add New Tenant" /></>}
           </button>
           <button
             onClick={refreshAllData}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold transition"
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition text-sm"
           >
             <FormattedMessage id="dashboard.refresh" defaultMessage="🔄 Refresh" />
           </button>
           <button
             onClick={() => navigate('/property-management')}
-            className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold transition"
+            className="bg-purple-500 hover:bg-purple-600 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition text-sm"
           >
             <FormattedMessage id="dashboard.modifyProperties" defaultMessage="⚙️ Modify Properties" />
           </button>
           <button
             onClick={() => navigate('/messenger')}
-            className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-lg font-semibold transition"
+            className="bg-teal-500 hover:bg-teal-600 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition text-sm"
           >
             💬 <FormattedMessage id="messenger.title" defaultMessage="Messenger" />
           </button>
@@ -618,7 +618,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Layout View Toggle */}
-      <div className="bg-white rounded-lg shadow-md p-4 flex items-center gap-4">
+      <div className="bg-white rounded-lg shadow-md p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         <label className="font-semibold text-gray-700"><FormattedMessage id="dashboard.viewLayout" defaultMessage="View Layout:" /></label>
         <select 
           value={layoutView} 

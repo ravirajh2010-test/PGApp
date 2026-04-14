@@ -75,19 +75,19 @@ const FloorOccupancyVisual = ({ buildings }) => {
 
       {/* Legend & Summary - only show when a building is selected */}
       {selectedBuilding && (
-      <div className="px-6 py-3 bg-gray-50 border-b flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-6">
+      <div className="px-4 sm:px-6 py-3 bg-gray-50 border-b flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-4 sm:gap-6">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-red-500"></div>
-            <span className="text-sm font-medium text-gray-700"><FormattedMessage id="dashboard.occupiedStatus" defaultMessage="Occupied" /></span>
+            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded bg-red-500"></div>
+            <span className="text-xs sm:text-sm font-medium text-gray-700"><FormattedMessage id="dashboard.occupiedStatus" defaultMessage="Occupied" /></span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-green-500"></div>
-            <span className="text-sm font-medium text-gray-700"><FormattedMessage id="dashboard.vacantStatus" defaultMessage="Vacant" /></span>
+            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded bg-green-500"></div>
+            <span className="text-xs sm:text-sm font-medium text-gray-700"><FormattedMessage id="dashboard.vacantStatus" defaultMessage="Vacant" /></span>
           </div>
         </div>
         {totalBeds > 0 && (
-          <div className="flex items-center gap-4 text-sm font-semibold">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm font-semibold">
             <span className="text-gray-600"><FormattedMessage id="dashboard.totalLabel" defaultMessage="Total" />: {totalBeds}</span>
             <span className="text-red-600"><FormattedMessage id="dashboard.occupiedStatus" defaultMessage="Occupied" />: {occupiedBeds}</span>
             <span className="text-green-600"><FormattedMessage id="dashboard.vacantStatus" defaultMessage="Vacant" />: {vacantBeds}</span>

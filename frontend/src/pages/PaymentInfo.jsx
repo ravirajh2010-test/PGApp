@@ -151,10 +151,10 @@ const PaymentInfo = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">💰 <FormattedMessage id="payment.paymentInfo" defaultMessage="Payment Info" /></h1>
-          <div className="mt-3 flex items-center gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">💰 <FormattedMessage id="payment.paymentInfo" defaultMessage="Payment Info" /></h1>
+          <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
             <p className="text-gray-600">
               <FormattedMessage id="payment.paymentStatusFor" defaultMessage="Payment status for" /> <span className="font-semibold text-brand-600">{monthName}</span>
             </p>
@@ -166,7 +166,7 @@ const PaymentInfo = () => {
                   setSelectedMonth(parseInt(month));
                   setSelectedYear(parseInt(year));
                 }}
-                className="px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white font-semibold text-gray-700"
+                className="px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white font-semibold text-gray-700 text-sm"
               >
                 {monthYearOptions.map((option) => (
                   <option key={`${option.month}-${option.year}`} value={`${option.month}-${option.year}`}>
@@ -179,7 +179,7 @@ const PaymentInfo = () => {
         </div>
         <button
           onClick={() => navigate('/admin')}
-          className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition"
+          className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition text-sm shrink-0"
         >
           <FormattedMessage id="property.backToDashboard" defaultMessage="← Back to Dashboard" />
         </button>
@@ -209,45 +209,47 @@ const PaymentInfo = () => {
 
       {/* Payment Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="px-6 py-4 bg-brand-50 border-b-2 border-brand-500 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-gray-800"><FormattedMessage id="payment.paymentStatusTitle" defaultMessage="Payment Status" /> — {monthName}</h2>
-            <select
-              value={roomFilter}
-              onChange={(e) => setRoomFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white font-semibold text-gray-700 text-sm"
-            >
-              <option value="">{intl.formatMessage({ id: 'payment.allRooms', defaultMessage: 'All Rooms' })}</option>
-              {roomOptions.map(room => (
-                <option key={room} value={room}>{intl.formatMessage({ id: 'payment.roomLabel', defaultMessage: 'Room {room}' }, { room })}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => navigate('/tenant-payment-search')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition"
-            >
-              🔍 <FormattedMessage id="payment.searchTenant" defaultMessage="Search Tenant" />
-            </button>
-            <button
-              onClick={() => setShowExportModal(true)}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold transition"
-            >
-              📊 <FormattedMessage id="payment.export" defaultMessage="Export" />
-            </button>
-            <button
-              onClick={() => setShowOfflineModal(true)}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition"
-            >
-            <FormattedMessage id="payment.markOfflinePayment" defaultMessage="💵 Mark Offline Pay" />
-            </button>
-            <button
-              onClick={() => fetchPaymentInfo(selectedMonth, selectedYear)}
-              className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg font-semibold transition"
-            >
-              🔄 <FormattedMessage id="payment.refresh" defaultMessage="Refresh" />
-            </button>
+        <div className="px-4 sm:px-6 py-4 bg-brand-50 border-b-2 border-brand-500">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800"><FormattedMessage id="payment.paymentStatusTitle" defaultMessage="Payment Status" /> — {monthName}</h2>
+              <select
+                value={roomFilter}
+                onChange={(e) => setRoomFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white font-semibold text-gray-700 text-sm w-full sm:w-auto"
+              >
+                <option value="">{intl.formatMessage({ id: 'payment.allRooms', defaultMessage: 'All Rooms' })}</option>
+                {roomOptions.map(room => (
+                  <option key={room} value={room}>{intl.formatMessage({ id: 'payment.roomLabel', defaultMessage: 'Room {room}' }, { room })}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => navigate('/tenant-payment-search')}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-semibold transition text-xs sm:text-sm"
+              >
+                🔍 <FormattedMessage id="payment.searchTenant" defaultMessage="Search Tenant" />
+              </button>
+              <button
+                onClick={() => setShowExportModal(true)}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg font-semibold transition text-xs sm:text-sm"
+              >
+                📊 <FormattedMessage id="payment.export" defaultMessage="Export" />
+              </button>
+              <button
+                onClick={() => setShowOfflineModal(true)}
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-semibold transition text-xs sm:text-sm"
+              >
+              <FormattedMessage id="payment.markOfflinePayment" defaultMessage="💵 Mark Offline Pay" />
+              </button>
+              <button
+                onClick={() => fetchPaymentInfo(selectedMonth, selectedYear)}
+                className="bg-brand-500 hover:bg-brand-600 text-white px-3 py-2 rounded-lg font-semibold transition text-xs sm:text-sm"
+              >
+                🔄 <FormattedMessage id="payment.refresh" defaultMessage="Refresh" />
+              </button>
+            </div>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -415,9 +417,9 @@ const PaymentInfo = () => {
       {/* Mark Offline Pay Modal */}
       {showOfflineModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] overflow-hidden">
-            <div className="px-6 py-4 bg-green-50 border-b-2 border-green-500 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-800">💵 <FormattedMessage id="payment.markOfflineTitle" defaultMessage="Mark Offline Payment" /> — {monthName}</h2>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] overflow-hidden mx-4">
+            <div className="px-4 sm:px-6 py-4 bg-green-50 border-b-2 border-green-500 flex justify-between items-center gap-2">
+              <h2 className="text-base sm:text-xl font-bold text-gray-800">💵 <FormattedMessage id="payment.markOfflineTitle" defaultMessage="Mark Offline Payment" /> — {monthName}</h2>
               <button
                 onClick={() => setShowOfflineModal(false)}
                 className="text-gray-500 hover:text-gray-700 text-2xl font-bold"

@@ -117,8 +117,8 @@ const SuperAdminDashboard = () => {
   return (
     <div className="space-y-8">
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-2"><FormattedMessage id="superAdmin.title" defaultMessage="Platform Administration" /></h1>
-        <p className="text-gray-600"><FormattedMessage id="superAdmin.platformOverview" defaultMessage="Manage all organizations and platform settings" /></p>
+        <h1 className="text-2xl sm:text-4xl font-bold text-gray-800 mb-2"><FormattedMessage id="superAdmin.title" defaultMessage="Platform Administration" /></h1>
+        <p className="text-gray-600 text-sm sm:text-base"><FormattedMessage id="superAdmin.platformOverview" defaultMessage="Manage all organizations and platform settings" /></p>
       </div>
 
       {/* Platform Stats */}
