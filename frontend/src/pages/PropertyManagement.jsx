@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormattedMessage } from 'react-intl';
+import { PlusIcon, ArrowPathIcon, PencilIcon, TrashIcon, BuildingOffice2Icon, HomeIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import Toast from '../components/Toast';
+import { Button, Card, Badge, Spinner, Input } from '../components/ui';
 
 const PropertyManagement = () => {
   const navigate = useNavigate();
@@ -292,28 +294,25 @@ const PropertyManagement = () => {
       )}
 
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-2">⚙️ <FormattedMessage id="property.propertyManagement" defaultMessage="Property Management" /></h1>
-        <p className="text-gray-600"><FormattedMessage id="property.manageBuildings" defaultMessage="Manage buildings, rooms, and beds" /></p>
+        <h1 className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-2 flex items-center justify-center gap-3">
+          <Cog6ToothIcon className="h-10 w-10 text-brand-500" />
+          <FormattedMessage id="property.propertyManagement" defaultMessage="Property Management" />
+        </h1>
+        <p className="text-slate-600 dark:text-slate-400"><FormattedMessage id="property.manageBuildings" defaultMessage="Manage buildings, rooms, and beds" /></p>
       </div>
 
-      {/* Debug Info */}
-      {loading && <div className="bg-blue-100 border border-blue-500 p-4 rounded-lg text-blue-800">Loading data...</div>}
+      {/* Loading */}
+      {loading && <div className="flex justify-center py-4"><Spinner size="lg" /></div>}
       
       {/* Controls */}
-      <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center justify-between bg-gray-50 p-4 rounded-lg">
-        <button
-          onClick={() => navigate('/admin')}
-          className="bg-gray-500 hover:bg-gray-600 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition text-sm"
-        >
-          <FormattedMessage id="property.backToDashboard" defaultMessage="← Back to Admin Dashboard" />
-        </button>
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center justify-between bg-slate-100 dark:bg-slate-800 p-4 rounded-xl">
+        <Button variant="secondary" onClick={() => navigate('/admin')} iconLeft={<span>←</span>}>
+          <FormattedMessage id="property.backToDashboard" defaultMessage="Back to Admin Dashboard" />
+        </Button>
         
-        <button
-          onClick={refreshAllData}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition flex items-center gap-2 text-sm"
-        >
-          🔄 Refresh All
-        </button>
+        <Button variant="outline" onClick={refreshAllData} iconLeft={<ArrowPathIcon className="h-4 w-4" />}>
+          Refresh All
+        </Button>
 
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-2 cursor-pointer">
@@ -321,72 +320,70 @@ const PropertyManagement = () => {
               type="checkbox"
               checked={autoRefresh}
               onChange={(e) => setAutoRefresh(e.target.checked)}
-              className="w-4 h-4"
+              className="w-4 h-4 accent-brand-500"
             />
-            <span className="text-sm font-semibold text-gray-700">Auto-refresh (30s)</span>
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Auto-refresh (30s)</span>
           </label>
           {lastRefreshTime && (
-            <span className="text-xs text-gray-500">Last: {lastRefreshTime}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">Last: {lastRefreshTime}</span>
           )}
         </div>
       </div>
 
       {/* Buildings Table */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="px-4 sm:px-6 py-4 bg-blue-50 border-b-2 border-blue-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <h2 className="text-2xl font-bold text-gray-800">🏢 <FormattedMessage id="property.buildings" defaultMessage="Buildings" /></h2>
+      <Card padding={false}>
+        <div className="px-4 sm:px-6 py-4 bg-blue-50 dark:bg-blue-900/20 border-b-2 border-blue-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <BuildingOffice2Icon className="h-6 w-6 text-blue-600" />
+            <FormattedMessage id="property.buildings" defaultMessage="Buildings" />
+          </h2>
           <div className="flex gap-2">
-            <button
+            <Button
+              size="sm"
+              variant="primary"
               onClick={() => {
                 setBuildingForm({ name: '', location: '' });
                 setEditingBuildingId(null);
                 setShowBuildingForm(!showBuildingForm);
               }}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition"
+              iconLeft={showBuildingForm ? null : <PlusIcon className="h-4 w-4" />}
             >
-              {showBuildingForm ? '✕' : '➕'}
-            </button>
-            <button
-              onClick={fetchBuildings}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition"
-            >
-              🔄
-            </button>
+              {showBuildingForm ? 'Close' : 'Add'}
+            </Button>
+            <Button size="sm" variant="outline" onClick={fetchBuildings} iconLeft={<ArrowPathIcon className="h-4 w-4" />} />
           </div>
         </div>
 
         {showBuildingForm && (
-          <div className="px-6 py-4 bg-blue-100 border-b">
-            {buildingError && <p className="text-red-600 mb-3">⚠️ {buildingError}</p>}
+          <div className="px-6 py-4 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
+            {buildingError && <p className="text-red-600 dark:text-red-400 mb-3">{buildingError}</p>}
             <form onSubmit={handleAddBuilding} className="flex flex-col sm:flex-row gap-2">
-              <input
+              <Input
                 type="text"
                 placeholder="Building Name"
                 value={buildingForm.name}
                 onChange={(e) => setBuildingForm({ ...buildingForm, name: e.target.value })}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded"
               />
-              <input
+              <Input
                 type="text"
                 placeholder="Location"
                 value={buildingForm.location}
                 onChange={(e) => setBuildingForm({ ...buildingForm, location: e.target.value })}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded"
               />
-              <button type="submit" className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded">
+              <Button type="submit" variant="success">
                 {editingBuildingId ? 'Update' : 'Add'}
-              </button>
+              </Button>
               {editingBuildingId && (
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => {
                     setBuildingForm({ name: '', location: '' });
                     setEditingBuildingId(null);
                   }}
-                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
                 >
                   Cancel
-                </button>
+                </Button>
               )}
             </form>
           </div>
@@ -395,114 +392,103 @@ const PropertyManagement = () => {
         <div className="overflow-x-auto">
           {buildings.length > 0 ? (
             <table className="w-full">
-              <thead className="bg-gray-100 border-b">
+              <thead className="bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
                 <tr>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">ID</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Name</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Location</th>
-                  <th className="px-6 py-3 text-center font-semibold text-gray-700">Actions</th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">ID</th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Name</th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Location</th>
+                  <th className="px-6 py-3 text-center font-semibold text-slate-700 dark:text-slate-200">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {buildings.map((building, idx) => (
-                  <tr key={building.id} className="border-b hover:bg-gray-50">
-                    <td className="px-6 py-3 font-medium">{idx + 1}</td>
-                    <td className="px-6 py-3">{building.name}</td>
-                    <td className="px-6 py-3">{building.location || '-'}</td>
-                    <td className="px-6 py-3 text-center">
-                      <button
-                        onClick={() => handleEditBuilding(building)}
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded mr-2"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteBuilding(building.id)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                      >
-                        Delete
-                      </button>
+                  <tr key={building.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                    <td className="px-6 py-3 font-medium text-slate-800 dark:text-slate-200">{idx + 1}</td>
+                    <td className="px-6 py-3 text-slate-700 dark:text-slate-300">{building.name}</td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-400">{building.location || '-'}</td>
+                    <td className="px-6 py-3 text-center flex justify-center gap-2">
+                      <Button size="xs" variant="outline" onClick={() => handleEditBuilding(building)} iconLeft={<PencilIcon className="h-3 w-3" />}>Edit</Button>
+                      <Button size="xs" variant="danger" onClick={() => handleDeleteBuilding(building.id)} iconLeft={<TrashIcon className="h-3 w-3" />}>Delete</Button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <p className="p-6 text-center text-gray-500">No buildings found</p>
+            <p className="p-6 text-center text-slate-500 dark:text-slate-400">No buildings found</p>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* Rooms Table */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="px-4 sm:px-6 py-4 bg-purple-50 border-b-2 border-purple-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <h2 className="text-2xl font-bold text-gray-800">🚪 <FormattedMessage id="property.rooms" defaultMessage="Rooms" /></h2>
+      <Card padding={false}>
+        <div className="px-4 sm:px-6 py-4 bg-purple-50 dark:bg-purple-900/20 border-b-2 border-purple-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <HomeIcon className="h-6 w-6 text-purple-600" />
+            <FormattedMessage id="property.rooms" defaultMessage="Rooms" />
+          </h2>
           <div className="flex gap-2">
-            <button
+            <Button
+              size="sm"
+              variant="secondary"
+              className="!bg-purple-500 hover:!bg-purple-600 !text-white"
               onClick={() => {
                 setRoomForm({ buildingId: '', roomNumber: '', capacity: '' });
                 setEditingRoomId(null);
                 setShowRoomForm(!showRoomForm);
               }}
-              className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold transition"
+              iconLeft={showRoomForm ? null : <PlusIcon className="h-4 w-4" />}
             >
-              {showRoomForm ? '✕' : '➕'}
-            </button>
-            <button
-              onClick={fetchRooms}
-              className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold transition"
-            >
-              🔄
-            </button>
+              {showRoomForm ? 'Close' : 'Add'}
+            </Button>
+            <Button size="sm" variant="outline" onClick={fetchRooms} iconLeft={<ArrowPathIcon className="h-4 w-4" />} />
           </div>
         </div>
 
         {showRoomForm && (
-          <div className="px-6 py-4 bg-purple-100 border-b">
-            <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mb-3 rounded text-sm text-blue-800">
-              💡 <strong><FormattedMessage id="property.roomHintTitle" defaultMessage="Tip:" /></strong>{' '}
+          <div className="px-6 py-4 bg-purple-50 dark:bg-purple-900/20 border-b border-purple-200 dark:border-purple-800">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-3 mb-3 rounded text-sm text-blue-800 dark:text-blue-300">
+              <strong><FormattedMessage id="property.roomHintTitle" defaultMessage="Tip:" /></strong>{' '}
               <FormattedMessage id="property.roomHintBody" defaultMessage="The first digit of the room number determines the floor. For example: {ex1} = Ground Floor, Room 01 | {ex2} = 1st Floor, Room 01 | {ex3} = 2nd Floor, Room 03. No need to create floors separately." values={{ ex1: <strong>001</strong>, ex2: <strong>101</strong>, ex3: <strong>203</strong> }} />
             </div>
-            {roomError && <p className="text-red-600 mb-3">⚠️ {roomError}</p>}
+            {roomError && <p className="text-red-600 dark:text-red-400 mb-3">{roomError}</p>}
             <form onSubmit={handleAddRoom} className="flex gap-2 flex-wrap">
               <select
                 value={roomForm.buildingId}
                 onChange={(e) => setRoomForm({ ...roomForm, buildingId: e.target.value })}
-                className="px-3 py-2 border border-gray-300 rounded"
+                className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
               >
                 <option value="">Select Building</option>
                 {buildings.map((b) => (
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
               </select>
-              <input
+              <Input
                 type="text"
                 placeholder="Room Number"
                 value={roomForm.roomNumber}
                 onChange={(e) => setRoomForm({ ...roomForm, roomNumber: e.target.value })}
-                className="px-3 py-2 border border-gray-300 rounded"
               />
-              <input
+              <Input
                 type="number"
                 placeholder="Capacity"
                 value={roomForm.capacity}
                 onChange={(e) => setRoomForm({ ...roomForm, capacity: e.target.value })}
-                className="px-3 py-2 border border-gray-300 rounded"
               />
-              <button type="submit" className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded">
+              <Button type="submit" variant="success">
                 {editingRoomId ? 'Update' : 'Add'}
-              </button>
+              </Button>
               {editingRoomId && (
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => {
                     setRoomForm({ buildingId: '', roomNumber: '', capacity: '' });
                     setEditingRoomId(null);
                   }}
-                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
                 >
                   Cancel
-                </button>
+                </Button>
               )}
             </form>
           </div>
@@ -511,78 +497,68 @@ const PropertyManagement = () => {
         <div className="overflow-x-auto">
           {rooms.length > 0 ? (
             <table className="w-full">
-              <thead className="bg-gray-100 border-b">
+              <thead className="bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
                 <tr>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">ID</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Building</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Room Number</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Capacity</th>
-                  <th className="px-6 py-3 text-center font-semibold text-gray-700">Actions</th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">ID</th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Building</th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Room Number</th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Capacity</th>
+                  <th className="px-6 py-3 text-center font-semibold text-slate-700 dark:text-slate-200">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {rooms.map((room, idx) => (
-                  <tr key={room.id} className="border-b hover:bg-gray-50">
-                    <td className="px-6 py-3 font-medium">{idx + 1}</td>
-                    <td className="px-6 py-3">{room.building_name}</td>
-                    <td className="px-6 py-3">{room.room_number}</td>
-                    <td className="px-6 py-3">{room.capacity}</td>
-                    <td className="px-6 py-3 text-center">
-                      <button
-                        onClick={() => handleEditRoom(room)}
-                        className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded mr-2"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteRoom(room.id)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                      >
-                        Delete
-                      </button>
+                  <tr key={room.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                    <td className="px-6 py-3 font-medium text-slate-800 dark:text-slate-200">{idx + 1}</td>
+                    <td className="px-6 py-3 text-slate-700 dark:text-slate-300">{room.building_name}</td>
+                    <td className="px-6 py-3 text-slate-700 dark:text-slate-300">{room.room_number}</td>
+                    <td className="px-6 py-3 text-slate-700 dark:text-slate-300">{room.capacity}</td>
+                    <td className="px-6 py-3 text-center flex justify-center gap-2">
+                      <Button size="xs" variant="outline" onClick={() => handleEditRoom(room)} iconLeft={<PencilIcon className="h-3 w-3" />}>Edit</Button>
+                      <Button size="xs" variant="danger" onClick={() => handleDeleteRoom(room.id)} iconLeft={<TrashIcon className="h-3 w-3" />}>Delete</Button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <p className="p-6 text-center text-gray-500">No rooms found</p>
+            <p className="p-6 text-center text-slate-500 dark:text-slate-400">No rooms found</p>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* Beds Table */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="px-4 sm:px-6 py-4 bg-green-50 border-b-2 border-green-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <h2 className="text-2xl font-bold text-gray-800">🛏️ <FormattedMessage id="property.beds" defaultMessage="Beds" /></h2>
+      <Card padding={false}>
+        <div className="px-4 sm:px-6 py-4 bg-green-50 dark:bg-green-900/20 border-b-2 border-green-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <HomeIcon className="h-6 w-6 text-green-600" />
+            <FormattedMessage id="property.beds" defaultMessage="Beds" />
+          </h2>
           <div className="flex gap-2">
-            <button
+            <Button
+              size="sm"
+              variant="success"
               onClick={() => {
                 setBedForm({ roomId: '', status: 'vacant' });
                 setEditingBedId(null);
                 setShowBedForm(!showBedForm);
               }}
-              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-semibold transition"
+              iconLeft={showBedForm ? null : <PlusIcon className="h-4 w-4" />}
             >
-              {showBedForm ? '✕' : '➕'}
-            </button>
-            <button
-              onClick={fetchBeds}
-              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-semibold transition"
-            >
-              🔄
-            </button>
+              {showBedForm ? 'Close' : 'Add'}
+            </Button>
+            <Button size="sm" variant="outline" onClick={fetchBeds} iconLeft={<ArrowPathIcon className="h-4 w-4" />} />
           </div>
         </div>
 
         {showBedForm && (
-          <div className="px-6 py-4 bg-green-100 border-b">
-            {bedError && <p className="text-red-600 mb-3">⚠️ {bedError}</p>}
+          <div className="px-6 py-4 bg-green-50 dark:bg-green-900/20 border-b border-green-200 dark:border-green-800">
+            {bedError && <p className="text-red-600 dark:text-red-400 mb-3">{bedError}</p>}
             {bedForm.roomId && !editingBedId && (
-              <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded">
-                <p className="text-sm text-blue-800">
+              <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded">
+                <p className="text-sm text-blue-800 dark:text-blue-300">
                   <strong>Room Capacity:</strong> {getBedsInRoom(bedForm.roomId)} / {getRoomCapacity(bedForm.roomId)} beds
-                  {isRoomAtCapacity(bedForm.roomId) && <span className="ml-2 text-red-600">⚠️ Room is at full capacity</span>}
+                  {isRoomAtCapacity(bedForm.roomId) && <span className="ml-2 text-red-600 dark:text-red-400"> Room is at full capacity</span>}
                 </p>
               </div>
             )}
@@ -590,7 +566,7 @@ const PropertyManagement = () => {
               <select
                 value={bedForm.roomId}
                 onChange={(e) => setBedForm({ ...bedForm, roomId: e.target.value })}
-                className="px-3 py-2 border border-gray-300 rounded"
+                className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
               >
                 <option value="">Select Room</option>
                 {rooms.map((r) => {
@@ -604,40 +580,39 @@ const PropertyManagement = () => {
                   );
                 })}
               </select>
-              <input
+              <Input
                 type="text"
                 placeholder="Bed ID (A, B, C...)"
                 value={bedForm.bedIdentifier}
                 onChange={(e) => setBedForm({ ...bedForm, bedIdentifier: e.target.value.toUpperCase() })}
-                className="px-3 py-2 border border-gray-300 rounded"
                 maxLength="5"
               />
               <select
                 value={bedForm.status}
                 onChange={(e) => setBedForm({ ...bedForm, status: e.target.value })}
-                className="px-3 py-2 border border-gray-300 rounded"
+                className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
               >
                 <option value="vacant">Vacant</option>
                 <option value="occupied">Occupied</option>
               </select>
-              <button 
-                type="submit" 
+              <Button
+                type="submit"
+                variant="success"
                 disabled={!editingBedId && bedForm.roomId && isRoomAtCapacity(bedForm.roomId)}
-                className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {editingBedId ? 'Update' : 'Add'}
-              </button>
+              </Button>
               {editingBedId && (
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => {
                     setBedForm({ roomId: '', bedIdentifier: '', status: 'vacant' });
                     setEditingBedId(null);
                   }}
-                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
                 >
                   Cancel
-                </button>
+                </Button>
               )}
             </form>
           </div>
@@ -646,51 +621,41 @@ const PropertyManagement = () => {
         <div className="overflow-x-auto">
           {beds.length > 0 ? (
             <table className="w-full">
-              <thead className="bg-gray-100 border-b">
+              <thead className="bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
                 <tr>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">ID</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Building</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Room</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Bed</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Status</th>
-                  <th className="px-6 py-3 text-center font-semibold text-gray-700">Actions</th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">ID</th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Building</th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Room</th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Bed</th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Status</th>
+                  <th className="px-6 py-3 text-center font-semibold text-slate-700 dark:text-slate-200">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {beds.map((bed, idx) => (
-                  <tr key={bed.id} className="border-b hover:bg-gray-50">
-                    <td className="px-6 py-3 font-medium">{idx + 1}</td>
-                    <td className="px-6 py-3">{bed.building_name}</td>
-                    <td className="px-6 py-3">Room {bed.room_number}</td>
-                    <td className="px-6 py-3 font-semibold text-blue-600">{bed.bed_identifier || '-'}</td>
+                  <tr key={bed.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                    <td className="px-6 py-3 font-medium text-slate-800 dark:text-slate-200">{idx + 1}</td>
+                    <td className="px-6 py-3 text-slate-700 dark:text-slate-300">{bed.building_name}</td>
+                    <td className="px-6 py-3 text-slate-700 dark:text-slate-300">Room {bed.room_number}</td>
+                    <td className="px-6 py-3 font-semibold text-brand-600 dark:text-brand-400">{bed.bed_identifier || '-'}</td>
                     <td className="px-6 py-3">
-                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${bed.status === 'occupied' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                        {bed.status === 'occupied' ? '🔴 Occupied' : '🟢 Vacant'}
-                      </span>
+                      <Badge variant={bed.status === 'occupied' ? 'danger' : 'success'}>
+                        {bed.status === 'occupied' ? 'Occupied' : 'Vacant'}
+                      </Badge>
                     </td>
-                    <td className="px-6 py-3 text-center">
-                      <button
-                        onClick={() => handleEditBed(bed)}
-                        className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded mr-2"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteBed(bed.id)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                      >
-                        Delete
-                      </button>
+                    <td className="px-6 py-3 text-center flex justify-center gap-2">
+                      <Button size="xs" variant="outline" onClick={() => handleEditBed(bed)} iconLeft={<PencilIcon className="h-3 w-3" />}>Edit</Button>
+                      <Button size="xs" variant="danger" onClick={() => handleDeleteBed(bed.id)} iconLeft={<TrashIcon className="h-3 w-3" />}>Delete</Button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <p className="p-6 text-center text-gray-500">No beds found</p>
+            <p className="p-6 text-center text-slate-500 dark:text-slate-400">No beds found</p>
           )}
         </div>
-      </div>
+      </Card>
     </div>
   );
 };

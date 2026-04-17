@@ -2,7 +2,7 @@ const Tenant = require('../models/Tenant');
 const Bed = require('../models/Bed');
 const { sendThankYouEmail } = require('./emailService');
 
-const processTenantCheckouts = async (orgPool, orgId) => {
+const processTenantCheckouts = async (orgPool, orgId, orgName) => {
   try {
     console.log(`[CHECKOUT] Processing tenant checkouts for org ${orgId || 'unknown'}...`);
     
@@ -52,7 +52,7 @@ const processTenantCheckouts = async (orgPool, orgId) => {
         
         // Step 1: Send thank you email in background (don't block checkout)
         console.log(`[CHECKOUT] Sending thank you email to ${tenant.email}...`);
-        sendThankYouEmail(tenant.email, tenant.name, bedInfo, stayDuration)
+        sendThankYouEmail(tenant.email, tenant.name, bedInfo, stayDuration, orgName)
           .then(sent => console.log(sent ? `[CHECKOUT] ✅ Email sent to ${tenant.email}` : `[CHECKOUT] ⚠️ Email failed for ${tenant.email}`))
           .catch(err => console.error(`[CHECKOUT] ❌ Email error:`, err.message));
         

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormattedMessage, useIntl } from 'react-intl';
+import { ChatBubbleLeftRightIcon, UsersIcon, BuildingOffice2Icon, Squares2X2Icon, HomeIcon, PaperAirplaneIcon, ClipboardDocumentListIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
+import { Button, Card, Input } from '../components/ui';
 
 const MESSAGE_TEMPLATES = [
   {
@@ -155,45 +157,44 @@ const Messenger = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
-            💬 <FormattedMessage id="messenger.title" defaultMessage="Messenger" />
+          <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100">
+            <ChatBubbleLeftRightIcon className="w-8 h-8 text-brand-500" />
+            <FormattedMessage id="messenger.title" defaultMessage="Messenger" />
           </h1>
-          <p className="text-gray-600 mt-1 text-sm sm:text-base">
+          <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm sm:text-base">
             <FormattedMessage id="messenger.subtitle" defaultMessage="Send communications to your tenants" />
           </p>
         </div>
-        <button
-          onClick={() => navigate('/admin')}
-          className="text-brand-600 hover:text-brand-700 font-semibold text-sm shrink-0"
-        >
+        <Button variant="ghost" onClick={() => navigate('/admin')} className="shrink-0">
           <FormattedMessage id="messenger.backToDashboard" defaultMessage="← Back to Dashboard" />
-        </button>
+        </Button>
       </div>
 
       {/* Group Selection */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-lg font-bold text-gray-800 mb-4">
+      <Card>
+        <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">
           <FormattedMessage id="messenger.selectRecipients" defaultMessage="Select Recipients" />
         </h2>
 
         {/* Group type buttons */}
         <div className="flex flex-wrap gap-2 mb-4">
           {[
-            { type: 'all', labelKey: 'messenger.allTenants', defaultLabel: 'All Tenants', icon: '👥' },
-            { type: 'building', labelKey: 'messenger.byBuilding', defaultLabel: 'By Building', icon: '🏢' },
-            { type: 'floor', labelKey: 'messenger.byFloor', defaultLabel: 'By Floor', icon: '🏗️' },
-            { type: 'room', labelKey: 'messenger.byRoom', defaultLabel: 'By Room', icon: '🚪' }
-          ].map(({ type, labelKey, defaultLabel, icon }) => (
+            { type: 'all', labelKey: 'messenger.allTenants', defaultLabel: 'All Tenants', Icon: UsersIcon },
+            { type: 'building', labelKey: 'messenger.byBuilding', defaultLabel: 'By Building', Icon: BuildingOffice2Icon },
+            { type: 'floor', labelKey: 'messenger.byFloor', defaultLabel: 'By Floor', Icon: Squares2X2Icon },
+            { type: 'room', labelKey: 'messenger.byRoom', defaultLabel: 'By Room', Icon: HomeIcon }
+          ].map(({ type, labelKey, defaultLabel, Icon }) => (
             <button
               key={type}
               onClick={() => handleGroupTypeChange(type)}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-medium transition-colors ${
                 groupType === type
                   ? 'bg-brand-500 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
               }`}
             >
-              {icon} <FormattedMessage id={labelKey} defaultMessage={defaultLabel} />
+              <Icon className="w-4 h-4" />
+              <FormattedMessage id={labelKey} defaultMessage={defaultLabel} />
             </button>
           ))}
         </div>
@@ -201,7 +202,7 @@ const Messenger = () => {
         {/* Building filter for floor/room */}
         {(groupType === 'floor' || groupType === 'room') && (
           <div className="mb-3">
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
               <FormattedMessage id="messenger.filterByBuilding" defaultMessage="Filter by Building" />
             </label>
             <select
@@ -210,7 +211,7 @@ const Messenger = () => {
                 setSelectedBuilding(e.target.value);
                 setGroupId('');
               }}
-              className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
+              className="w-full max-w-md px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:border-brand-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
             >
               <option value="">
                 {intl.formatMessage({ id: 'messenger.allBuildings', defaultMessage: 'All Buildings' })}
@@ -227,7 +228,7 @@ const Messenger = () => {
           <select
             value={groupId}
             onChange={(e) => setGroupId(e.target.value)}
-            className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
+            className="w-full max-w-md px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:border-brand-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
           >
             <option value="">
               {intl.formatMessage({ id: 'messenger.selectBuilding', defaultMessage: 'Select a building...' })}
@@ -242,7 +243,7 @@ const Messenger = () => {
           <select
             value={groupId}
             onChange={(e) => setGroupId(e.target.value)}
-            className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
+            className="w-full max-w-md px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:border-brand-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
           >
             <option value="">
               {intl.formatMessage({ id: 'messenger.selectFloor', defaultMessage: 'Select a floor...' })}
@@ -259,7 +260,7 @@ const Messenger = () => {
           <select
             value={groupId}
             onChange={(e) => setGroupId(e.target.value)}
-            className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
+            className="w-full max-w-md px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:border-brand-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
           >
             <option value="">
               {intl.formatMessage({ id: 'messenger.selectRoom', defaultMessage: 'Select a room...' })}
@@ -271,26 +272,28 @@ const Messenger = () => {
             ))}
           </select>
         )}
-      </div>
+      </Card>
 
       {/* Templates */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <Card>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-800">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">
             <FormattedMessage id="messenger.composeMessage" defaultMessage="Compose Message" />
           </h2>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
+            iconLeft={<ClipboardDocumentListIcon className="w-4 h-4" />}
             onClick={() => setShowTemplates(!showTemplates)}
-            className="bg-purple-100 text-purple-700 hover:bg-purple-200 px-4 py-2 rounded-lg font-medium transition"
           >
-            📋 <FormattedMessage id="messenger.templates" defaultMessage="Templates" />
-          </button>
+            <FormattedMessage id="messenger.templates" defaultMessage="Templates" />
+          </Button>
         </div>
 
         {/* Template picker */}
         {showTemplates && (
-          <div className="mb-4 bg-purple-50 rounded-lg p-4 border border-purple-200">
-            <h3 className="text-sm font-semibold text-purple-800 mb-3">
+          <div className="mb-4 bg-brand-50 dark:bg-brand-900/20 rounded-lg p-4 border border-brand-200 dark:border-brand-700">
+            <h3 className="text-sm font-semibold text-brand-800 dark:text-brand-300 mb-3">
               <FormattedMessage id="messenger.selectTemplate" defaultMessage="Select a template to get started:" />
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -298,9 +301,9 @@ const Messenger = () => {
                 <button
                   key={template.id}
                   onClick={() => handleTemplateSelect(template)}
-                  className="text-left p-3 bg-white rounded-lg border border-purple-200 hover:border-purple-400 hover:shadow-sm transition"
+                  className="text-left p-3 bg-white dark:bg-slate-800 rounded-lg border border-brand-200 dark:border-brand-700 hover:border-brand-400 dark:hover:border-brand-500 hover:shadow-sm transition-colors"
                 >
-                  <span className="font-medium text-gray-800">
+                  <span className="font-medium text-slate-800 dark:text-slate-200">
                     <FormattedMessage id={template.labelKey} defaultMessage={template.defaultLabel} />
                   </span>
                 </button>
@@ -311,69 +314,58 @@ const Messenger = () => {
 
         {/* Subject */}
         <div className="mb-4">
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
-            <FormattedMessage id="messenger.subject" defaultMessage="Subject" />
-          </label>
-          <input
-            type="text"
+          <Input
+            label={intl.formatMessage({ id: 'messenger.subject', defaultMessage: 'Subject' })}
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder={intl.formatMessage({ id: 'messenger.subjectPlaceholder', defaultMessage: 'Enter email subject...' })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500"
           />
         </div>
 
         {/* Message body */}
         <div className="mb-4">
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
-            <FormattedMessage id="messenger.message" defaultMessage="Message" />
-          </label>
-          <textarea
+          <Input
+            as="textarea"
+            label={intl.formatMessage({ id: 'messenger.message', defaultMessage: 'Message' })}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder={intl.formatMessage({ id: 'messenger.messagePlaceholder', defaultMessage: 'Type your message here...' })}
             rows={10}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500 resize-y"
+            className="resize-y"
           />
         </div>
 
         {/* Error */}
         {error && (
-          <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-3 rounded">
-            <p className="text-red-800 font-medium">⚠️ {error}</p>
+          <div className="mb-4 flex items-start gap-2 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-3 rounded">
+            <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+            <p className="text-red-800 dark:text-red-300 font-medium">{error}</p>
           </div>
         )}
 
         {/* Success */}
         {result && (
-          <div className="mb-4 bg-green-50 border-l-4 border-green-500 p-3 rounded">
-            <p className="text-green-800 font-medium">
-              ✅ {result.message}
-            </p>
+          <div className="mb-4 flex items-start gap-2 bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-3 rounded">
+            <CheckCircleIcon className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
+            <p className="text-green-800 dark:text-green-300 font-medium">{result.message}</p>
           </div>
         )}
 
         {/* Action buttons */}
         <div className="flex gap-3">
-          <button
+          <Button
+            variant="primary"
             onClick={handleSend}
-            disabled={sending}
-            className="bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 disabled:cursor-wait text-white px-6 py-2 rounded-lg font-semibold transition"
+            loading={sending}
+            iconLeft={<PaperAirplaneIcon className="w-4 h-4" />}
           >
-            {sending ? (
-              <FormattedMessage id="messenger.sending" defaultMessage="Sending..." />
-            ) : (
-              <>📤 <FormattedMessage id="messenger.send" defaultMessage="Send Message" /></>
-            )}
-          </button>
-          <button
-            onClick={handleCancel}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-semibold transition"
-          >
+            <FormattedMessage id="messenger.send" defaultMessage="Send Message" />
+          </Button>
+          <Button variant="secondary" onClick={handleCancel}>
             <FormattedMessage id="common.cancel" defaultMessage="Cancel" />
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 };

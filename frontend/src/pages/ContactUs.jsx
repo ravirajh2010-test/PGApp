@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormattedMessage, useIntl } from 'react-intl';
+import { PhoneIcon, EnvelopeIcon, PaperAirplaneIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import Card from '../components/ui/Card';
 
 const ContactUs = () => {
   const navigate = useNavigate();
@@ -27,112 +31,94 @@ const ContactUs = () => {
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-800">
-          📞 <FormattedMessage id="contact.title" defaultMessage="Contact Us" />
+        <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 flex items-center justify-center gap-2">
+          <PhoneIcon className="w-8 h-8 text-brand-500" />
+          <FormattedMessage id="contact.title" defaultMessage="Contact Us" />
         </h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-slate-600 dark:text-slate-400 mt-2">
           <FormattedMessage id="contact.subtitle" defaultMessage="Have a question or need help? Reach out to us." />
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Contact Form */}
-        <div className="bg-white rounded-2xl shadow-md p-8 border border-gray-100">
+        <Card>
           {sent ? (
             <div className="text-center py-12">
-              <div className="text-5xl mb-4">✅</div>
-              <p className="text-green-700 font-semibold text-lg">
+              <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
+              <p className="text-green-700 dark:text-green-400 font-semibold text-lg">
                 <FormattedMessage id="contact.messageSent" defaultMessage="Message sent successfully! We'll get back to you soon." />
               </p>
-              <button
-                onClick={() => setSent(false)}
-                className="mt-6 bg-brand-500 hover:bg-brand-600 text-white px-6 py-2 rounded-lg font-semibold transition"
-              >
+              <Button variant="primary" className="mt-6" onClick={() => setSent(false)}>
                 <FormattedMessage id="contact.send" defaultMessage="Send Message" />
-              </button>
+              </Button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  <FormattedMessage id="contact.name" defaultMessage="Your Name" />
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  required
-                  placeholder={intl.formatMessage({ id: 'contact.namePlaceholder', defaultMessage: 'Enter your full name' })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  <FormattedMessage id="contact.email" defaultMessage="Your Email" />
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  required
-                  placeholder={intl.formatMessage({ id: 'contact.emailPlaceholder', defaultMessage: 'Enter your email address' })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  <FormattedMessage id="contact.phone" defaultMessage="Your Phone Number" />
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={form.phone}
-                  onChange={handleChange}
-                  required
-                  placeholder={intl.formatMessage({ id: 'contact.phonePlaceholder', defaultMessage: 'Enter your phone number' })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  <FormattedMessage id="contact.message" defaultMessage="Your Message" />
-                </label>
-                <textarea
-                  name="message"
-                  value={form.message}
-                  onChange={handleChange}
-                  required
-                  rows={4}
-                  placeholder={intl.formatMessage({ id: 'contact.messagePlaceholder', defaultMessage: 'Tell us how we can help you...' })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
-                />
-              </div>
-              <button
+              <Input
+                label={<FormattedMessage id="contact.name" defaultMessage="Your Name" />}
+                type="text"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                required
+                placeholder={intl.formatMessage({ id: 'contact.namePlaceholder', defaultMessage: 'Enter your full name' })}
+              />
+              <Input
+                label={<FormattedMessage id="contact.email" defaultMessage="Your Email" />}
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                required
+                placeholder={intl.formatMessage({ id: 'contact.emailPlaceholder', defaultMessage: 'Enter your email address' })}
+              />
+              <Input
+                label={<FormattedMessage id="contact.phone" defaultMessage="Your Phone Number" />}
+                type="tel"
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+                required
+                placeholder={intl.formatMessage({ id: 'contact.phonePlaceholder', defaultMessage: 'Enter your phone number' })}
+              />
+              <Input
+                label={<FormattedMessage id="contact.message" defaultMessage="Your Message" />}
+                as="textarea"
+                name="message"
+                value={form.message}
+                onChange={handleChange}
+                required
+                rows={4}
+                placeholder={intl.formatMessage({ id: 'contact.messagePlaceholder', defaultMessage: 'Tell us how we can help you...' })}
+                className="resize-none"
+              />
+              <Button
                 type="submit"
-                disabled={sending}
-                className={`w-full ${sending ? 'bg-gray-400 cursor-not-allowed' : 'bg-brand-500 hover:bg-brand-600'} text-white py-3 rounded-xl font-semibold transition shadow-lg shadow-brand-500/20`}
+                variant="primary"
+                fullWidth
+                loading={sending}
+                iconLeft={<PaperAirplaneIcon />}
               >
-                {sending
-                  ? '⏳ ' + intl.formatMessage({ id: 'contact.sending', defaultMessage: 'Sending...' })
-                  : '📨 ' + intl.formatMessage({ id: 'contact.send', defaultMessage: 'Send Message' })}
-              </button>
-            </form>
+                <FormattedMessage id="contact.send" defaultMessage="Send Message" />
+              </Button>
+          </form>
           )}
-        </div>
+        </Card>
 
         {/* Contact Info */}
         <div className="space-y-6">
-          <div className="bg-white rounded-2xl shadow-md p-8 border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-800 mb-6">
+          <Card>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-6">
               <FormattedMessage id="contact.orReachUs" defaultMessage="Or reach us directly" />
             </h2>
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="bg-blue-100 text-blue-600 rounded-full p-3 text-xl">📧</div>
+                <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full p-3">
+                  <EnvelopeIcon className="w-5 h-5" />
+                </div>
                 <div>
-                  <h3 className="font-semibold text-gray-800">
+                  <h3 className="font-semibold text-slate-800 dark:text-slate-100">
                     <FormattedMessage id="contact.emailUs" defaultMessage="Email Us" />
                   </h3>
                   <a href="mailto:support@roomipilot.com" className="text-brand-600 hover:underline font-medium">
@@ -141,9 +127,11 @@ const ContactUs = () => {
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="bg-green-100 text-green-600 rounded-full p-3 text-xl">📱</div>
+                <div className="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full p-3">
+                  <PhoneIcon className="w-5 h-5" />
+                </div>
                 <div>
-                  <h3 className="font-semibold text-gray-800">
+                  <h3 className="font-semibold text-slate-800 dark:text-slate-100">
                     <FormattedMessage id="contact.callUs" defaultMessage="Call Us" />
                   </h3>
                   <a href="tel:+917719427089" className="text-brand-600 hover:underline font-medium">
@@ -152,7 +140,7 @@ const ContactUs = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
 
           {/* Quick info card */}
           <div className="bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl shadow-md p-8 text-white">
@@ -164,8 +152,8 @@ const ContactUs = () => {
               />
             </p>
             <div className="mt-6 space-y-2 text-sm opacity-90">
-              <p>📧 support@roomipilot.com</p>
-              <p>📱 07719427089</p>
+              <p>support@roomipilot.com</p>
+              <p>07719427089</p>
             </div>
           </div>
         </div>
@@ -173,12 +161,9 @@ const ContactUs = () => {
 
       {/* Back button */}
       <div className="text-center">
-        <button
-          onClick={() => navigate(-1)}
-          className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition"
-        >
+        <Button variant="secondary" onClick={() => navigate(-1)}>
           <FormattedMessage id="common.back" defaultMessage="Back" />
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
 import { FormattedMessage } from 'react-intl';
+import { UserIcon, LockClosedIcon, PhoneIcon, CreditCardIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import { useCurrency } from '../context/LanguageContext';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
+import Spinner from '../components/ui/Spinner';
 
 const TenantDashboard = () => {
   const { currencySymbol } = useCurrency();
@@ -88,7 +93,11 @@ const TenantDashboard = () => {
   };
 
   if (loading) {
-    return <div className="text-center py-12">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center py-20">
+        <Spinner size="xl" className="text-brand-500" />
+      </div>
+    );
   }
 
   return (
@@ -102,122 +111,125 @@ const TenantDashboard = () => {
       )}
 
       <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-4xl font-bold text-gray-800 mb-2">👤 <FormattedMessage id="tenant.tenantDashboard" defaultMessage="Tenant Dashboard" /></h1>
-        <p className="text-gray-600 text-sm sm:text-base"><FormattedMessage id="tenant.stayDetails" defaultMessage="Manage your stay and payments" /></p>
+        <h1 className="text-2xl sm:text-4xl font-bold text-slate-800 dark:text-slate-100 mb-2 flex items-center justify-center gap-2">
+          <UserIcon className="w-8 h-8 text-brand-500" />
+          <FormattedMessage id="tenant.tenantDashboard" defaultMessage="Tenant Dashboard" />
+        </h1>
+        <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base"><FormattedMessage id="tenant.stayDetails" defaultMessage="Manage your stay and payments" /></p>
       </div>
 
       {/* Profile Section */}
-      <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-brand-500">
+      <Card accent="brand">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-800"><FormattedMessage id="tenant.myProfile" defaultMessage="Profile Information" /></h2>
-          <button
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100"><FormattedMessage id="tenant.myProfile" defaultMessage="Profile Information" /></h2>
+          <Button
+            variant="primary"
+            size="sm"
             onClick={() => setShowPasswordModal(true)}
-            className="bg-brand-500 hover:bg-brand-600 text-white font-semibold py-2 px-4 rounded-lg transition text-sm shrink-0"
+            iconLeft={<LockClosedIcon />}
           >
-            🔒 <FormattedMessage id="tenant.resetPassword" defaultMessage="Reset Password" />
-          </button>
+            <FormattedMessage id="tenant.resetPassword" defaultMessage="Reset Password" />
+          </Button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <p className="text-sm text-gray-600"><FormattedMessage id="tenant.name" defaultMessage="Name" /></p>
-            <p className="text-lg font-semibold text-gray-800">{profile.name || 'N/A'}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400"><FormattedMessage id="tenant.name" defaultMessage="Name" /></p>
+            <p className="text-lg font-semibold text-slate-800 dark:text-slate-100">{profile.name || 'N/A'}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-600"><FormattedMessage id="tenant.email" defaultMessage="Email" /></p>
-            <p className="text-lg font-semibold text-gray-800">{profile.email || 'N/A'}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400"><FormattedMessage id="tenant.email" defaultMessage="Email" /></p>
+            <p className="text-lg font-semibold text-slate-800 dark:text-slate-100">{profile.email || 'N/A'}</p>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Stay Details Section */}
-      <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4"><FormattedMessage id="tenant.stayDetails" defaultMessage="Stay Details" /></h2>
+      <Card accent="blue">
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4"><FormattedMessage id="tenant.stayDetails" defaultMessage="Stay Details" /></h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <p className="text-sm text-gray-600"><FormattedMessage id="tenant.checkInDate" defaultMessage="Check-in Date" /></p>
-            <p className="text-lg font-semibold text-gray-800">{stay.start_date ? new Date(stay.start_date).toLocaleDateString() : 'N/A'}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400"><FormattedMessage id="tenant.checkInDate" defaultMessage="Check-in Date" /></p>
+            <p className="text-lg font-semibold text-slate-800 dark:text-slate-100">{stay.start_date ? new Date(stay.start_date).toLocaleDateString() : 'N/A'}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-600"><FormattedMessage id="tenant.checkOutDate" defaultMessage="Check-out Date" /></p>
-            <p className="text-lg font-semibold text-gray-800">{stay.end_date ? new Date(stay.end_date).toLocaleDateString() : 'N/A'}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400"><FormattedMessage id="tenant.checkOutDate" defaultMessage="Check-out Date" /></p>
+            <p className="text-lg font-semibold text-slate-800 dark:text-slate-100">{stay.end_date ? new Date(stay.end_date).toLocaleDateString() : 'N/A'}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-600"><FormattedMessage id="tenant.monthlyRent" defaultMessage="Monthly Rent" /></p>
-            <p className="text-2xl font-bold text-green-600">{currencySymbol}{stay.rent || 'N/A'}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400"><FormattedMessage id="tenant.monthlyRent" defaultMessage="Monthly Rent" /></p>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{currencySymbol}{stay.rent || 'N/A'}</p>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Payments Section */}
-      <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
+      <Card accent="purple">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-800"><FormattedMessage id="tenant.paymentHistory" defaultMessage="Payment History" /></h2>
-          <button 
-            onClick={handlePay} 
-            className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-2 px-6 rounded-lg transition"
-          >
-            💳 <FormattedMessage id="tenant.payRent" defaultMessage="Pay Rent" />
-          </button>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100"><FormattedMessage id="tenant.paymentHistory" defaultMessage="Payment History" /></h2>
+          <Button variant="primary" onClick={handlePay} iconLeft={<CreditCardIcon />}>
+            <FormattedMessage id="tenant.payRent" defaultMessage="Pay Rent" />
+          </Button>
         </div>
         <div className="overflow-x-auto">
           {payments.length > 0 ? (
             <table className="w-full">
-              <thead className="bg-gray-100 border-b">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 border-b dark:border-slate-700">
                 <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="tenant.date" defaultMessage="Date" /></th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="tenant.amount" defaultMessage="Amount" /></th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="tenant.status" defaultMessage="Status" /></th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300"><FormattedMessage id="tenant.date" defaultMessage="Date" /></th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300"><FormattedMessage id="tenant.amount" defaultMessage="Amount" /></th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300"><FormattedMessage id="tenant.status" defaultMessage="Status" /></th>
                 </tr>
               </thead>
               <tbody>
                 {payments.map((p) => (
-                  <tr key={p.id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-3">{new Date(p.payment_date).toLocaleDateString()}</td>
-                    <td className="px-4 py-3 font-semibold">{currencySymbol}{p.amount}</td>
+                  <tr key={p.id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                    <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{new Date(p.payment_date).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-100">{currencySymbol}{p.amount}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        p.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                      }`}>
+                      <Badge variant={p.status === 'completed' ? 'success' : 'warning'}>
                         {p.status}
-                      </span>
+                      </Badge>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <p className="text-gray-500 text-center py-4"><FormattedMessage id="tenant.noPayments" defaultMessage="No payments yet" /></p>
+            <p className="text-slate-500 dark:text-slate-400 text-center py-4"><FormattedMessage id="tenant.noPayments" defaultMessage="No payments yet" /></p>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* Service Manager Contact */}
       {adminContact && (
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">📞 <FormattedMessage id="tenant.serviceManagerContact" defaultMessage="Service Manager Contact" /></h2>
+        <Card accent="green">
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
+            <PhoneIcon className="w-6 h-6 text-green-500" />
+            <FormattedMessage id="tenant.serviceManagerContact" defaultMessage="Service Manager Contact" />
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <p className="text-sm text-gray-600"><FormattedMessage id="tenant.contactName" defaultMessage="Name" /></p>
-              <p className="text-lg font-semibold text-gray-800">{adminContact.adminName}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400"><FormattedMessage id="tenant.contactName" defaultMessage="Name" /></p>
+              <p className="text-lg font-semibold text-slate-800 dark:text-slate-100">{adminContact.adminName}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600"><FormattedMessage id="tenant.contactEmail" defaultMessage="Email" /></p>
+              <p className="text-sm text-slate-500 dark:text-slate-400"><FormattedMessage id="tenant.contactEmail" defaultMessage="Email" /></p>
               <a href={`mailto:${adminContact.adminEmail}`} className="text-lg font-semibold text-brand-500 hover:underline">
                 {adminContact.adminEmail}
               </a>
             </div>
             <div>
-              <p className="text-sm text-gray-600"><FormattedMessage id="tenant.contactPhone" defaultMessage="Phone" /></p>
+              <p className="text-sm text-slate-500 dark:text-slate-400"><FormattedMessage id="tenant.contactPhone" defaultMessage="Phone" /></p>
               {adminContact.orgPhone && adminContact.orgPhone !== 'N/A' ? (
                 <a href={`tel:${adminContact.orgPhone}`} className="text-lg font-semibold text-brand-500 hover:underline">
                   {adminContact.orgPhone}
                 </a>
               ) : (
-                <p className="text-lg font-semibold text-gray-800">N/A</p>
+                <p className="text-lg font-semibold text-slate-800 dark:text-slate-100">N/A</p>
               )}
             </div>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

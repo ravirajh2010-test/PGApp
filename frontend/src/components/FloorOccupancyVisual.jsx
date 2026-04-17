@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
+import { BuildingOffice2Icon } from '@heroicons/react/24/outline';
 import api from '../services/api';
+import Spinner from './ui/Spinner';
 
 const FloorOccupancyVisual = ({ buildings, refreshKey }) => {
   const [selectedBuilding, setSelectedBuilding] = useState('');
@@ -54,11 +56,12 @@ const FloorOccupancyVisual = ({ buildings, refreshKey }) => {
   if (buildings.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+    <div className="bg-white dark:bg-dark-700 rounded-xl shadow-card overflow-hidden">
+      <div className="px-6 py-4 bg-gradient-to-r from-brand-700 to-brand-500 text-white">
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <h2 className="text-2xl font-bold">
-            🏢 <FormattedMessage id="dashboard.floorOccupancy" defaultMessage="Floor-wise Occupancy" />
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <BuildingOffice2Icon className="w-7 h-7" />
+            <FormattedMessage id="dashboard.floorOccupancy" defaultMessage="Floor-wise Occupancy" />
           </h2>
           <select
             value={selectedBuilding}
@@ -75,23 +78,23 @@ const FloorOccupancyVisual = ({ buildings, refreshKey }) => {
 
       {/* Legend & Summary - only show when a building is selected */}
       {selectedBuilding && (
-      <div className="px-4 sm:px-6 py-3 bg-gray-50 border-b flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div className="px-4 sm:px-6 py-3 bg-slate-50 dark:bg-slate-800/50 border-b dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-4 sm:gap-6">
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 sm:w-6 sm:h-6 rounded bg-red-500"></div>
-            <span className="text-xs sm:text-sm font-medium text-gray-700"><FormattedMessage id="dashboard.occupiedStatus" defaultMessage="Occupied" /></span>
+            <span className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300"><FormattedMessage id="dashboard.occupiedStatus" defaultMessage="Occupied" /></span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 sm:w-6 sm:h-6 rounded bg-green-500"></div>
-            <span className="text-xs sm:text-sm font-medium text-gray-700"><FormattedMessage id="dashboard.vacantStatus" defaultMessage="Vacant" /></span>
+            <span className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300"><FormattedMessage id="dashboard.vacantStatus" defaultMessage="Vacant" /></span>
           </div>
         </div>
         {totalBeds > 0 && (
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm font-semibold">
-            <span className="text-gray-600"><FormattedMessage id="dashboard.totalLabel" defaultMessage="Total" />: {totalBeds}</span>
-            <span className="text-red-600"><FormattedMessage id="dashboard.occupiedStatus" defaultMessage="Occupied" />: {occupiedBeds}</span>
-            <span className="text-green-600"><FormattedMessage id="dashboard.vacantStatus" defaultMessage="Vacant" />: {vacantBeds}</span>
-            <span className="text-indigo-600">
+            <span className="text-slate-600 dark:text-slate-400"><FormattedMessage id="dashboard.totalLabel" defaultMessage="Total" />: {totalBeds}</span>
+            <span className="text-red-600 dark:text-red-400"><FormattedMessage id="dashboard.occupiedStatus" defaultMessage="Occupied" />: {occupiedBeds}</span>
+            <span className="text-green-600 dark:text-green-400"><FormattedMessage id="dashboard.vacantStatus" defaultMessage="Vacant" />: {vacantBeds}</span>
+            <span className="text-brand-600 dark:text-brand-400">
               <FormattedMessage id="dashboard.percentFull" defaultMessage="{percent}% Full" values={{ percent: Math.round((occupiedBeds / totalBeds) * 100) }} />
             </span>
           </div>
@@ -102,16 +105,18 @@ const FloorOccupancyVisual = ({ buildings, refreshKey }) => {
       {selectedBuilding && (
       <div className="p-6">
         {loading ? (
-          <p className="text-center text-gray-500 py-8"><FormattedMessage id="dashboard.loadingFloorLayout" defaultMessage="Loading floor layout..." /></p>
+          <div className="flex justify-center py-10">
+            <Spinner size="lg" className="text-brand-500" />
+          </div>
         ) : floors.length === 0 ? (
-          <p className="text-center text-gray-500 py-8"><FormattedMessage id="dashboard.noFloorsFound" defaultMessage="No floors/rooms found for this building." /></p>
+          <p className="text-center text-slate-500 dark:text-slate-400 py-8"><FormattedMessage id="dashboard.noFloorsFound" defaultMessage="No floors/rooms found for this building." /></p>
         ) : (
           <div className="space-y-6">
             {/* Building visual container */}
-            <div className="bg-gray-100 rounded-xl p-4 border-2 border-gray-300 relative">
+              <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-4 border-2 border-slate-300 dark:border-slate-600 relative">
               {/* Building name header */}
-              <div className="bg-amber-100 border-2 border-amber-400 rounded-t-lg px-4 py-2 text-center mb-4">
-                <span className="font-bold text-amber-800 text-lg">{buildingName}</span>
+              <div className="bg-brand-50 dark:bg-brand-900/20 border-2 border-brand-300 dark:border-brand-700 rounded-t-lg px-4 py-2 text-center mb-4">
+                <span className="font-bold text-brand-800 dark:text-brand-300 text-lg">{buildingName}</span>
               </div>
 
               {/* Floors - rendered top to bottom (highest floor first) */}
@@ -121,13 +126,13 @@ const FloorOccupancyVisual = ({ buildings, refreshKey }) => {
                   const floorTotal = floor.rooms.reduce((sum, r) => sum + r.beds.length, 0);
 
                   return (
-                    <div key={floor.floor_number} className="bg-white rounded-lg border-2 border-gray-200 overflow-hidden">
+                    <div key={floor.floor_number} className="bg-white dark:bg-dark-700 rounded-lg border-2 border-slate-200 dark:border-slate-600 overflow-hidden">
                       {/* Floor header */}
-                      <div className="bg-indigo-50 px-4 py-2 border-b border-indigo-200 flex items-center justify-between">
-                        <span className="font-bold text-indigo-800">
+                      <div className="bg-brand-50 dark:bg-brand-900/20 px-4 py-2 border-b border-brand-200 dark:border-brand-700 flex items-center justify-between">
+                        <span className="font-bold text-brand-800 dark:text-brand-300">
                           {getFloorLabel(floor.floor_number)}
                         </span>
-                        <span className="text-xs font-medium text-gray-500">
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                           <FormattedMessage id="dashboard.bedsOccupiedCount" defaultMessage="{occupied}/{total} beds occupied" values={{ occupied: floorOccupied, total: floorTotal }} />
                         </span>
                       </div>
@@ -135,10 +140,10 @@ const FloorOccupancyVisual = ({ buildings, refreshKey }) => {
                       {/* Rooms in this floor */}
                       <div className="p-3 flex flex-wrap gap-4">
                         {floor.rooms.map((room) => (
-                          <div key={room.room_id} className="border border-gray-200 rounded-lg p-3 bg-gray-50 min-w-[140px]">
+                          <div key={room.room_id} className="border border-slate-200 dark:border-slate-600 rounded-lg p-3 bg-slate-50 dark:bg-slate-800/60 min-w-[140px]">
                             {/* Room label */}
                             <div className="text-center mb-2">
-                              <span className="text-xs font-bold text-gray-600 bg-white px-2 py-0.5 rounded border">
+                              <span className="text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-dark-700 px-2 py-0.5 rounded border dark:border-slate-600">
                                 <FormattedMessage id="dashboard.roomLabel" defaultMessage="Room {number}" values={{ number: room.room_number }} />
                               </span>
                             </div>

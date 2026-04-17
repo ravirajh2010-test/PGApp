@@ -5,6 +5,17 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: 'dist'
-  }
+    outDir: 'dist',
+    chunkSizeWarningLimit: 650,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-xlsx': ['xlsx'],
+          'vendor-pdf': ['jspdf', 'html2canvas'],
+          'vendor-intl': ['react-intl'],
+        },
+      },
+    },
+  },
 })

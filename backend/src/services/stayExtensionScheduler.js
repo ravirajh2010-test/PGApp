@@ -1,7 +1,7 @@
 // This file sets up a scheduled job to send stay extension reminders
 // It runs daily at 5 PM IST (11:30 UTC) and checks for tenants
-// whose end_date is 3 days from now, reminding them to contact
-// the admin to extend their stay and avoid bed release.
+// whose end_date is within 5 days from now (including the last date),
+// reminding them to contact the admin to extend their stay and avoid bed release.
 
 const cron = require('node-cron');
 const dbManager = require('./DatabaseManager');
@@ -55,7 +55,7 @@ const processStayExtensionReminders = async (orgPool, orgId, masterPool) => {
     console.error(`[REMINDER] Could not fetch org name for org ${orgId}:`, err.message);
   }
 
-  // Find tenants whose end_date is exactly 3 days from now
+  // Find tenants whose end_date is within the next 5 days (including today)
   const query = `
     SELECT t.id, t.email, t.end_date, u.name,
            b.bed_identifier, r.room_number,
@@ -65,7 +65,7 @@ const processStayExtensionReminders = async (orgPool, orgId, masterPool) => {
     JOIN beds b ON t.bed_id = b.id
     JOIN rooms r ON b.room_id = r.id
     JOIN buildings bl ON r.building_id = bl.id
-    WHERE DATE(t.end_date) = CURRENT_DATE + INTERVAL '3 days'
+    WHERE DATE(t.end_date) BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '5 days'
     ORDER BY bl.name, r.room_number
   `;
 
@@ -76,7 +76,7 @@ const processStayExtensionReminders = async (orgPool, orgId, masterPool) => {
     return;
   }
 
-  console.log(`[REMINDER] Org ${orgId} (${orgName}): Found ${tenants.length} tenant(s) ending in 3 days`);
+  console.log(`[REMINDER] Org ${orgId} (${orgName}): Found ${tenants.length} tenant(s) ending within 5 days`);
 
   for (const tenant of tenants) {
     try {

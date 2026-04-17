@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormattedMessage, useIntl } from 'react-intl';
+import { MagnifyingGlassIcon, EnvelopeIcon, PhoneIcon, HomeIcon, CurrencyDollarIcon, CalendarIcon, XMarkIcon, CheckCircleIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import { useCurrency } from '../context/LanguageContext';
+import { Button, Card, Badge, Spinner } from '../components/ui';
 
 const TenantPaymentSearch = () => {
   const navigate = useNavigate();
@@ -77,55 +79,65 @@ const TenantPaymentSearch = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">🔍 <FormattedMessage id="tenantSearch.title" defaultMessage="Search Tenant Payments" /></h1>
-        <button onClick={() => navigate('/payment-info')} className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition text-sm shrink-0">
+        <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100">
+          <MagnifyingGlassIcon className="w-8 h-8 text-brand-500" />
+          <FormattedMessage id="tenantSearch.title" defaultMessage="Search Tenant Payments" />
+        </h1>
+        <Button variant="secondary" size="sm" onClick={() => navigate('/payment-info')} className="shrink-0">
           <FormattedMessage id="tenantSearch.backToPayments" defaultMessage="← Back to Payment Info" />
-        </button>
+        </Button>
       </div>
 
       {/* Search Bar */}
-      <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+      <Card>
         <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            placeholder={intl.formatMessage({ id: 'tenantSearch.placeholder', defaultMessage: 'Search by tenant name, email, or mobile number...' })}
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-base sm:text-lg"
-          />
-          <button
+          <div className="relative flex-1">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder={intl.formatMessage({ id: 'tenantSearch.placeholder', defaultMessage: 'Search by tenant name, email, or mobile number...' })}
+              className="w-full pl-10 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-base sm:text-lg"
+            />
+          </div>
+          <Button
+            variant="primary"
+            size="lg"
+            loading={searching}
             onClick={handleSearch}
-            disabled={searching || query.trim().length < 2}
-            className="bg-brand-500 hover:bg-brand-600 text-white font-bold px-6 sm:px-8 py-3 rounded-xl transition shadow-lg shadow-brand-500/20 disabled:opacity-50 shrink-0"
+            disabled={query.trim().length < 2}
+            iconLeft={<MagnifyingGlassIcon className="w-5 h-5" />}
+            className="shrink-0"
           >
-            {searching ? '⏳ ' + intl.formatMessage({ id: 'tenantSearch.searching', defaultMessage: 'Searching...' }) : '🔍 ' + intl.formatMessage({ id: 'tenantSearch.search', defaultMessage: 'Search' })}
-          </button>
+            <FormattedMessage id="tenantSearch.search" defaultMessage="Search" />
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {/* Search Results (before selecting a tenant) */}
       {!selectedTenant && searched && (
-        <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b">
-            <h2 className="text-lg font-bold text-gray-800">
+        <Card padding={false}>
+          <div className="px-6 py-4 bg-slate-50 dark:bg-slate-700/50 border-b dark:border-slate-600">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">
               {results.length > 0 ? intl.formatMessage({ id: 'tenantSearch.found', defaultMessage: 'Found {count} tenant(s)' }, { count: results.length }) : intl.formatMessage({ id: 'tenantSearch.noResults', defaultMessage: 'No tenants found' })}
             </h2>
           </div>
           {results.length > 0 && (
-            <div className="divide-y">
+            <div className="divide-y dark:divide-slate-600">
               {results.map(tenant => (
                 <div
                   key={tenant.id}
                   onClick={() => handleSelectTenant(tenant)}
-                  className="px-6 py-4 hover:bg-brand-50 cursor-pointer transition flex items-center justify-between"
+                  className="px-6 py-4 hover:bg-brand-50 dark:hover:bg-brand-900/20 cursor-pointer transition-colors flex items-center justify-between"
                 >
                   <div>
-                    <p className="font-semibold text-gray-800 text-base sm:text-lg">{tenant.name}</p>
-                    <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500 mt-1">
-                      <span>📧 {tenant.email}</span>
-                      {tenant.phone && <span>📱 {tenant.phone}</span>}
-                      <span>🛏️ {tenant.bed_info}</span>
+                    <p className="font-semibold text-slate-800 dark:text-slate-100 text-base sm:text-lg">{tenant.name}</p>
+                    <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+                      <span className="flex items-center gap-1"><EnvelopeIcon className="w-3.5 h-3.5" />{tenant.email}</span>
+                      {tenant.phone && <span className="flex items-center gap-1"><PhoneIcon className="w-3.5 h-3.5" />{tenant.phone}</span>}
+                      <span className="flex items-center gap-1"><HomeIcon className="w-3.5 h-3.5" />{tenant.bed_info}</span>
                     </div>
                   </div>
                   <div className="text-brand-500 font-semibold text-sm">
@@ -135,115 +147,112 @@ const TenantPaymentSearch = () => {
               ))}
             </div>
           )}
-        </div>
+        </Card>
       )}
 
       {/* Selected Tenant - Payment History */}
       {selectedTenant && (
         <>
           {/* Tenant Info Card */}
-          <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+          <Card accent="brand">
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-gray-800">{selectedTenant.name}</h2>
-                <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-2">
-                  <span>📧 {selectedTenant.email}</span>
-                  {selectedTenant.phone && <span>📱 {selectedTenant.phone}</span>}
-                  <span>🛏️ {selectedTenant.bed_info}</span>
-                  <span>💰 {intl.formatMessage({ id: 'tenantSearch.perMonth', defaultMessage: '{symbol}{rent}/month' }, { symbol: currencySymbol, rent: selectedTenant.rent })}</span>
-                  <span>📅 {intl.formatMessage({ id: 'tenantSearch.since', defaultMessage: 'Since {date}' }, { date: new Date(selectedTenant.start_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) })}</span>
-                  {selectedTenant.end_date && <span>📅 {intl.formatMessage({ id: 'tenantSearch.until', defaultMessage: 'Until {date}' }, { date: new Date(selectedTenant.end_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) })}</span>}
+                <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{selectedTenant.name}</h2>
+                <div className="flex flex-wrap gap-3 text-sm text-slate-600 dark:text-slate-400 mt-2">
+                  <span className="flex items-center gap-1"><EnvelopeIcon className="w-4 h-4" />{selectedTenant.email}</span>
+                  {selectedTenant.phone && <span className="flex items-center gap-1"><PhoneIcon className="w-4 h-4" />{selectedTenant.phone}</span>}
+                  <span className="flex items-center gap-1"><HomeIcon className="w-4 h-4" />{selectedTenant.bed_info}</span>
+                  <span className="flex items-center gap-1"><CurrencyDollarIcon className="w-4 h-4" />{intl.formatMessage({ id: 'tenantSearch.perMonth', defaultMessage: '{symbol}{rent}/month' }, { symbol: currencySymbol, rent: selectedTenant.rent })}</span>
+                  <span className="flex items-center gap-1"><CalendarIcon className="w-4 h-4" />{intl.formatMessage({ id: 'tenantSearch.since', defaultMessage: 'Since {date}' }, { date: new Date(selectedTenant.start_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) })}</span>
+                  {selectedTenant.end_date && <span className="flex items-center gap-1"><CalendarIcon className="w-4 h-4" />{intl.formatMessage({ id: 'tenantSearch.until', defaultMessage: 'Until {date}' }, { date: new Date(selectedTenant.end_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) })}</span>}
                 </div>
               </div>
               <button
                 onClick={() => { setSelectedTenant(null); setMonths([]); }}
-                className="text-gray-400 hover:text-gray-600 text-sm font-semibold"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               >
-                <FormattedMessage id="tenantSearch.close" defaultMessage="✕ Close" />
+                <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
-          </div>
+          </Card>
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-blue-500">
-              <h3 className="text-sm font-semibold text-gray-600 uppercase"><FormattedMessage id="tenantSearch.totalMonths" defaultMessage="Total Months" /></h3>
-              <p className="text-3xl font-bold text-blue-600">{months.length}</p>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-green-500">
-              <h3 className="text-sm font-semibold text-gray-600 uppercase"><FormattedMessage id="payment.paid" defaultMessage="Paid" /></h3>
-              <p className="text-3xl font-bold text-green-600">{paidCount}</p>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-red-500">
-              <h3 className="text-sm font-semibold text-gray-600 uppercase"><FormattedMessage id="payment.unpaid" defaultMessage="Unpaid" /></h3>
-              <p className="text-3xl font-bold text-red-600">{unpaidCount}</p>
-            </div>
+            <Card accent="blue">
+              <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase"><FormattedMessage id="tenantSearch.totalMonths" defaultMessage="Total Months" /></h3>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">{months.length}</p>
+            </Card>
+            <Card accent="green">
+              <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase"><FormattedMessage id="payment.paid" defaultMessage="Paid" /></h3>
+              <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-1">{paidCount}</p>
+            </Card>
+            <Card accent="red">
+              <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase"><FormattedMessage id="payment.unpaid" defaultMessage="Unpaid" /></h3>
+              <p className="text-3xl font-bold text-red-600 dark:text-red-400 mt-1">{unpaidCount}</p>
+            </Card>
           </div>
 
           {/* Payment History Grid */}
-          <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
-            <div className="px-6 py-4 bg-brand-50 border-b-2 border-brand-500">
-              <h2 className="text-xl font-bold text-gray-800"><FormattedMessage id="tenantSearch.monthWiseHistory" defaultMessage="Month-wise Payment History" /></h2>
+          <Card padding={false}>
+            <div className="px-6 py-4 bg-brand-50 dark:bg-brand-900/20 border-b-2 border-brand-500">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100"><FormattedMessage id="tenantSearch.monthWiseHistory" defaultMessage="Month-wise Payment History" /></h2>
             </div>
             {loadingHistory ? (
               <div className="flex justify-center items-center h-32">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-500"></div>
+                <Spinner size="lg" />
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-100 border-b">
+                  <thead className="bg-slate-100 dark:bg-slate-700/50 border-b dark:border-slate-600">
                     <tr>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700">#</th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="tenantSearch.month" defaultMessage="Month" /></th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="tenantSearch.rent" defaultMessage={`Rent (${currencySymbol})`} /></th>
-                      <th className="px-6 py-3 text-center font-semibold text-gray-700"><FormattedMessage id="payment.statusHeader" defaultMessage="Status" /></th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="tenantSearch.paymentDate" defaultMessage="Payment Date" /></th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700"><FormattedMessage id="tenantSearch.reference" defaultMessage="Reference" /></th>
-                      <th className="px-6 py-3 text-center font-semibold text-gray-700"><FormattedMessage id="payment.actionHeader" defaultMessage="Action" /></th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">#</th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300"><FormattedMessage id="tenantSearch.month" defaultMessage="Month" /></th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300"><FormattedMessage id="tenantSearch.rent" defaultMessage={`Rent (${currencySymbol})`} /></th>
+                      <th className="px-6 py-3 text-center font-semibold text-slate-700 dark:text-slate-300"><FormattedMessage id="payment.statusHeader" defaultMessage="Status" /></th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300"><FormattedMessage id="tenantSearch.paymentDate" defaultMessage="Payment Date" /></th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300"><FormattedMessage id="tenantSearch.reference" defaultMessage="Reference" /></th>
+                      <th className="px-6 py-3 text-center font-semibold text-slate-700 dark:text-slate-300"><FormattedMessage id="payment.actionHeader" defaultMessage="Action" /></th>
                     </tr>
                   </thead>
                   <tbody>
                     {months.map((m, idx) => {
                       const key = `${m.month}-${m.year}`;
                       return (
-                        <tr key={key} className="border-b hover:bg-gray-50">
-                          <td className="px-6 py-3 font-medium">{idx + 1}</td>
-                          <td className="px-6 py-3 font-medium">{m.monthName}</td>
-                          <td className="px-6 py-3 font-semibold">{currencySymbol}{m.billAmount}</td>
+                        <tr key={key} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                          <td className="px-6 py-3 font-medium text-slate-700 dark:text-slate-300">{idx + 1}</td>
+                          <td className="px-6 py-3 font-medium text-slate-800 dark:text-slate-200">{m.monthName}</td>
+                          <td className="px-6 py-3 font-semibold text-slate-800 dark:text-slate-200">{currencySymbol}{m.billAmount}</td>
                           <td className="px-6 py-3 text-center">
                             {m.status === 'Paid' ? (
-                              <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">✅ <FormattedMessage id="payment.paidStatus" defaultMessage="Paid" /></span>
+                              <Badge variant="success" dot><FormattedMessage id="payment.paidStatus" defaultMessage="Paid" /></Badge>
                             ) : (
-                              <span
-                                title={`Bill Generated: ${currencySymbol}${m.billAmount} due`}
-                                className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold cursor-help inline-block"
-                              >
-                                📄 <FormattedMessage id="payment.billGenerated" defaultMessage="Bill Generated" />
-                              </span>
+                              <Badge variant="info" dot title={`Bill Generated: ${currencySymbol}${m.billAmount} due`}>
+                                <FormattedMessage id="payment.billGenerated" defaultMessage="Bill Generated" />
+                              </Badge>
                             )}
                           </td>
-                          <td className="px-6 py-3 text-sm text-gray-500">
+                          <td className="px-6 py-3 text-sm text-slate-500 dark:text-slate-400">
                             {m.payment?.payment_date ? new Date(m.payment.payment_date).toLocaleDateString('en-IN') : '—'}
                           </td>
-                          <td className="px-6 py-3 text-sm text-gray-500 font-mono">
+                          <td className="px-6 py-3 text-sm text-slate-500 dark:text-slate-400 font-mono">
                             {m.payment?.razorpay_payment_id
                               ? (m.payment.razorpay_payment_id.startsWith('OFFLINE_') ? intl.formatMessage({ id: 'tenantSearch.offline', defaultMessage: 'Offline' }) : m.payment.razorpay_payment_id.substring(0, 16) + '...')
                               : '—'}
                           </td>
                           <td className="px-6 py-3 text-center">
                             {m.status !== 'Paid' ? (
-                              <button
+                              <Button
+                                variant="success"
+                                size="sm"
+                                loading={markingPaid[key]}
                                 onClick={() => handleMarkPaid(selectedTenant.id, m.month, m.year, m.monthName)}
-                                disabled={markingPaid[key]}
-                                className={`${
-                                  markingPaid[key] ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
-                                } text-white px-4 py-2 rounded-lg text-sm font-semibold transition`}
+                                iconLeft={<CheckCircleIcon className="w-4 h-4" />}
                               >
-                                {markingPaid[key] ? '⏳ ' + intl.formatMessage({ id: 'tenantSearch.marking', defaultMessage: 'Marking...' }) : '✅ ' + intl.formatMessage({ id: 'tenantSearch.markPaid', defaultMessage: 'Mark Paid' })}
-                              </button>
+                                <FormattedMessage id="tenantSearch.markPaid" defaultMessage="Mark Paid" />
+                              </Button>
                             ) : (
-                              <span className="text-gray-400 text-sm">—</span>
+                              <span className="text-slate-400 text-sm">—</span>
                             )}
                           </td>
                         </tr>
@@ -253,7 +262,7 @@ const TenantPaymentSearch = () => {
                 </table>
               </div>
             )}
-          </div>
+          </Card>
         </>
       )}
     </div>

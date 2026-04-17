@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { FormattedMessage } from 'react-intl';
+import { BuildingOffice2Icon, HomeModernIcon, UsersIcon, CreditCardIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 
 const GuestView = () => {
@@ -52,10 +53,10 @@ const GuestView = () => {
                     <img src="/images/roomipilot-logo.png" alt="RoomiPilot" className="w-48 h-48 drop-shadow-2xl" />
                   </div>
                   <div className="absolute -top-4 -right-4 w-20 h-20 bg-brand-500 rounded-2xl flex items-center justify-center shadow-lg">
-                    <span className="text-3xl">🏢</span>
+                    <BuildingOffice2Icon className="w-10 h-10 text-white" />
                   </div>
                   <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-brand-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    <span className="text-2xl">🔒</span>
+                    <LockClosedIcon className="w-8 h-8 text-white" />
                   </div>
                 </div>
               </div>
@@ -66,30 +67,30 @@ const GuestView = () => {
         {/* Features Section */}
         <section className="max-w-7xl mx-auto px-4 py-20">
           <div className="text-center mb-14">
-            <h2 className="text-3xl font-bold text-gray-800 mb-3">Everything you need to manage your PG</h2>
-            <p className="text-gray-500 text-lg">Powerful tools designed for hostel & PG operators</p>
+          <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-3">Everything you need to manage your PG</h2>
+            <p className="text-slate-500 dark:text-slate-400 text-lg">Powerful tools designed for hostel & PG operators</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="group bg-white rounded-2xl shadow-md hover:shadow-xl p-8 text-center transition border border-gray-100 hover:border-brand-200">
-              <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:bg-brand-100 transition">
-                <span className="text-3xl">🏠</span>
+            <div className="group bg-white dark:bg-dark-700 rounded-2xl shadow-card hover:shadow-card-hover p-8 text-center transition-all duration-200 border border-slate-100 dark:border-slate-600 hover:border-brand-200 dark:hover:border-brand-600">
+              <div className="w-16 h-16 bg-brand-50 dark:bg-brand-900/20 rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:bg-brand-100 dark:group-hover:bg-brand-900/30 transition">
+                <HomeModernIcon className="w-8 h-8 text-brand-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-3"><FormattedMessage id="guest.propertyMgmt" defaultMessage="Property Management" /></h3>
-              <p className="text-gray-500"><FormattedMessage id="guest.propertyMgmtDesc" defaultMessage="Manage buildings, rooms, and beds with real-time occupancy tracking" /></p>
+              <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-3"><FormattedMessage id="guest.propertyMgmt" defaultMessage="Property Management" /></h3>
+              <p className="text-slate-500 dark:text-slate-400"><FormattedMessage id="guest.propertyMgmtDesc" defaultMessage="Manage buildings, rooms, and beds with real-time occupancy tracking" /></p>
             </div>
-            <div className="group bg-white rounded-2xl shadow-md hover:shadow-xl p-8 text-center transition border border-gray-100 hover:border-brand-200">
-              <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:bg-brand-100 transition">
-                <span className="text-3xl">👥</span>
+            <div className="group bg-white dark:bg-dark-700 rounded-2xl shadow-card hover:shadow-card-hover p-8 text-center transition-all duration-200 border border-slate-100 dark:border-slate-600 hover:border-brand-200 dark:hover:border-brand-600">
+              <div className="w-16 h-16 bg-brand-50 dark:bg-brand-900/20 rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:bg-brand-100 dark:group-hover:bg-brand-900/30 transition">
+                <UsersIcon className="w-8 h-8 text-brand-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-3"><FormattedMessage id="guest.tenantMgmt" defaultMessage="Tenant Management" /></h3>
-              <p className="text-gray-500"><FormattedMessage id="guest.tenantMgmtDesc" defaultMessage="Onboard tenants, track stays, and manage check-ins/check-outs" /></p>
+              <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-3"><FormattedMessage id="guest.tenantMgmt" defaultMessage="Tenant Management" /></h3>
+              <p className="text-slate-500 dark:text-slate-400"><FormattedMessage id="guest.tenantMgmtDesc" defaultMessage="Onboard tenants, track stays, and manage check-ins/check-outs" /></p>
             </div>
-            <div className="group bg-white rounded-2xl shadow-md hover:shadow-xl p-8 text-center transition border border-gray-100 hover:border-brand-200">
-              <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:bg-brand-100 transition">
-                <span className="text-3xl">💰</span>
+            <div className="group bg-white dark:bg-dark-700 rounded-2xl shadow-card hover:shadow-card-hover p-8 text-center transition-all duration-200 border border-slate-100 dark:border-slate-600 hover:border-brand-200 dark:hover:border-brand-600">
+              <div className="w-16 h-16 bg-brand-50 dark:bg-brand-900/20 rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:bg-brand-100 dark:group-hover:bg-brand-900/30 transition">
+                <CreditCardIcon className="w-8 h-8 text-brand-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-3"><FormattedMessage id="guest.paymentTracking" defaultMessage="Payment Tracking" /></h3>
-              <p className="text-gray-500"><FormattedMessage id="guest.paymentTrackingDesc" defaultMessage="Integrated Razorpay payments with automatic rent collection" /></p>
+              <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-3"><FormattedMessage id="guest.paymentTracking" defaultMessage="Payment Tracking" /></h3>
+              <p className="text-slate-500 dark:text-slate-400"><FormattedMessage id="guest.paymentTrackingDesc" defaultMessage="Integrated Razorpay payments with automatic rent collection" /></p>
             </div>
           </div>
         </section>
@@ -188,42 +189,47 @@ const GuestView = () => {
   };
 
   return (
-    <div className="bg-gradient-to-b from-white to-gray-50 rounded-lg p-8">
+    <div className="bg-gradient-to-b from-white dark:from-dark-700 to-slate-50 dark:to-slate-900 rounded-xl p-8">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-800 mb-2">
+        <h1 className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-2">
           <FormattedMessage id="guest.welcomeTo" defaultMessage="Welcome to" /> {orgInfo?.name || orgSlug}
         </h1>
-        <p className="text-lg text-gray-600"><FormattedMessage id="guest.findAccommodation" defaultMessage="Find your perfect accommodation" /></p>
+        <p className="text-lg text-slate-600 dark:text-slate-400"><FormattedMessage id="guest.findAccommodation" defaultMessage="Find your perfect accommodation" /></p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Buildings Section */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-brand-600 mb-4 pb-2 border-b-2 border-brand-500">🏢 <FormattedMessage id="guest.buildings" defaultMessage="Buildings" /></h2>
+<div className="bg-white dark:bg-dark-700 rounded-xl shadow-card p-6 border border-slate-100 dark:border-slate-600">
+          <h2 className="text-2xl font-bold text-brand-600 dark:text-brand-400 mb-4 pb-2 border-b-2 border-brand-500 flex items-center gap-2">
+            <BuildingOffice2Icon className="w-6 h-6" />
+            <FormattedMessage id="guest.buildings" defaultMessage="Buildings" />
+          </h2>
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {buildings.length > 0 ? (
               buildings.map((b) => (
                 <button
                   key={b.id}
                   onClick={() => fetchRooms(b.id)}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition ${
+                  className={`w-full text-left px-4 py-3 rounded-xl transition-colors ${
                     selectedBuilding === b.id
                       ? 'bg-brand-500 text-white'
-                      : 'bg-gray-100 hover:bg-brand-50 text-gray-800'
+                      : 'bg-slate-100 dark:bg-slate-800/60 hover:bg-brand-50 dark:hover:bg-brand-900/20 text-slate-800 dark:text-slate-100'
                   }`}
                 >
                   {b.name}
                 </button>
               ))
             ) : (
-              <p className="text-gray-400 text-center py-4"><FormattedMessage id="guest.noBuildingsAvailable" defaultMessage="No buildings available" /></p>
+              <p className="text-slate-400 text-center py-4"><FormattedMessage id="guest.noBuildingsAvailable" defaultMessage="No buildings available" /></p>
             )}
           </div>
         </div>
 
         {/* Rooms Section */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-brand-600 mb-4 pb-2 border-b-2 border-brand-500">🚪 <FormattedMessage id="guest.rooms" defaultMessage="Rooms" /></h2>
+<div className="bg-white dark:bg-dark-700 rounded-xl shadow-card p-6 border border-slate-100 dark:border-slate-600">
+          <h2 className="text-2xl font-bold text-brand-600 dark:text-brand-400 mb-4 pb-2 border-b-2 border-brand-500">
+            <FormattedMessage id="guest.rooms" defaultMessage="Rooms" />
+          </h2>
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {selectedBuilding ? (
               rooms.length > 0 ? (
@@ -231,52 +237,54 @@ const GuestView = () => {
                   <button
                     key={r.id}
                     onClick={() => fetchVacancies(r.id)}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition ${
+                    className={`w-full text-left px-4 py-3 rounded-xl transition-colors ${
                       selectedRoom === r.id
                         ? 'bg-brand-500 text-white'
-                        : 'bg-gray-100 hover:bg-brand-50 text-gray-800'
+                        : 'bg-slate-100 dark:bg-slate-800/60 hover:bg-brand-50 dark:hover:bg-brand-900/20 text-slate-800 dark:text-slate-100'
                     }`}
                   >
                     Room {r.room_number} (Capacity: {r.capacity})
                   </button>
                 ))
               ) : (
-                <p className="text-gray-400 text-center py-4"><FormattedMessage id="guest.noRoomsAvailable" defaultMessage="No rooms available" /></p>
+                <p className="text-slate-400 text-center py-4"><FormattedMessage id="guest.noRoomsAvailable" defaultMessage="No rooms available" /></p>
               )
             ) : (
-              <p className="text-gray-400 text-center py-4"><FormattedMessage id="guest.selectBuilding" defaultMessage="Select a building" /></p>
+              <p className="text-slate-400 text-center py-4"><FormattedMessage id="guest.selectBuilding" defaultMessage="Select a building" /></p>
             )}
           </div>
         </div>
 
         {/* Vacant Beds Section */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-brand-600 mb-4 pb-2 border-b-2 border-brand-500">🛏️ <FormattedMessage id="guest.vacantBeds" defaultMessage="Vacant Beds" /></h2>
+        <div className="bg-white dark:bg-dark-700 rounded-xl shadow-card p-6 border border-slate-100 dark:border-slate-600">
+          <h2 className="text-2xl font-bold text-brand-600 dark:text-brand-400 mb-4 pb-2 border-b-2 border-brand-500">
+            <FormattedMessage id="guest.vacantBeds" defaultMessage="Vacant Beds" />
+          </h2>
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {selectedRoom ? (
               vacancies.length > 0 ? (
                 vacancies.map((b) => (
-                  <div key={b.id} className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
-                    <p className="font-semibold text-green-700">Bed {b.id}</p>
-                    <p className="text-sm text-green-600">Status: {b.status}</p>
+                  <div key={b.id} className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 rounded-lg">
+                    <p className="font-semibold text-green-700 dark:text-green-400">Bed {b.id}</p>
+                    <p className="text-sm text-green-600 dark:text-green-500">Status: {b.status}</p>
                   </div>
                 ))
               ) : (
-                <p className="text-gray-400 text-center py-4"><FormattedMessage id="guest.noVacantBeds" defaultMessage="No vacant beds" /></p>
+                <p className="text-slate-400 text-center py-4"><FormattedMessage id="guest.noVacantBeds" defaultMessage="No vacant beds" /></p>
               )
             ) : (
-              <p className="text-gray-400 text-center py-4"><FormattedMessage id="guest.selectRoom" defaultMessage="Select a room" /></p>
+              <p className="text-slate-400 text-center py-4"><FormattedMessage id="guest.selectRoom" defaultMessage="Select a room" /></p>
             )}
           </div>
         </div>
       </div>
 
       {/* Call to Action */}
-      <div className="mt-12 bg-brand-50 rounded-lg p-8 text-center">
-        <h3 className="text-2xl font-bold text-gray-800 mb-4"><FormattedMessage id="guest.readyToBook" defaultMessage="Ready to book?" /></h3>
+      <div className="mt-12 bg-brand-50 dark:bg-brand-900/20 rounded-xl p-8 text-center border border-brand-200 dark:border-brand-700">
+        <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4"><FormattedMessage id="guest.readyToBook" defaultMessage="Ready to book?" /></h3>
         <Link
           to="/login"
-          className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 px-8 rounded-lg transition inline-block"
+          className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 px-8 rounded-xl transition-colors inline-block"
         >
           <FormattedMessage id="guest.signInToBook" defaultMessage="Sign In to Book Now" />
         </Link>
