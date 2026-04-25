@@ -5,7 +5,7 @@ import { CurrencyDollarIcon, ArrowPathIcon, MagnifyingGlassIcon, ArrowDownTrayIc
 import api from '../services/api';
 import { exportPaymentData } from '../services/exportUtils';
 import { useCurrency } from '../context/LanguageContext';
-import { Button, Card, Badge, Spinner, Modal } from '../components/ui';
+import { Button, Card, Badge, Spinner, Modal, DonutChart } from '../components/ui';
 
 const PaymentInfo = () => {
   const navigate = useNavigate();
@@ -210,6 +210,68 @@ const PaymentInfo = () => {
           </Card>
         )}
       </div>
+
+      {/* Revenue Breakdown */}
+      {(() => {
+        const totalReceivable = tenants
+          .filter(t => t.payment_status !== 'NA')
+          .reduce((sum, t) => sum + parseFloat(t.billAmount || 0), 0);
+        const received = tenants
+          .filter(t => t.payment_status === 'Paid')
+          .reduce((sum, t) => sum + parseFloat(t.billAmount || 0), 0);
+        const yetToRecover = tenants
+          .filter(t => t.payment_status === 'Bill Generated')
+          .reduce((sum, t) => sum + parseFloat(t.billAmount || 0), 0);
+        const pct = totalReceivable > 0 ? Math.round((received / totalReceivable) * 100) : 0;
+
+        return (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+            {/* 3 revenue stat cards */}
+            <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Card accent="brand" className="flex flex-col justify-between">
+                <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Receivable</h3>
+                <p className="text-2xl font-extrabold text-brand-600 dark:text-brand-400 mt-2">
+                  {currencySymbol}{totalReceivable.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Expected for {monthName}</p>
+              </Card>
+              <Card accent="green" className="flex flex-col justify-between">
+                <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Received So Far</h3>
+                <p className="text-2xl font-extrabold text-green-600 dark:text-green-400 mt-2">
+                  {currencySymbol}{received.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{paidCount} tenant{paidCount !== 1 ? 's' : ''} paid</p>
+              </Card>
+              <Card accent="red" className="flex flex-col justify-between">
+                <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Yet to Recover</h3>
+                <p className="text-2xl font-extrabold text-red-600 dark:text-red-400 mt-2">
+                  {currencySymbol}{yetToRecover.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{unpaidCount} tenant{unpaidCount !== 1 ? 's' : ''} pending</p>
+              </Card>
+            </div>
+
+            {/* Donut chart */}
+            <Card className="flex flex-col items-center justify-center gap-2">
+              <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Collection</h3>
+              <DonutChart
+                size={130}
+                thickness={24}
+                label={`${pct}%`}
+                subLabel="Collected"
+                segments={[
+                  { label: 'Received',  value: received,     color: '#22c55e' },
+                  { label: 'Pending',   value: yetToRecover, color: '#ef4444' },
+                ]}
+              />
+              <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />Received</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />Pending</span>
+              </div>
+            </Card>
+          </div>
+        );
+      })()}
 
       {/* Payment Table */}
       <Card padding={false}>
