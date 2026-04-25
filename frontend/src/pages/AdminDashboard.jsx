@@ -354,39 +354,36 @@ const AdminDashboard = () => {
       </div>
 
       {/* Occupancy Stats + Donut Chart */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Left: 3 stat cards stacked */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:col-span-2">
-          <Card accent="brand">
-            <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase"><FormattedMessage id="dashboard.totalBeds" defaultMessage="Total Beds" /></h3>
-            <p className="text-3xl font-bold text-brand-500 mt-1">{occupancy.total || 0}</p>
-          </Card>
-          <Card accent="green">
-            <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase"><FormattedMessage id="dashboard.occupied" defaultMessage="Occupied" /></h3>
-            <p className="text-3xl font-bold text-green-500 mt-1">{occupancy.occupied || 0}</p>
-          </Card>
-          <Card accent="blue">
-            <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase"><FormattedMessage id="dashboard.vacant" defaultMessage="Vacant" /></h3>
-            <p className="text-3xl font-bold text-blue-500 mt-1">{(occupancy.total || 0) - (occupancy.occupied || 0)}</p>
-          </Card>
-        </div>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <Card accent="brand">
+          <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase"><FormattedMessage id="dashboard.totalBeds" defaultMessage="Total Beds" /></h3>
+          <p className="text-2xl font-bold text-brand-500 mt-1">{occupancy.total || 0}</p>
+        </Card>
+        <Card accent="green">
+          <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase"><FormattedMessage id="dashboard.occupied" defaultMessage="Occupied" /></h3>
+          <p className="text-2xl font-bold text-green-500 mt-1">{occupancy.occupied || 0}</p>
+        </Card>
+        <Card accent="blue">
+          <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase"><FormattedMessage id="dashboard.vacant" defaultMessage="Vacant" /></h3>
+          <p className="text-2xl font-bold text-blue-500 mt-1">{(occupancy.total || 0) - (occupancy.occupied || 0)}</p>
+        </Card>
 
-        {/* Right: Occupancy Donut Chart */}
-        <Card className="flex flex-col items-center justify-center gap-3">
-          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase text-center">Occupancy</h3>
+        {/* Donut chart — same height as stat cards */}
+        <Card className="flex flex-col items-center justify-center gap-1 py-3">
+          <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Occupancy</h3>
           <DonutChart
-            size={150}
-            thickness={26}
+            size={90}
+            thickness={18}
             label={occupancy.total ? `${Math.round((occupancy.occupied / occupancy.total) * 100)}%` : '—'}
-            subLabel="Occupancy"
+            subLabel="Rate"
             segments={[
               { label: 'Occupied', value: occupancy.occupied || 0, color: '#22c55e' },
               { label: 'Vacant',   value: (occupancy.total || 0) - (occupancy.occupied || 0), color: '#3b82f6' },
             ]}
           />
-          <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400">
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />Occupied</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />Vacant</span>
+          <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />Occupied</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />Vacant</span>
           </div>
         </Card>
       </div>
