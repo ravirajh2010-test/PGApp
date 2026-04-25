@@ -189,29 +189,7 @@ const PaymentInfo = () => {
         </Button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Card accent="blue">
-          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase"><FormattedMessage id="dashboard.tenantsSection" defaultMessage="Total Tenants" /></h3>
-          <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">{tenants.length}</p>
-        </Card>
-        <Card accent="green">
-          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase"><FormattedMessage id="payment.paid" defaultMessage="Paid" /></h3>
-          <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-1">{paidCount}</p>
-        </Card>
-        <Card accent="red">
-          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase"><FormattedMessage id="payment.unpaid" defaultMessage="Not Paid" /></h3>
-          <p className="text-3xl font-bold text-red-600 dark:text-red-400 mt-1">{unpaidCount}</p>
-        </Card>
-        {naCount > 0 && (
-          <Card>
-            <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase"><FormattedMessage id="payment.naLabel" defaultMessage="NA" /></h3>
-            <p className="text-3xl font-bold text-slate-500 dark:text-slate-400 mt-1">{naCount}</p>
-          </Card>
-        )}
-      </div>
-
-      {/* Revenue Breakdown */}
+      {/* Combined Summary + Revenue + Chart */}
       {(() => {
         const totalReceivable = tenants
           .filter(t => t.payment_status !== 'NA')
@@ -223,53 +201,57 @@ const PaymentInfo = () => {
           .filter(t => t.payment_status === 'Bill Generated')
           .reduce((sum, t) => sum + parseFloat(t.billAmount || 0), 0);
         const pct = totalReceivable > 0 ? Math.round((received / totalReceivable) * 100) : 0;
+        const fmt = (n) => n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
         return (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-            {/* 3 revenue stat cards */}
-            <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Card accent="brand" className="flex flex-col justify-between">
-                <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Receivable</h3>
-                <p className="text-2xl font-extrabold text-brand-600 dark:text-brand-400 mt-2">
-                  {currencySymbol}{totalReceivable.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Expected for {monthName}</p>
-              </Card>
-              <Card accent="green" className="flex flex-col justify-between">
-                <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Received So Far</h3>
-                <p className="text-2xl font-extrabold text-green-600 dark:text-green-400 mt-2">
-                  {currencySymbol}{received.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{paidCount} tenant{paidCount !== 1 ? 's' : ''} paid</p>
-              </Card>
-              <Card accent="red" className="flex flex-col justify-between">
-                <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Yet to Recover</h3>
-                <p className="text-2xl font-extrabold text-red-600 dark:text-red-400 mt-2">
-                  {currencySymbol}{yetToRecover.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{unpaidCount} tenant{unpaidCount !== 1 ? 's' : ''} pending</p>
-              </Card>
-            </div>
-
-            {/* Donut chart */}
-            <Card className="flex flex-col items-center justify-center gap-2">
-              <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Collection</h3>
-              <DonutChart
-                size={130}
-                thickness={24}
-                label={`${pct}%`}
-                subLabel="Collected"
-                segments={[
-                  { label: 'Received',  value: received,     color: '#22c55e' },
-                  { label: 'Pending',   value: yetToRecover, color: '#ef4444' },
-                ]}
-              />
-              <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />Received</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />Pending</span>
+          <Card>
+            <div className="flex flex-col sm:flex-row gap-4 items-center">
+              {/* Left: 2×3 compact stat grid */}
+              <div className="grid grid-cols-3 gap-2 flex-1 w-full">
+                {/* Row 1 — tenant counts */}
+                {[
+                  { label: 'Total Tenants', value: tenants.length,  color: 'text-blue-600 dark:text-blue-400',  border: 'border-blue-200 dark:border-blue-800',  bg: 'bg-blue-50 dark:bg-blue-900/20' },
+                  { label: 'Paid',          value: paidCount,       color: 'text-green-600 dark:text-green-400', border: 'border-green-200 dark:border-green-800', bg: 'bg-green-50 dark:bg-green-900/20' },
+                  { label: 'Unpaid',        value: unpaidCount,     color: 'text-red-600 dark:text-red-400',    border: 'border-red-200 dark:border-red-800',    bg: 'bg-red-50 dark:bg-red-900/20' },
+                ].map(({ label, value, color, border, bg }) => (
+                  <div key={label} className={`rounded-xl border ${border} ${bg} p-3 flex flex-col gap-0.5`}>
+                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide leading-none">{label}</span>
+                    <span className={`text-xl font-extrabold ${color} leading-tight`}>{value}</span>
+                  </div>
+                ))}
+                {/* Row 2 — amounts */}
+                {[
+                  { label: 'Receivable',     value: `${currencySymbol}${fmt(totalReceivable)}`, color: 'text-brand-600 dark:text-brand-400',  border: 'border-brand-200 dark:border-brand-800',  bg: 'bg-brand-50 dark:bg-brand-900/20' },
+                  { label: 'Received',       value: `${currencySymbol}${fmt(received)}`,        color: 'text-green-600 dark:text-green-400',  border: 'border-green-200 dark:border-green-800',  bg: 'bg-green-50 dark:bg-green-900/20' },
+                  { label: 'Yet to Recover', value: `${currencySymbol}${fmt(yetToRecover)}`,    color: 'text-red-600 dark:text-red-400',      border: 'border-red-200 dark:border-red-800',      bg: 'bg-red-50 dark:bg-red-900/20' },
+                ].map(({ label, value, color, border, bg }) => (
+                  <div key={label} className={`rounded-xl border ${border} ${bg} p-3 flex flex-col gap-0.5`}>
+                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide leading-none">{label}</span>
+                    <span className={`text-base font-extrabold ${color} leading-tight`}>{value}</span>
+                  </div>
+                ))}
               </div>
-            </Card>
-          </div>
+
+              {/* Right: Donut chart */}
+              <div className="flex flex-col items-center gap-1.5 shrink-0">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Collection</span>
+                <DonutChart
+                  size={130}
+                  thickness={24}
+                  label={`${pct}%`}
+                  subLabel="Collected"
+                  segments={[
+                    { label: 'Received', value: received,     color: '#22c55e' },
+                    { label: 'Pending',  value: yetToRecover, color: '#ef4444' },
+                  ]}
+                />
+                <div className="flex items-center gap-3 text-[10px] text-slate-500 dark:text-slate-400">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />Received</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />Pending</span>
+                </div>
+              </div>
+            </div>
+          </Card>
         );
       })()}
 
