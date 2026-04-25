@@ -132,10 +132,6 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo,
               <div class="credentials-box">
                 <h3 style="margin-top: 0; color: #ff6b35;">Your Login Credentials</h3>
                 <div class="credential">
-                  <label>Portal:</label><br/>
-                  <value><a href="${APP_URL}" style="color:#ff6b35;">${APP_URL}</a></value>
-                </div>
-                <div class="credential" style="margin-top: 12px;">
                   <label>Email:</label><br/>
                   <value>${tenantEmail}</value>
                 </div>
@@ -152,7 +148,7 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo,
               <div class="important">
                 <strong>⚠️ Important Information:</strong>
                 <ul>
-                  <li>Use the above credentials to login at <a href="${APP_URL}">${APP_URL}</a></li>
+                  <li>Click the button below to log in to your account</li>
                   <li>On your first login you will be asked to <strong>set a new permanent password</strong> — please do this immediately</li>
                   <li>Keep your password safe and do not share it with anyone</li>
                   <li>Bed Information: <strong>${bedInfo}</strong></li>
@@ -161,7 +157,7 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo,
               
               <p><strong>Next Steps:</strong></p>
               <ol>
-                <li>Click the "Login to Portal" button above (or visit <a href="${APP_URL}">${APP_URL}</a>)</li>
+                <li>Click the "Login to Portal" button below</li>
                 <li>Sign in with the credentials above</li>
                 <li>Change your password on first login (email OTP verification required)</li>
                 <li>Review your stay details and payment schedule</li>
@@ -481,7 +477,6 @@ const sendOrgWelcomeEmail = async (orgEmail, orgName, adminName, adminEmail, pla
 
               <div class="credentials-box">
                 <h3 style="margin-top: 0; color: #d97706;">🔑 Your Admin Login Details</h3>
-                <div style="margin: 8px 0;"><strong>Portal:</strong> <a href="${APP_URL}" style="color:#ff6b35;">${APP_URL}</a></div>
                 <div style="margin: 8px 0;"><strong>Admin Email:</strong> <span class="cred-value">${adminEmail}</span></div>
                 <div style="margin: 8px 0; font-size: 13px; color: #666;">Use the password you set during registration. You can change it after logging in.</div>
               </div>
@@ -508,7 +503,7 @@ const sendOrgWelcomeEmail = async (orgEmail, orgName, adminName, adminEmail, pla
               
               <p><strong>What's Next?</strong></p>
               <ol>
-                <li>Click the button above to visit <a href="${APP_URL}">${APP_URL}</a></li>
+                <li>Click the button above to go to your Admin Dashboard</li>
                 <li>Log in with your admin email and the password you set during registration</li>
                 <li>Set up your buildings, rooms, and beds</li>
                 <li>Start adding your tenants</li>
@@ -723,7 +718,6 @@ const sendPasswordResetByAdmin = async (userEmail, userName, tempPassword, orgNa
 
               <div class="cred-box">
                 <h3 style="margin-top:0; color:#2563eb;">Your Temporary Login Details</h3>
-                <div style="margin: 10px 0;"><strong>Portal:</strong> <a href="${APP_URL}" style="color:#2563eb;">${APP_URL}</a></div>
                 <div style="margin: 10px 0;"><strong>Email:</strong> <span class="cred-value">${userEmail}</span></div>
                 <div style="margin: 10px 0;"><strong>Temporary Password:</strong> <span class="cred-value">${tempPassword}</span></div>
               </div>
