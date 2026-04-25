@@ -3,11 +3,11 @@ import Spinner from './Spinner';
 
 const variants = {
   primary:
-    'bg-brand-500 text-white hover:bg-brand-600 active:bg-brand-700 shadow-sm hover:shadow-brand-500/25 hover:shadow-md focus-ring',
+    'bg-gradient-to-r from-brand-500 to-sky-500 text-white hover:from-brand-600 hover:to-sky-600 active:from-brand-700 active:to-sky-700 shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 focus-ring',
   secondary:
-    'bg-slate-100 text-slate-700 hover:bg-slate-200 active:bg-slate-300 dark:bg-dark-700 dark:text-slate-200 dark:hover:bg-slate-700 focus-ring',
+    'bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100 border border-slate-200 shadow-sm dark:border-slate-700 dark:bg-dark-700 dark:text-slate-200 dark:hover:bg-slate-700 focus-ring',
   danger:
-    'bg-red-500 text-white hover:bg-red-600 active:bg-red-700 shadow-sm focus-ring',
+    'bg-red-500 text-white hover:bg-red-600 active:bg-red-700 shadow-lg shadow-red-500/20 focus-ring',
   ghost:
     'bg-transparent text-slate-600 hover:bg-slate-100 active:bg-slate-200 dark:text-slate-300 dark:hover:bg-dark-700 focus-ring',
   outline:
@@ -45,11 +45,11 @@ const Button = forwardRef(({
       type={type}
       disabled={isDisabled}
       className={[
-        'inline-flex items-center justify-center font-semibold transition-all duration-150 select-none',
+        'inline-flex items-center justify-center font-semibold transition-all duration-200 select-none will-change-transform',
         variants[variant],
         sizes[size],
         fullWidth ? 'w-full' : '',
-        isDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer',
+        isDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer hover:-translate-y-0.5',
         className,
       ].filter(Boolean).join(' ')}
       {...props}

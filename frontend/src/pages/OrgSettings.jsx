@@ -18,6 +18,7 @@ const OrgSettings = () => {
   const [org, setOrg] = useState(null);
   const [subscription, setSubscription] = useState(null);
   const [users, setUsers] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('general');
   const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', address: '' });
@@ -26,6 +27,13 @@ const OrgSettings = () => {
   const [toast, setToast] = useState(null);
   const [deactivating, setDeactivating] = useState(null);
   const [resetPasswordUser, setResetPasswordUser] = useState(null);
+  const [showAddAdmin, setShowAddAdmin] = useState(false);
+  const [addingAdmin, setAddingAdmin] = useState(false);
+  const [adminError, setAdminError] = useState('');
+  const [adminForm, setAdminForm] = useState({ name: '', email: '', password: '' });
+  const [removingAdmin, setRemovingAdmin] = useState(null);
+
+  const adminCount = users.filter((u) => u.role === 'admin').length;
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -38,14 +46,16 @@ const OrgSettings = () => {
   const fetchOrgData = async () => {
     setLoading(true);
     try {
-      const [orgRes, subRes, usersRes] = await Promise.all([
+      const [orgRes, subRes, usersRes, auditRes] = await Promise.all([
         api.get('/organization/me'),
         api.get('/organization/subscription'),
         api.get('/organization/users'),
+        api.get('/organization/audit-logs'),
       ]);
       setOrg(orgRes.data);
       setSubscription(subRes.data);
       setUsers(usersRes.data);
+      setAuditLogs(auditRes.data || []);
       setEditForm({
         name: orgRes.data.name || '',
         email: orgRes.data.email || '',
@@ -79,6 +89,45 @@ const OrgSettings = () => {
     }
   };
 
+  const handleAddAdmin = async (e) => {
+    e.preventDefault();
+    setAdminError('');
+    if (!adminForm.name || !adminForm.email || !adminForm.password) {
+      setAdminError('Name, email, and password are required.');
+      return;
+    }
+    if (adminForm.password.length < 6) {
+      setAdminError('Password must be at least 6 characters long.');
+      return;
+    }
+    setAddingAdmin(true);
+    try {
+      await api.post('/organization/admins', adminForm);
+      setToast({ message: `Admin ${adminForm.name} added successfully.`, type: 'success', key: Date.now() });
+      setAdminForm({ name: '', email: '', password: '' });
+      setShowAddAdmin(false);
+      fetchOrgData();
+    } catch (error) {
+      setAdminError(error.response?.data?.message || 'Failed to add admin.');
+    } finally {
+      setAddingAdmin(false);
+    }
+  };
+
+  const handleRemoveAdmin = async (targetUser) => {
+    if (!window.confirm(`Remove "${targetUser.name}" as an admin? They will lose access immediately.`)) return;
+    setRemovingAdmin(targetUser.id);
+    try {
+      await api.delete(`/organization/admins/${targetUser.id}`);
+      setToast({ message: `${targetUser.name} removed as admin.`, type: 'success', key: Date.now() });
+      fetchOrgData();
+    } catch (error) {
+      setToast({ message: error.response?.data?.message || 'Failed to remove admin.', type: 'error', key: Date.now() });
+    } finally {
+      setRemovingAdmin(null);
+    }
+  };
+
   const handleDeactivateUser = async (userId, userName) => {
     if (!window.confirm(`Are you sure you want to deactivate "${userName}"? This will remove their bed allocation and send a farewell email.`)) return;
     setDeactivating(userId);
@@ -102,7 +151,7 @@ const OrgSettings = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Toast Notification */}
       {toast && (
         <Toast
@@ -113,24 +162,29 @@ const OrgSettings = () => {
         />
       )}
 
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-2"><FormattedMessage id="orgSettings.title" defaultMessage="Organization Settings" /></h1>
-        <p className="text-slate-600 dark:text-slate-400"><FormattedMessage id="orgSettings.general" defaultMessage="Manage your organization details and subscription" /></p>
+      <div className="text-center">
+        <h1 className="mb-2 text-3xl font-bold text-slate-800 dark:text-slate-100"><FormattedMessage id="orgSettings.title" defaultMessage="Organization Settings" /></h1>
+        <p className="text-slate-600 dark:text-slate-400"><FormattedMessage id="orgSettings.subtitle" defaultMessage="Manage your organization details and subscription" /></p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b">
-        {['general', 'subscription', 'users'].map((tab) => (
+      <div className="flex flex-wrap gap-2 border-b pb-2">
+        {[
+          { id: 'general', labelId: 'orgSettings.general', fallback: 'General' },
+          { id: 'subscription', labelId: 'orgSettings.subscription', fallback: 'Subscription' },
+          { id: 'users', labelId: 'orgSettings.usersTab', fallback: 'Users' },
+          { id: 'audit', labelId: 'orgSettings.auditTab', fallback: 'Audit' },
+        ].map((tab) => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-6 py-3 font-semibold capitalize transition-colors ${
-              activeTab === tab
-                ? 'border-b-2 border-brand-500 text-brand-500'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+              activeTab === tab.id
+                ? 'bg-brand-50 text-brand-600 dark:bg-brand-900/20 dark:text-brand-300'
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200'
             }`}
           >
-            {tab}
+            <FormattedMessage id={tab.labelId} defaultMessage={tab.fallback} />
           </button>
         ))}
       </div>
@@ -138,7 +192,7 @@ const OrgSettings = () => {
       {/* General Settings */}
       {activeTab === 'general' && org && (
         <Card>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-6"><FormattedMessage id="orgSettings.general" defaultMessage="Organization Details" /></h2>
+          <h2 className="mb-5 text-xl font-bold text-slate-800 dark:text-slate-100"><FormattedMessage id="orgSettings.general" defaultMessage="Organization Details" /></h2>
           
           {message && (
             <div className={`p-3 rounded-xl mb-4 ${
@@ -161,6 +215,21 @@ const OrgSettings = () => {
                 label={<FormattedMessage id="orgSettings.slug" defaultMessage="Slug (URL)" />}
                 type="text"
                 value={org.slug}
+                disabled
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Organization ID"
+                type="text"
+                value={org.organization_code || ''}
+                disabled
+                helper="Share this ID with admins and tenants for login."
+              />
+              <Input
+                label="Organization Status"
+                type="text"
+                value={org.status || 'active'}
                 disabled
               />
             </div>
@@ -191,11 +260,18 @@ const OrgSettings = () => {
           </form>
 
           {org.stats && (
-            <div className="mt-8 pt-6 border-t dark:border-slate-700">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">Usage Statistics</h3>
+            <div className="mt-6 border-t pt-5 dark:border-slate-700">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">
+                <FormattedMessage id="orgSettings.usageStats" defaultMessage="Usage Statistics" />
+              </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[['Buildings', org.stats.buildings], ['Beds', org.stats.totalBeds], ['Users', org.stats.users], ['Tenants', org.stats.tenants]].map(([label, val]) => (
-                  <div key={label} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 text-center border dark:border-slate-700">
+                {[
+                  [<FormattedMessage id="orgSettings.statBuildings" defaultMessage="Buildings" />, org.stats.buildings],
+                  [<FormattedMessage id="orgSettings.statBeds" defaultMessage="Beds" />, org.stats.totalBeds],
+                  [<FormattedMessage id="orgSettings.statUsers" defaultMessage="Users" />, org.stats.users],
+                  [<FormattedMessage id="orgSettings.statTenants" defaultMessage="Tenants" />, org.stats.tenants],
+                ].map(([label, val], idx) => (
+                  <div key={idx} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 text-center border dark:border-slate-700">
                     <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
                     <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{val || 0}</p>
                   </div>
@@ -209,11 +285,11 @@ const OrgSettings = () => {
       {/* Subscription */}
       {activeTab === 'subscription' && (
         <Card>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-6"><FormattedMessage id="orgSettings.subscription" defaultMessage="Subscription & Billing" /></h2>
+          <h2 className="mb-5 text-xl font-bold text-slate-800 dark:text-slate-100"><FormattedMessage id="orgSettings.subscription" defaultMessage="Subscription & Billing" /></h2>
           
           {subscription && (
-            <div className="space-y-6">
-              <div className="bg-brand-50 dark:bg-brand-900/20 rounded-xl p-6 border-2 border-brand-200 dark:border-brand-700">
+            <div className="space-y-5">
+              <div className="rounded-xl border-2 border-brand-200 bg-brand-50 p-5 dark:border-brand-700 dark:bg-brand-900/20">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div>
                     <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 capitalize">{subscription.current?.plan || org?.plan} Plan</h3>
@@ -271,7 +347,9 @@ const OrgSettings = () => {
                           <p className="font-bold text-brand-500">{currencySymbol}{plan.price_monthly}/mo</p>
                         </div>
                         {plan.plan === (org?.plan || subscription.current?.plan) && (
-                          <Badge variant="brand" size="sm" className="mt-2">Current Plan</Badge>
+                          <Badge variant="brand" size="sm" className="mt-2">
+                            <FormattedMessage id="orgSettings.currentPlan" defaultMessage="Current Plan" />
+                          </Badge>
                         )}
                       </div>
                     ))}
@@ -295,62 +373,200 @@ const OrgSettings = () => {
 
       {/* Users */}
       {activeTab === 'users' && (
+        <div className="space-y-5">
+          <Card>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                  <FormattedMessage id="orgSettings.adminTeam" defaultMessage="Admin team" />
+                </h3>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  <FormattedMessage
+                    id="orgSettings.adminTeamHelp"
+                    defaultMessage="Each organization can have up to two admins. The secondary admin is optional and can be added or removed anytime."
+                  />
+                </p>
+                <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  <FormattedMessage id="orgSettings.adminCountLabel" defaultMessage="Active admins" />: {adminCount}/2
+                </p>
+              </div>
+              {adminCount < 2 && !showAddAdmin && (
+                <Button variant="primary" size="sm" onClick={() => { setAdminError(''); setShowAddAdmin(true); }}>
+                  <FormattedMessage id="orgSettings.addSecondaryAdmin" defaultMessage="Add secondary admin" />
+                </Button>
+              )}
+            </div>
+
+            {showAddAdmin && (
+              <form onSubmit={handleAddAdmin} className="mt-4 space-y-3 rounded-2xl border border-violet-200 bg-violet-50/60 p-4 dark:border-violet-500/30 dark:bg-violet-500/10">
+                {adminError && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-700 dark:bg-red-900/20 dark:text-red-300">
+                    {adminError}
+                  </div>
+                )}
+                <div className="grid gap-3 md:grid-cols-3">
+                  <Input
+                    label={<FormattedMessage id="orgSettings.adminName" defaultMessage="Name" />}
+                    value={adminForm.name}
+                    onChange={(e) => setAdminForm({ ...adminForm, name: e.target.value })}
+                    placeholder="Jane Smith"
+                    required
+                  />
+                  <Input
+                    label={<FormattedMessage id="orgSettings.adminEmail" defaultMessage="Email" />}
+                    type="email"
+                    value={adminForm.email}
+                    onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
+                    placeholder="ops@example.com"
+                    required
+                  />
+                  <Input
+                    label={<FormattedMessage id="orgSettings.adminPassword" defaultMessage="Temporary password" />}
+                    type="text"
+                    value={adminForm.password}
+                    onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
+                    placeholder="Min 6 characters"
+                    required
+                    minLength={6}
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => { setShowAddAdmin(false); setAdminError(''); setAdminForm({ name: '', email: '', password: '' }); }}
+                  >
+                    <FormattedMessage id="common.cancel" defaultMessage="Cancel" />
+                  </Button>
+                  <Button type="submit" variant="primary" size="sm" loading={addingAdmin}>
+                    <FormattedMessage id="orgSettings.createAdmin" defaultMessage="Create admin" />
+                  </Button>
+                </div>
+              </form>
+            )}
+          </Card>
+
+          <Card padding={false}>
+            <div className="px-6 py-4 bg-brand-50 dark:bg-brand-900/20 border-b-2 border-brand-500 rounded-t-xl">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100"><FormattedMessage id="orgSettings.usersTab" defaultMessage="Organization Users" /></h2>
+            </div>
+            <div className="overflow-x-auto">
+              {users.length > 0 ? (
+                <table className="w-full">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 border-b dark:border-slate-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300"><FormattedMessage id="orgSettings.userName" defaultMessage="Name" /></th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300"><FormattedMessage id="orgSettings.userEmail" defaultMessage="Email" /></th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300"><FormattedMessage id="orgSettings.userRole" defaultMessage="Role" /></th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300"><FormattedMessage id="orgSettings.created" defaultMessage="Created" /></th>
+                      <th className="px-6 py-3 text-center font-semibold text-slate-700 dark:text-slate-300"><FormattedMessage id="orgSettings.actions" defaultMessage="Actions" /></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((u) => (
+                      <tr key={u.id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                        <td className="px-6 py-3 font-medium text-slate-800 dark:text-slate-100">{u.name}</td>
+                        <td className="px-6 py-3 text-slate-700 dark:text-slate-300">{u.email}</td>
+                        <td className="px-6 py-3">
+                          <Badge variant={u.role === 'admin' ? 'purple' : 'info'}>{u.role}</Badge>
+                        </td>
+                        <td className="px-6 py-3 text-sm text-slate-500 dark:text-slate-400">
+                          {new Date(u.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-3 text-center">
+                          <div className="flex flex-wrap gap-2 justify-center">
+                            {u.role === 'admin' && u.id === user.id && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => setResetPasswordUser({ id: u.id, email: u.email, name: u.name, is_first_login: false })}
+                              >
+                                <FormattedMessage id="orgSettings.resetPassword" defaultMessage="Reset Password" />
+                              </Button>
+                            )}
+                            {u.role === 'admin' && u.id !== user.id && adminCount > 1 && (
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                loading={removingAdmin === u.id}
+                                onClick={() => handleRemoveAdmin(u)}
+                              >
+                                <FormattedMessage id="orgSettings.removeAdmin" defaultMessage="Remove admin" />
+                              </Button>
+                            )}
+                            {u.role !== 'admin' && u.id !== user.id && (
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                loading={deactivating === u.id}
+                                onClick={() => handleDeactivateUser(u.id, u.name)}
+                              >
+                                {deactivating === u.id
+                                  ? <FormattedMessage id="orgSettings.deactivating" defaultMessage="Deactivating..." />
+                                  : <FormattedMessage id="orgSettings.deactivate" defaultMessage="Deactivate" />}
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="p-6 text-center text-slate-500 dark:text-slate-400">
+                  <FormattedMessage id="orgSettings.noUsers" defaultMessage="No users found" />
+                </p>
+              )}
+            </div>
+          </Card>
+        </div>
+      )}
+      {activeTab === 'audit' && (
         <Card padding={false}>
-          <div className="px-6 py-4 bg-brand-50 dark:bg-brand-900/20 border-b-2 border-brand-500 rounded-t-xl">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100"><FormattedMessage id="orgSettings.usersTab" defaultMessage="Organization Users" /></h2>
+          <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/70 border-b dark:border-slate-700 rounded-t-xl">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+              <FormattedMessage id="orgSettings.auditTitle" defaultMessage="Audit Trail" />
+            </h2>
           </div>
           <div className="overflow-x-auto">
-            {users.length > 0 ? (
+            {auditLogs.length > 0 ? (
               <table className="w-full">
                 <thead className="bg-slate-50 dark:bg-slate-800/50 border-b dark:border-slate-700">
                   <tr>
-                    <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Name</th>
-                    <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Email</th>
-                    <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Role</th>
-                    <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Created</th>
-                    <th className="px-6 py-3 text-center font-semibold text-slate-700 dark:text-slate-300">Actions</th>
+                    <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">
+                      <FormattedMessage id="orgSettings.auditWhen" defaultMessage="When" />
+                    </th>
+                    <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">
+                      <FormattedMessage id="orgSettings.auditUser" defaultMessage="User" />
+                    </th>
+                    <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">
+                      <FormattedMessage id="orgSettings.auditAction" defaultMessage="Action" />
+                    </th>
+                    <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">
+                      <FormattedMessage id="orgSettings.auditEntity" defaultMessage="Entity" />
+                    </th>
+                    <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">
+                      <FormattedMessage id="orgSettings.auditDetails" defaultMessage="Details" />
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((u) => (
-                    <tr key={u.id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                      <td className="px-6 py-3 font-medium text-slate-800 dark:text-slate-100">{u.name}</td>
-                      <td className="px-6 py-3 text-slate-700 dark:text-slate-300">{u.email}</td>
-                      <td className="px-6 py-3">
-                        <Badge variant={u.role === 'admin' ? 'purple' : 'info'}>{u.role}</Badge>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-slate-500 dark:text-slate-400">
-                        {new Date(u.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-3 text-center">
-                        <div className="flex gap-2 justify-center">
-                          {u.role === 'admin' && u.id === user.id && (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => setResetPasswordUser({ id: u.id, email: u.email, name: u.name, is_first_login: false })}
-                            >
-                              Reset Password
-                            </Button>
-                          )}
-                          {u.id !== user.id && (
-                            <Button
-                              size="sm"
-                              variant="danger"
-                              loading={deactivating === u.id}
-                              onClick={() => handleDeactivateUser(u.id, u.name)}
-                            >
-                              {deactivating === u.id ? 'Deactivating...' : 'Deactivate'}
-                            </Button>
-                          )}
-                        </div>
-                      </td>
+                  {auditLogs.map((log) => (
+                    <tr key={log.id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                      <td className="px-6 py-3 text-sm text-slate-500 dark:text-slate-400">{new Date(log.created_at).toLocaleString()}</td>
+                      <td className="px-6 py-3 font-medium text-slate-800 dark:text-slate-100">{log.user_name || 'System'}</td>
+                      <td className="px-6 py-3"><Badge variant="info">{log.action}</Badge></td>
+                      <td className="px-6 py-3 text-slate-700 dark:text-slate-300">{log.entity_type || '-'}</td>
+                      <td className="px-6 py-3 text-sm text-slate-500 dark:text-slate-400">{log.details ? JSON.stringify(log.details) : '-'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             ) : (
-              <p className="p-6 text-center text-slate-500 dark:text-slate-400">No users found</p>
+              <p className="p-6 text-center text-slate-500 dark:text-slate-400">
+                <FormattedMessage id="orgSettings.auditEmpty" defaultMessage="No audit activity found yet." />
+              </p>
             )}
           </div>
         </Card>

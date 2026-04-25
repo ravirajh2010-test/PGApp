@@ -8,19 +8,19 @@ const LanguageSwitcher = () => {
       <select
         value={region}
         onChange={(e) => changeRegion(e.target.value)}
-        className="px-1.5 py-1 bg-brand-600 text-white border border-brand-400 rounded focus:outline-none focus:ring-1 focus:ring-white text-xs cursor-pointer"
+        className="min-w-[96px] px-3 py-1.5 bg-brand-600 text-white border border-brand-400 rounded-xl focus:outline-none focus:ring-1 focus:ring-white text-sm cursor-pointer"
       >
-        <option value="IN" className="bg-white text-gray-800">IN</option>
-        <option value="UK" className="bg-white text-gray-800">GBP</option>
+        <option value="IN" className="bg-white text-gray-800">India</option>
+        <option value="UK" className="bg-white text-gray-800">Europe</option>
       </select>
       <select
         value={language}
         onChange={(e) => changeLanguage(e.target.value)}
-        className="px-1.5 py-1 bg-brand-600 text-white border border-brand-400 rounded focus:outline-none focus:ring-1 focus:ring-white text-xs cursor-pointer"
+        className="min-w-[110px] px-3 py-1.5 bg-brand-600 text-white border border-brand-400 rounded-xl focus:outline-none focus:ring-1 focus:ring-white text-sm cursor-pointer"
       >
-        <option value="en" className="bg-white text-gray-800">EN</option>
-        <option value="te" className="bg-white text-gray-800">తె</option>
-        <option value="hi" className="bg-white text-gray-800">हि</option>
+        <option value="en" className="bg-white text-gray-800">English</option>
+        <option value="te" className="bg-white text-gray-800">Telugu</option>
+        <option value="hi" className="bg-white text-gray-800">Hindi</option>
       </select>
     </div>
   );

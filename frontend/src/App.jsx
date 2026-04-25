@@ -30,9 +30,10 @@ function App() {
   return (
     <LanguageProvider>
       <Router>
-        <div className="App min-h-screen bg-slate-50 dark:bg-slate-900">
+        <div className="App min-h-screen bg-slate-50 dark:bg-slate-950">
           <Header />
-          <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+          <main className="relative mx-auto min-h-[calc(100vh-72px)] max-w-7xl px-3 py-3 sm:px-4 sm:py-5">
+            <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-36 bg-gradient-to-b from-brand-500/8 via-brand-500/4 to-transparent blur-2xl dark:from-brand-500/12 dark:via-brand-500/5" />
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<GuestView />} />

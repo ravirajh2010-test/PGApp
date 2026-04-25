@@ -7,7 +7,7 @@ const {
   getBeds, createBed, updateBed, deleteBed,
   getPaymentInfo, sendPaymentReminderEmail, markOfflinePay,
   searchTenants, getTenantPaymentHistory, deactivateUser,
-  getMessengerGroups, sendGroupMessage
+  getMessengerGroups, sendGroupMessage, lookupTenantByEmail
 } = require('../controllers/adminController');
 const { checkTenantsDatabaseConsistency } = require('../controllers/debugController');
 const { authenticateToken, authorizeRole } = require('../middleware/auth');
@@ -21,6 +21,7 @@ router.use(tenantIsolation);
 
 // Tenants routes
 router.get('/tenants', getTenants);
+router.get('/tenants/lookup', lookupTenantByEmail);
 router.post('/tenants', checkPlanLimits('user'), createTenant);
 router.put('/tenants/:id', updateTenant);
 router.delete('/tenants/:id', deleteTenant);

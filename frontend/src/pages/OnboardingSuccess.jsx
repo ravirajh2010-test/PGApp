@@ -34,11 +34,13 @@ const OnboardingSuccess = () => {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-brand-50 dark:from-slate-900 dark:to-dark-900 flex items-center justify-center">
+    <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.12),_transparent_30%),linear-gradient(135deg,#f8fafc_0%,#eef6ff_45%,#f8fafc_100%)] dark:bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.12),_transparent_30%),linear-gradient(135deg,#020617_0%,#0f172a_50%,#111827_100%)]">
       <div className="max-w-md w-full mx-4">
-        <div className="bg-white dark:bg-dark-700 rounded-2xl shadow-xl p-8 text-center border border-slate-100 dark:border-slate-700">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <img src="/images/roomipilot-logo.png" alt="RoomiPilot" className="h-8 w-8" />
+        <div className="rounded-[28px] border border-white/70 bg-white/90 p-6 text-center shadow-2xl shadow-slate-200/60 backdrop-blur dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-none">
+          <div className="mb-6 flex items-center justify-center gap-3">
+            <div className="rounded-2xl border border-brand-100 bg-brand-50 p-2 shadow-lg shadow-brand-500/10 dark:border-brand-500/20 dark:bg-brand-500/10">
+              <img src="/images/roomipilot-logo.png" alt="RoomiPilot" className="h-8 w-8" />
+            </div>
             <span className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">Roomi<span className="text-brand-500">Pilot</span></span>
           </div>
 
@@ -48,7 +50,7 @@ const OnboardingSuccess = () => {
                 <Spinner size="xl" className="text-brand-500" />
               </div>
               <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Setting up your organization...</h2>
-              <p className="text-slate-500 dark:text-slate-400">Payment confirmed! We're creating your workspace now.</p>
+              <p className="text-slate-500 dark:text-slate-400">Payment confirmed. We are creating your workspace and both admin accounts now.</p>
             </>
           )}
 
@@ -58,7 +60,7 @@ const OnboardingSuccess = () => {
                 <CheckCircleIcon className="w-16 h-16 text-green-500" />
               </div>
               <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Welcome to RoomiPilot!</h2>
-              <p className="text-slate-500 dark:text-slate-400">Your organization is ready. Redirecting to your dashboard...</p>
+              <p className="text-slate-500 dark:text-slate-400">Your organization is ready. Redirecting to your primary admin dashboard...</p>
             </>
           )}
 

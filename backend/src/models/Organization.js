@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const dbManager = require('../services/DatabaseManager');
+const { formatOrganizationCode } = require('../services/orgIdentityService');
 
 /**
  * Organization model - uses master pool since organizations table lives in master DB.
@@ -10,7 +11,13 @@ class Organization {
     const query = `INSERT INTO organizations (name, slug, email, phone, address, plan) 
                    VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
     const result = await pool.query(query, [name, slug, email, phone, address, plan]);
-    return result.rows[0];
+    const org = result.rows[0];
+    const organizationCode = formatOrganizationCode(org.id);
+    const updated = await pool.query(
+      'UPDATE organizations SET organization_code = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
+      [organizationCode, org.id]
+    );
+    return updated.rows[0];
   }
 
   static async findById(id) {
@@ -20,6 +27,11 @@ class Organization {
 
   static async findBySlug(slug) {
     const result = await pool.query('SELECT * FROM organizations WHERE slug = $1', [slug]);
+    return result.rows[0];
+  }
+
+  static async findByOrganizationCode(organizationCode) {
+    const result = await pool.query('SELECT * FROM organizations WHERE organization_code = $1', [organizationCode]);
     return result.rows[0];
   }
 

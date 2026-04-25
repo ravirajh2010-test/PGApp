@@ -22,6 +22,7 @@ const AdminDashboard = () => {
   const [layoutView, setLayoutView] = useState('rooms'); // 'floors' or 'rooms'
   const [floors, setFloors] = useState([]);
   const [selectedBuildingForFloors, setSelectedBuildingForFloors] = useState(null);
+  const [activeSection, setActiveSection] = useState('tenants');
 
   // Tenant form state
   const [showTenantForm, setShowTenantForm] = useState(false);
@@ -44,6 +45,8 @@ const AdminDashboard = () => {
   const [editingCheckout, setEditingCheckout] = useState(null); // tenant id being edited
   const [editCheckoutDate, setEditCheckoutDate] = useState('');
   const [floorRefreshKey, setFloorRefreshKey] = useState(0);
+  const [emailLookup, setEmailLookup] = useState({ checking: false, otherOrgs: [], lastCheckedEmail: '' });
+  const [pendingTenantSubmit, setPendingTenantSubmit] = useState(null);
 
   // Refresh all data
   const refreshAllData = async () => {
@@ -193,12 +196,30 @@ const AdminDashboard = () => {
 
   const [creatingTenant, setCreatingTenant] = useState(false);
 
-  const handleCreateTenant = async (e) => {
-    e.preventDefault();
+  const lookupEmailAcrossOrgs = async (email) => {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanEmail || !/^\S+@\S+\.\S+$/.test(cleanEmail)) {
+      setEmailLookup({ checking: false, otherOrgs: [], lastCheckedEmail: '' });
+      return [];
+    }
+    if (emailLookup.lastCheckedEmail === cleanEmail) return emailLookup.otherOrgs;
+
+    setEmailLookup({ checking: true, otherOrgs: [], lastCheckedEmail: cleanEmail });
+    try {
+      const res = await api.get('/admin/tenants/lookup', { params: { email: cleanEmail } });
+      const otherOrgs = res.data?.otherOrganizations || [];
+      setEmailLookup({ checking: false, otherOrgs, lastCheckedEmail: cleanEmail });
+      return otherOrgs;
+    } catch (error) {
+      setEmailLookup({ checking: false, otherOrgs: [], lastCheckedEmail: cleanEmail });
+      return [];
+    }
+  };
+
+  const submitTenantCreate = async () => {
     setTenantError('');
     setCreatingTenant(true);
     try {
-      // Save credentials before clearing form
       const savedCredentials = {
         name: formData.name,
         email: formData.email,
@@ -243,7 +264,19 @@ const AdminDashboard = () => {
       setTenantError(errorMsg);
     } finally {
       setCreatingTenant(false);
+      setPendingTenantSubmit(null);
     }
+  };
+
+  const handleCreateTenant = async (e) => {
+    e.preventDefault();
+    setTenantError('');
+    const otherOrgs = await lookupEmailAcrossOrgs(formData.email);
+    if (otherOrgs && otherOrgs.length > 0) {
+      setPendingTenantSubmit({ otherOrgs });
+      return;
+    }
+    await submitTenantCreate();
   };
 
   const handleDeleteTenant = async (id) => {
@@ -266,7 +299,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Tenant Credentials Modal - rendered at top level for proper overlay */}
       {createdCredentials && (
         <TenantCredentialsModal 
@@ -275,16 +308,53 @@ const AdminDashboard = () => {
         />
       )}
 
-      <div className="text-center mb-8">
-        <h1 className="flex items-center justify-center gap-2 text-2xl sm:text-4xl font-bold text-slate-800 dark:text-slate-100 mb-2">
-          <UsersIcon className="w-8 h-8 text-brand-500" />
+      {/* Duplicate-tenant confirmation modal */}
+      {pendingTenantSubmit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+              <FormattedMessage id="tenants.confirmDuplicateTitle" defaultMessage="Confirm tenant creation" />
+            </h3>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              <FormattedMessage
+                id="tenants.confirmDuplicateBody"
+                defaultMessage="This email is already registered in the following organization(s). You can still add them as a tenant in your organization — please confirm."
+              />
+            </p>
+            <div className="mt-3 max-h-48 space-y-1.5 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800/60">
+              {pendingTenantSubmit.otherOrgs.map((o) => (
+                <div key={`${o.id}-${o.role}`} className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-slate-800 dark:text-slate-100">{o.name}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {o.organizationCode || o.slug} · {o.role}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setPendingTenantSubmit(null)}>
+                <FormattedMessage id="common.cancel" defaultMessage="Cancel" />
+              </Button>
+              <Button variant="primary" size="sm" loading={creatingTenant} onClick={submitTenantCreate}>
+                <FormattedMessage id="tenants.confirmAndCreate" defaultMessage="Confirm & create" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="text-center">
+        <h1 className="mb-2 flex items-center justify-center gap-2 text-2xl font-bold text-slate-800 dark:text-slate-100 sm:text-3xl">
+          <UsersIcon className="h-7 w-7 text-brand-500" />
           <FormattedMessage id="dashboard.adminDashboard" defaultMessage="Admin Dashboard" />
         </h1>
         <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base"><FormattedMessage id="dashboard.subtitle" defaultMessage="Manage tenants and view property overview" /></p>
       </div>
 
       {/* Occupancy Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card accent="brand">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase"><FormattedMessage id="dashboard.totalBeds" defaultMessage="Total Beds" /></h3>
           <p className="text-3xl font-bold text-brand-500 mt-1">{occupancy.total || 0}</p>
@@ -300,7 +370,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Controls */}
-      <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-700 dark:bg-slate-800/50">
         <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
           <Button
             variant={showTenantForm ? 'secondary' : 'primary'}
@@ -342,14 +412,62 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+      <div className="grid gap-2 sm:grid-cols-3">
+        {[
+          { id: 'tenants', label: 'Tenants', icon: UsersIcon },
+          { id: 'layout', label: 'Layout', icon: HomeIcon },
+          { id: 'inventory', label: 'Inventory', icon: BuildingOffice2Icon },
+        ].map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setActiveSection(id)}
+            className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
+              activeSection === id
+                ? 'border-transparent bg-brand-500 text-white shadow-md shadow-brand-500/20'
+                : 'border-slate-200 bg-white text-slate-700 hover:bg-brand-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-brand-900/20'
+            }`}
+          >
+            <Icon className="h-4 w-4" />
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* Add Tenant Form */}
-      {showTenantForm && (
+      {activeSection === 'tenants' && showTenantForm && (
         <Card className="border-2 border-brand-300 dark:border-brand-700">
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6"><FormattedMessage id="tenants.addNewTenant" defaultMessage="Add New Tenant" /></h2>
+          <h2 className="mb-4 text-xl font-bold text-slate-800 dark:text-slate-100"><FormattedMessage id="tenants.addNewTenant" defaultMessage="Add New Tenant" /></h2>
           
           {tenantError && (
             <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mb-6">
               <p className="text-red-800 dark:text-red-300 font-semibold">{tenantError}</p>
+            </div>
+          )}
+
+          {emailLookup.otherOrgs.length > 0 && (
+            <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3.5 dark:border-amber-600/40 dark:bg-amber-900/20">
+              <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                <FormattedMessage
+                  id="tenants.duplicateEmailHeading"
+                  defaultMessage="This email is already used in other organization(s):"
+                />
+              </p>
+              <ul className="mt-1 space-y-0.5 text-sm text-amber-800 dark:text-amber-200">
+                {emailLookup.otherOrgs.map((o) => (
+                  <li key={`${o.id}-${o.role}`}>
+                    • <span className="font-semibold">{o.name}</span>
+                    {o.organizationCode ? <span className="ml-1 text-xs text-amber-700 dark:text-amber-300">({o.organizationCode})</span> : null}
+                    <span className="ml-1 text-xs italic">— {o.role}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">
+                <FormattedMessage
+                  id="tenants.duplicateEmailHelper"
+                  defaultMessage="You can still add them here — they will be a separate tenant in your organization."
+                />
+              </p>
             </div>
           )}
 
@@ -367,7 +485,13 @@ const AdminDashboard = () => {
                 name="email"
                 placeholder="Email"
                 value={formData.email}
-                onChange={handleInputChange}
+                onChange={(e) => {
+                  handleInputChange(e);
+                  if (emailLookup.lastCheckedEmail) {
+                    setEmailLookup({ checking: false, otherOrgs: [], lastCheckedEmail: '' });
+                  }
+                }}
+                onBlur={(e) => lookupEmailAcrossOrgs(e.target.value)}
                 required
               />
               <Input
@@ -469,9 +593,10 @@ const AdminDashboard = () => {
       )}
 
       {/* Floor-wise Occupancy Visual */}
-      <FloorOccupancyVisual buildings={buildings} refreshKey={floorRefreshKey} />
+      {activeSection === 'layout' && <FloorOccupancyVisual buildings={buildings} refreshKey={floorRefreshKey} />}
 
       {/* Tenants Table */}
+      {activeSection === 'tenants' && (
       <Card padding={false}>
         <div className="px-6 py-4 bg-brand-50 dark:bg-brand-900/20 border-b-2 border-brand-500">
           <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -567,8 +692,10 @@ const AdminDashboard = () => {
           )}
         </div>
       </Card>
+      )}
 
       {/* Buildings Overview (Read-Only) */}
+      {activeSection === 'inventory' && (
       <Card padding={false}>
         <div className="px-6 py-4 bg-blue-50 dark:bg-blue-900/20 border-b-2 border-blue-500">
           <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -601,9 +728,11 @@ const AdminDashboard = () => {
           )}
         </div>
       </Card>
+      )}
 
       {/* Layout View Toggle */}
-      <Card className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+      {activeSection === 'layout' && (
+      <Card className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
         <label className="font-semibold text-slate-700 dark:text-slate-300"><FormattedMessage id="dashboard.viewLayout" defaultMessage="View Layout:" /></label>
         <select 
           value={layoutView} 
@@ -634,9 +763,10 @@ const AdminDashboard = () => {
           </>
         )}
       </Card>
+      )}
 
       {/* Rooms Overview (Read-Only) */}
-      {layoutView === 'rooms' && (
+      {activeSection === 'layout' && layoutView === 'rooms' && (
       <Card padding={false}>
         <div className="px-6 py-4 bg-purple-50 dark:bg-purple-900/20 border-b-2 border-purple-500">
           <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -674,7 +804,7 @@ const AdminDashboard = () => {
       )}
 
       {/* Floor Layout View */}
-      {layoutView === 'floors' && (
+      {activeSection === 'layout' && layoutView === 'floors' && (
       <div className="space-y-4">
         {floors.map((floor) => (
           <Card key={floor.floor_number} padding={false}>
@@ -715,7 +845,45 @@ const AdminDashboard = () => {
       )}
 
       {/* Beds Overview (Read-Only) */}
-      {layoutView === 'rooms' && (
+      {activeSection === 'inventory' && (
+      <Card padding={false}>
+        <div className="px-6 py-4 bg-purple-50 dark:bg-purple-900/20 border-b-2 border-purple-500">
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <HomeIcon className="h-6 w-6 text-purple-600" />
+            <FormattedMessage id="dashboard.roomsOverview" defaultMessage="Rooms Overview" />
+          </h2>
+        </div>
+        <div className="overflow-x-auto">
+          {rooms.length > 0 ? (
+            <table className="w-full">
+              <thead className="bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
+                <tr>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-200"><FormattedMessage id="dashboard.id" defaultMessage="ID" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-200"><FormattedMessage id="dashboard.building" defaultMessage="Building" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-200"><FormattedMessage id="dashboard.roomNumber" defaultMessage="Room Number" /></th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-200"><FormattedMessage id="dashboard.capacity" defaultMessage="Capacity" /></th>
+                </tr>
+              </thead>
+              <tbody>
+                {rooms.map((room, idx) => (
+                  <tr key={room.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                    <td className="px-6 py-3 font-medium text-slate-800 dark:text-slate-200">{idx + 1}</td>
+                    <td className="px-6 py-3 text-slate-700 dark:text-slate-300">{room.building_name}</td>
+                    <td className="px-6 py-3 text-slate-700 dark:text-slate-300">{room.room_number}</td>
+                    <td className="px-6 py-3 text-slate-700 dark:text-slate-300">{room.capacity}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="p-6 text-center text-slate-500 dark:text-slate-400"><FormattedMessage id="dashboard.noRoomsFound" defaultMessage="No rooms found" /></p>
+          )}
+        </div>
+      </Card>
+      )}
+
+      {/* Beds Overview (Read-Only) */}
+      {activeSection === 'inventory' && (
       <Card padding={false}>
         <div className="px-6 py-4 bg-green-50 dark:bg-green-900/20 border-b-2 border-green-500">
           <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">

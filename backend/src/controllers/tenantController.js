@@ -2,6 +2,7 @@ const Tenant = require('../models/Tenant');
 const Payment = require('../models/Payment');
 const Organization = require('../models/Organization');
 const Razorpay = require('razorpay');
+const { logRequestAudit } = require('../services/auditService');
 
 let razorpay = null;
 if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
@@ -83,7 +84,35 @@ const verifyPayment = async (req, res) => {
       paymentYear: payYear,
       razorpayPaymentId: razorpay_payment_id
     });
+    await logRequestAudit(req, {
+      action: 'PAYMENT_COMPLETED',
+      entityType: 'payment',
+      entityId: payment.id,
+      details: {
+        amount: tenant.rent,
+        paymentMonth: dbMonth,
+        paymentYear: payYear,
+        reference: razorpay_payment_id,
+      },
+    });
     res.json({ message: 'Payment verified', payment });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const getAuditLogs = async (req, res) => {
+  try {
+    const logs = await req.pool.query(
+      `SELECT al.*, u.name as user_name
+       FROM audit_logs al
+       LEFT JOIN users u ON al.user_id = u.id
+       WHERE al.user_id = $1
+       ORDER BY al.created_at DESC
+       LIMIT 30`,
+      [req.user.id]
+    );
+    res.json(logs.rows);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -112,4 +141,4 @@ const getAdminContact = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, getStayDetails, getPayments, createPaymentOrder, verifyPayment, getAdminContact };
+module.exports = { getProfile, getStayDetails, getPayments, createPaymentOrder, verifyPayment, getAdminContact, getAuditLogs };

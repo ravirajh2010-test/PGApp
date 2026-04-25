@@ -154,7 +154,7 @@ const Messenger = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100">
@@ -170,6 +170,7 @@ const Messenger = () => {
         </Button>
       </div>
 
+      <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr] xl:items-start">
       {/* Group Selection */}
       <Card>
         <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">
@@ -352,7 +353,7 @@ const Messenger = () => {
         )}
 
         {/* Action buttons */}
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Button
             variant="primary"
             onClick={handleSend}
@@ -366,6 +367,7 @@ const Messenger = () => {
           </Button>
         </div>
       </Card>
+      </div>
     </div>
   );
 };

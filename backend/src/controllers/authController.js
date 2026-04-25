@@ -5,13 +5,21 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const dbManager = require('../services/DatabaseManager');
 const { sendOrgWelcomeEmail } = require('../services/emailService');
+const {
+  normalizeOnboardingAdmins,
+  validateOnboardingAdmins,
+  createOrganizationAdmins,
+} = require('../services/onboardingService');
+const { getRequestIp, logAuditByOrgId } = require('../services/auditService');
 
 const register = async (req, res) => {
   try {
-    const { name, email, password, orgSlug } = req.body;
+    const { name, email, password, orgSlug, orgCode } = req.body;
     
-    // Find org by slug
-    const org = await Organization.findBySlug(orgSlug);
+    // Find org by public code first, then fall back to slug for compatibility.
+    const org = orgCode
+      ? await Organization.findByOrganizationCode(orgCode.trim().toUpperCase())
+      : await Organization.findBySlug(orgSlug);
     if (!org) return res.status(404).json({ message: 'Organization not found' });
     
     const orgPool = await dbManager.getOrgPool(org.id);
@@ -22,6 +30,14 @@ const register = async (req, res) => {
     
     // Add org mapping for cross-org login
     await User.addOrgMapping(email, org.id, user.id, 'tenant');
+    await logAuditByOrgId(org.id, {
+      userId: user.id,
+      action: 'TENANT_REGISTERED',
+      entityType: 'user',
+      entityId: user.id,
+      details: { email: user.email, role: user.role },
+      ipAddress: getRequestIp(req),
+    });
     
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
@@ -31,14 +47,16 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { email, password, orgSlug } = req.body;
+    const { email, password, orgSlug, orgCode } = req.body;
     
     let user;
     let orgId = null;
     
-    if (orgSlug) {
+    if (orgSlug || orgCode) {
       // Login within a specific org
-      const org = await Organization.findBySlug(orgSlug);
+      const org = orgCode
+        ? await Organization.findByOrganizationCode(orgCode.trim().toUpperCase())
+        : await Organization.findBySlug(orgSlug);
       if (!org) return res.status(404).json({ message: 'Organization not found' });
       
       const orgPool = await dbManager.getOrgPool(org.id);
@@ -54,7 +72,24 @@ const login = async (req, res) => {
         const orgMappings = await User.findOrgsByEmail(email);
         
         if (orgMappings.length === 0) {
-          return res.status(400).json({ message: 'Invalid credentials' });
+          // Backward compatibility: allow legacy users linked by org_id in master users table.
+          const legacyUser = await User.findLegacyOrgUserByEmail(email);
+          if (!legacyUser) {
+            return res.status(400).json({ message: 'Invalid credentials' });
+          }
+
+          orgId = legacyUser.org_id;
+          try {
+            const orgPool = await dbManager.getOrgPool(orgId);
+            user = await User.findByEmail(orgPool, email);
+          } catch (e) {
+            user = null;
+          }
+
+          // If user is not yet present in org DB, validate against legacy master user record.
+          if (!user) {
+            user = legacyUser;
+          }
         } else if (orgMappings.length === 1) {
           // Single org - auto-resolve
           const mapping = orgMappings[0];
@@ -86,7 +121,12 @@ const login = async (req, res) => {
           
           return res.status(300).json({
             message: 'Multiple organizations found. Please select one.',
-            organizations: orgMappings.map(m => ({ id: m.org_id, name: m.org_name, slug: m.org_slug }))
+            organizations: orgMappings.map(m => ({
+              id: m.org_id,
+              name: m.org_name,
+              slug: m.org_slug,
+              organizationCode: m.organization_code,
+            }))
           });
         }
       }
@@ -111,6 +151,14 @@ const login = async (req, res) => {
       try {
         const orgPool = await dbManager.getOrgPool(orgId);
         await orgPool.query('UPDATE users SET last_active = NOW() WHERE id = $1', [user.id]);
+        await logAuditByOrgId(orgId, {
+          userId: user.id,
+          action: 'USER_LOGIN',
+          entityType: 'user',
+          entityId: user.id,
+          details: { email: user.email, role: user.role },
+          ipAddress: getRequestIp(req),
+        });
       } catch (e) { /* ignore if column doesn't exist yet */ }
     }
     
@@ -134,6 +182,7 @@ const login = async (req, res) => {
         id: orgInfo.id,
         name: orgInfo.name,
         slug: orgInfo.slug,
+        organizationCode: orgInfo.organization_code,
         plan: orgInfo.plan,
         status: orgInfo.status
       } : null
@@ -153,13 +202,12 @@ const registerOrganization = async (req, res) => {
     const orgEmail = req.body.orgEmail || req.body.email;
     const orgPhone = req.body.orgPhone || req.body.phone;
     const orgAddress = req.body.orgAddress || req.body.address;
-    const adminName = req.body.adminName || req.body.name;
-    const adminEmail = req.body.adminEmail;
-    const adminPassword = req.body.adminPassword || req.body.password;
     const plan = req.body.plan || 'free';
+    const admins = normalizeOnboardingAdmins(req.body);
+    const primaryAdmin = admins[0];
     
-    if (!orgName || !orgSlug || !adminName || !adminEmail || !adminPassword) {
-      return res.status(400).json({ message: 'Organization name, slug, admin name, email and password are required' });
+    if (!orgName || !orgSlug) {
+      return res.status(400).json({ message: 'Organization name and slug are required' });
     }
 
     // Validate slug format
@@ -181,10 +229,9 @@ const registerOrganization = async (req, res) => {
       }
     }
 
-    // Check if admin email is already used by another organization
-    const existingAdminOrgs = await User.findOrgsByEmail(adminEmail);
-    if (existingAdminOrgs && existingAdminOrgs.length > 0) {
-      return res.status(400).json({ message: 'This admin email is already registered with another organization' });
+    const adminValidationError = await validateOnboardingAdmins(admins);
+    if (adminValidationError) {
+      return res.status(400).json({ message: adminValidationError });
     }
 
     // Create organization in master DB
@@ -196,17 +243,27 @@ const registerOrganization = async (req, res) => {
     // Provision org database (named after business name: pg_stay_<orgname>)
     const orgPool = await dbManager.createOrgDatabase(org.id, orgName);
 
-    // Create admin user in org database
-    const user = await User.create(orgPool, adminName, adminEmail, adminPassword, 'admin');
-    
-    // Add org mapping for cross-org login
-    await User.addOrgMapping(adminEmail, org.id, user.id, 'admin');
+    // Create the default two admins in the org database.
+    const [user] = await createOrganizationAdmins(orgPool, org.id, admins);
+    await logAuditByOrgId(org.id, {
+      userId: user.id,
+      action: 'ORGANIZATION_ONBOARDED',
+      entityType: 'organization',
+      entityId: org.id,
+      details: {
+        organizationName: org.name,
+        organizationCode: org.organization_code,
+        plan: org.plan,
+        admins: admins.map((admin) => admin.email),
+      },
+      ipAddress: getRequestIp(req),
+    });
     
     const token = jwt.sign({ id: user.id, role: user.role, orgId: org.id }, process.env.JWT_SECRET, { expiresIn: '8h' });
     
     // Send welcome email to the business email
-    const welcomeEmail = orgEmail || adminEmail;
-    sendOrgWelcomeEmail(welcomeEmail, orgName, adminName, adminEmail, plan)
+    const welcomeEmail = orgEmail || primaryAdmin.email;
+    sendOrgWelcomeEmail(welcomeEmail, orgName, primaryAdmin.name, primaryAdmin.email, plan)
       .catch(err => console.error('Failed to send welcome email:', err.message));
     
     res.status(201).json({
@@ -224,6 +281,7 @@ const registerOrganization = async (req, res) => {
         id: org.id,
         name: org.name,
         slug: org.slug,
+        organizationCode: org.organization_code,
         plan: org.plan,
         status: org.status
       }
@@ -272,6 +330,16 @@ const changePassword = async (req, res) => {
     }
 
     const updatedUser = await User.changePassword(userPool, userId, newPassword);
+    if (req.user.orgId) {
+      await logAuditByOrgId(req.user.orgId, {
+        userId,
+        action: 'PASSWORD_CHANGED',
+        entityType: 'user',
+        entityId: userId,
+        details: { email },
+        ipAddress: getRequestIp(req),
+      });
+    }
     res.json({ 
       message: 'Password changed successfully',
       user: {

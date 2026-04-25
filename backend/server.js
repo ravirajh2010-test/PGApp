@@ -9,6 +9,9 @@ const app = express();
 app.use(cors({
   origin: [
     'http://localhost:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
     'http://localhost:3000',
     'https://aupl8.vercel.app',
     'https://www.roomipilot.com',
@@ -88,6 +91,7 @@ const initDatabase = async () => {
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         slug VARCHAR(100) UNIQUE NOT NULL,
+        organization_code VARCHAR(20) UNIQUE,
         email VARCHAR(255) NOT NULL,
         phone VARCHAR(20),
         address TEXT,
@@ -103,12 +107,19 @@ const initDatabase = async () => {
       );
     `);
 
-    // Add database_name column if missing (migration for existing installs)
+    // Add organization_code/database_name columns if missing (migration for existing installs)
     await pool.query(`
       DO $$ BEGIN
+        ALTER TABLE organizations ADD COLUMN IF NOT EXISTS organization_code VARCHAR(20);
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS database_name VARCHAR(255);
       EXCEPTION WHEN duplicate_column THEN NULL;
       END $$;
+    `);
+    await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_organizations_organization_code ON organizations(organization_code)');
+    await pool.query(`
+      UPDATE organizations
+      SET organization_code = 'ORG-' || LPAD(id::text, 6, '0')
+      WHERE organization_code IS NULL OR organization_code = ''
     `);
 
     // Plan limits

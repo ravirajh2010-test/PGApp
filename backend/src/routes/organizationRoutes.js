@@ -1,5 +1,14 @@
 const express = require('express');
-const { getMyOrganization, updateMyOrganization, getMySubscription, getMyInvoices, getMyAuditLogs, getMyUsers } = require('../controllers/organizationController');
+const {
+  getMyOrganization,
+  updateMyOrganization,
+  getMySubscription,
+  getMyInvoices,
+  getMyAuditLogs,
+  getMyUsers,
+  addOrgAdmin,
+  removeOrgAdmin,
+} = require('../controllers/organizationController');
 const { authenticateToken, authorizeRole } = require('../middleware/auth');
 const { tenantIsolation } = require('../middleware/tenantIsolation');
 
@@ -15,5 +24,7 @@ router.get('/subscription', getMySubscription);
 router.get('/invoices', getMyInvoices);
 router.get('/audit-logs', getMyAuditLogs);
 router.get('/users', getMyUsers);
+router.post('/admins', addOrgAdmin);
+router.delete('/admins/:userId', removeOrgAdmin);
 
 module.exports = router;

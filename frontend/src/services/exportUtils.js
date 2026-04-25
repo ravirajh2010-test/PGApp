@@ -87,6 +87,13 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats, curre
       throw new Error('jsPDF library not loaded');
     }
 
+    // jsPDF built-in fonts only support Latin/ASCII — map known Unicode symbols to ASCII equivalents
+    const pdfSafeSymbol = (sym) => {
+      const map = { '₹': 'Rs.', '€': 'EUR', '£': 'GBP', '¥': 'JPY', '₩': 'KRW' };
+      return map[sym] ?? sym.replace(/[^\x00-\x7F]/g, '?');
+    };
+    const sym = pdfSafeSymbol(currencySymbol);
+
     const doc = new jsPDF({
       orientation: 'landscape',
       unit: 'mm',
@@ -138,8 +145,9 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats, curre
     yPosition += 20;
 
     // Table column config
-    const headers = ['#', 'Tenant Name', 'Email', 'Bed Info', `Rent (${currencySymbol})`, `Bill (${currencySymbol})`, 'Month', 'Status'];
-    const colWidths = [10, 35, 50, 35, 25, 25, 30, 30];
+    // Landscape A4 = 297mm wide; with 14mm margins on each side, usable = 269mm
+    const headers = ['#', 'Tenant Name', 'Email', 'Bed Info', `Rent (${sym})`, `Bill (${sym})`, 'Month', 'Status'];
+    const colWidths = [10, 32, 45, 55, 22, 22, 28, 26]; // total = 240mm
     const tableWidth = colWidths.reduce((a, b) => a + b, 0);
     const rowHeight = 8;
 
@@ -189,8 +197,8 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats, curre
         String(item.name || ''),
         String(item.email || ''),
         String(item.bed_info || ''),
-        currencySymbol + ' ' + String(item.rent || 0),
-        currencySymbol + ' ' + String(item.billAmount || 0),
+        sym + ' ' + String(item.rent || 0),
+        sym + ' ' + String(item.billAmount || 0),
         String(monthName || ''),
         String(item.payment_status || ''),
       ];
@@ -199,8 +207,8 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats, curre
       doc.setFont('helvetica', 'normal');
       let x = leftMargin;
       rowData.forEach((cell, cellIdx) => {
-        // Truncate text to fit column
-        const maxChars = Math.floor(colWidths[cellIdx] / 2);
+        // Truncate text to fit column — at 8pt Helvetica, ~1.8mm per char
+        const maxChars = Math.floor(colWidths[cellIdx] / 1.8);
         const displayText = cell.length > maxChars ? cell.substring(0, maxChars) + '..' : cell;
 
         // Style status column

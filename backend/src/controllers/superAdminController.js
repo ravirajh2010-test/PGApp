@@ -189,8 +189,92 @@ const getPlatformStats = async (req, res) => {
 const getSubscriptions = async (req, res) => {
   try {
     const subscriptions = await Subscription.findAll();
-    res.json(subscriptions);
+    const enriched = subscriptions.map((subscription) => {
+      const isPaidSubscriber = subscription.status === 'active'
+        && Number(subscription.amount || 0) > 0
+        && subscription.plan !== 'free';
+
+      return {
+        ...subscription,
+        subscriber_category: isPaidSubscriber ? 'paid' : 'non_paid',
+      };
+    });
+
+    res.json({
+      summary: {
+        total: enriched.length,
+        paid: enriched.filter((item) => item.subscriber_category === 'paid').length,
+        non_paid: enriched.filter((item) => item.subscriber_category === 'non_paid').length,
+      },
+      subscribers: enriched,
+    });
   } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const sendSubscriberEmail = async (req, res) => {
+  try {
+    const { category = 'all', subject, message } = req.body;
+
+    if (!subject || !message) {
+      return res.status(400).json({ message: 'Subject and message are required' });
+    }
+
+    const subscriptions = await Subscription.findAll();
+    const subscribers = subscriptions
+      .map((subscription) => ({
+        ...subscription,
+        subscriber_category: subscription.status === 'active'
+          && Number(subscription.amount || 0) > 0
+          && subscription.plan !== 'free'
+            ? 'paid'
+            : 'non_paid',
+      }))
+      .filter((subscription) => category === 'all' || subscription.subscriber_category === category)
+      .filter((subscription, index, array) => (
+        subscription.org_email
+        && array.findIndex((item) => item.org_email === subscription.org_email) === index
+      ));
+
+    if (subscribers.length === 0) {
+      return res.status(404).json({ message: 'No subscribers found for the selected category' });
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const subscriber of subscribers) {
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; background: #f8fafc; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;">
+          <div style="background: linear-gradient(135deg, #0f172a 0%, #0284c7 100%); color: white; padding: 24px;">
+            <h1 style="margin: 0; font-size: 24px;">RoomiPilot</h1>
+            <p style="margin: 8px 0 0; opacity: 0.9;">Platform update for ${subscriber.org_name}</p>
+          </div>
+          <div style="padding: 24px; background: white;">
+            <p>Hello ${subscriber.org_name} team,</p>
+            <div style="margin: 20px 0; padding: 16px; border-left: 4px solid #0ea5e9; background: #f8fafc; white-space: pre-wrap;">${message.replace(/\n/g, '<br/>')}</div>
+            <p>Plan: <strong>${subscriber.plan}</strong></p>
+            <p>Subscriber category: <strong>${subscriber.subscriber_category === 'paid' ? 'Paid' : 'Non-paid'}</strong></p>
+            <p>Regards,<br/><strong>RoomiPilot Platform Team</strong></p>
+          </div>
+        </div>
+      `;
+
+      const sent = await sendEmail(subscriber.org_email, subject, html);
+      if (sent) successCount += 1;
+      else failCount += 1;
+    }
+
+    res.json({
+      message: `Email campaign sent to ${successCount} subscriber(s)${failCount ? `, ${failCount} failed` : ''}`,
+      category,
+      successCount,
+      failCount,
+      totalRecipients: subscribers.length,
+    });
+  } catch (error) {
+    console.error('Error sending subscriber email:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -410,5 +494,6 @@ module.exports = {
   getSubscriptions, getInvoices,
   getPlanLimits, updatePlanLimits,
   getAuditLogs,
-  getInactiveUsers, disableInactiveUser, deleteInactiveUser, sendInactiveUserReminder
+  getInactiveUsers, disableInactiveUser, deleteInactiveUser, sendInactiveUserReminder,
+  sendSubscriberEmail
 };

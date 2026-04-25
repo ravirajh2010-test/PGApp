@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FormattedMessage } from 'react-intl';
 import { UserIcon, LockClosedIcon, PhoneIcon, CreditCardIcon } from '@heroicons/react/24/outline';
-import api from '../services/api';
+import api, { getOrganization } from '../services/api';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import { useCurrency } from '../context/LanguageContext';
 import Card from '../components/ui/Card';
@@ -18,6 +18,8 @@ const TenantDashboard = () => {
   const [user, setUser] = useState(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [adminContact, setAdminContact] = useState(null);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [organization, setOrganization] = useState(null);
 
   useEffect(() => {
     // Get user from localStorage
@@ -29,11 +31,13 @@ const TenantDashboard = () => {
         setShowPasswordModal(true);
       }
     }
+    setOrganization(getOrganization());
     
     fetchProfile();
     fetchStay();
     fetchPayments();
     fetchAdminContact();
+    fetchAuditLogs();
   }, []);
 
   const fetchProfile = async () => {
@@ -74,6 +78,15 @@ const TenantDashboard = () => {
     }
   };
 
+  const fetchAuditLogs = async () => {
+    try {
+      const res = await api.get('/tenant/audit-logs');
+      setAuditLogs(res.data || []);
+    } catch (error) {
+      console.error('Error fetching audit logs');
+    }
+  };
+
   const handlePay = async () => {
     try {
       const res = await api.post('/tenant/pay');
@@ -101,7 +114,7 @@ const TenantDashboard = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {showPasswordModal && user && (
         <ChangePasswordModal 
           user={user}
@@ -110,14 +123,31 @@ const TenantDashboard = () => {
         />
       )}
 
-      <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-4xl font-bold text-slate-800 dark:text-slate-100 mb-2 flex items-center justify-center gap-2">
-          <UserIcon className="w-8 h-8 text-brand-500" />
+      <div className="text-center">
+        <h1 className="mb-2 flex items-center justify-center gap-2 text-2xl font-bold text-slate-800 dark:text-slate-100 sm:text-3xl">
+          <UserIcon className="h-7 w-7 text-brand-500" />
           <FormattedMessage id="tenant.tenantDashboard" defaultMessage="Tenant Dashboard" />
         </h1>
         <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base"><FormattedMessage id="tenant.stayDetails" defaultMessage="Manage your stay and payments" /></p>
       </div>
 
+      {organization?.organizationCode && (
+        <Card accent="brand">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                <FormattedMessage id="tenant.organizationId" defaultMessage="Organization ID" />
+              </p>
+              <p className="text-xl font-bold text-slate-800 dark:text-slate-100">{organization.organizationCode}</p>
+            </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              <FormattedMessage id="tenant.organizationIdHelper" defaultMessage="Use this ID every time you log in." />
+            </p>
+          </div>
+        </Card>
+      )}
+
+      <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
       {/* Profile Section */}
       <Card accent="brand">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
@@ -161,6 +191,7 @@ const TenantDashboard = () => {
           </div>
         </div>
       </Card>
+      </div>
 
       {/* Payments Section */}
       <Card accent="purple">
@@ -231,6 +262,36 @@ const TenantDashboard = () => {
           </div>
         </Card>
       )}
+
+      <Card accent="blue">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100">
+            <FormattedMessage id="tenant.recentActivity" defaultMessage="Recent Activity" />
+          </h2>
+          <Button variant="secondary" size="sm" onClick={fetchAuditLogs}>
+            <FormattedMessage id="common.refresh" defaultMessage="Refresh" />
+          </Button>
+        </div>
+        {auditLogs.length > 0 ? (
+          <div className="space-y-3">
+            {auditLogs.map((log) => (
+              <div key={log.id} className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/50">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="font-semibold text-slate-800 dark:text-slate-100">{log.action}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{new Date(log.created_at).toLocaleString()}</p>
+                </div>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {log.details ? JSON.stringify(log.details) : <FormattedMessage id="tenant.noActivityDetails" defaultMessage="No additional details" />}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="py-4 text-center text-slate-500 dark:text-slate-400">
+            <FormattedMessage id="tenant.noActivity" defaultMessage="No recent activity yet." />
+          </p>
+        )}
+      </Card>
     </div>
   );
 };

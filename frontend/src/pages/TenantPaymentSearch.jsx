@@ -76,7 +76,7 @@ const TenantPaymentSearch = () => {
   const unpaidCount = months.filter(m => m.status === 'Bill Generated').length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100">
@@ -130,7 +130,7 @@ const TenantPaymentSearch = () => {
                 <div
                   key={tenant.id}
                   onClick={() => handleSelectTenant(tenant)}
-                  className="px-6 py-4 hover:bg-brand-50 dark:hover:bg-brand-900/20 cursor-pointer transition-colors flex items-center justify-between"
+                  className="flex items-center justify-between px-5 py-3.5 transition-colors cursor-pointer hover:bg-brand-50 dark:hover:bg-brand-900/20"
                 >
                   <div>
                     <p className="font-semibold text-slate-800 dark:text-slate-100 text-base sm:text-lg">{tenant.name}</p>
@@ -177,7 +177,7 @@ const TenantPaymentSearch = () => {
           </Card>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <Card accent="blue">
               <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase"><FormattedMessage id="tenantSearch.totalMonths" defaultMessage="Total Months" /></h3>
               <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">{months.length}</p>

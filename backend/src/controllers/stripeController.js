@@ -5,6 +5,11 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const dbManager = require('../services/DatabaseManager');
 const { sendOrgWelcomeEmail } = require('../services/emailService');
+const {
+  normalizeOnboardingAdmins,
+  validateOnboardingAdmins,
+  createOrganizationAdmins,
+} = require('../services/onboardingService');
 
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
@@ -34,9 +39,11 @@ const createCheckoutSession = async (req, res) => {
       return res.status(503).json({ message: 'Payment gateway not configured' });
     }
 
-    const { orgName, orgSlug, orgEmail, orgPhone, orgAddress, adminName, adminEmail, adminPassword, plan } = req.body;
+    const { orgName, orgSlug, orgEmail, orgPhone, orgAddress, plan } = req.body;
+    const admins = normalizeOnboardingAdmins(req.body);
+    const primaryAdmin = admins[0];
 
-    if (!orgName || !orgSlug || !adminName || !adminEmail || !adminPassword || !plan) {
+    if (!orgName || !orgSlug || !plan) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
@@ -63,13 +70,12 @@ const createCheckoutSession = async (req, res) => {
       }
     }
 
-    // Check if admin email is already used by another organization
-    const existingAdminOrgs = await User.findOrgsByEmail(adminEmail);
-    if (existingAdminOrgs && existingAdminOrgs.length > 0) {
-      return res.status(400).json({ message: 'This admin email is already registered with another organization' });
+    const adminValidationError = await validateOnboardingAdmins(admins);
+    if (adminValidationError) {
+      return res.status(400).json({ message: adminValidationError });
     }
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5174';
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -86,16 +92,19 @@ const createCheckoutSession = async (req, res) => {
         },
         quantity: 1,
       }],
-      customer_email: adminEmail,
+      customer_email: primaryAdmin.email,
       metadata: {
         orgName,
         orgSlug,
         orgEmail: orgEmail || '',
         orgPhone: orgPhone || '',
         orgAddress: orgAddress || '',
-        adminName,
-        adminEmail,
-        adminPassword,
+        adminName: primaryAdmin.name,
+        adminEmail: primaryAdmin.email,
+        adminPassword: primaryAdmin.password,
+        secondaryAdminName: admins[1].name,
+        secondaryAdminEmail: admins[1].email,
+        secondaryAdminPassword: admins[1].password,
         plan,
       },
       success_url: `${frontendUrl}/onboarding/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -135,12 +144,15 @@ const checkoutSuccess = async (req, res) => {
       return res.status(400).json({ message: 'Invalid session data' });
     }
 
+    const admins = normalizeOnboardingAdmins(meta);
+    const primaryAdmin = admins[0];
+
     // Check if org was already created (idempotency - user might refresh)
     const existingOrg = await Organization.findBySlug(meta.orgSlug);
     if (existingOrg) {
       // Already created, just return auth data
       const orgPool = await dbManager.getOrgPool(existingOrg.id);
-      const users = await orgPool.query('SELECT * FROM users WHERE email = $1', [meta.adminEmail]);
+      const users = await orgPool.query('SELECT * FROM users WHERE email = $1', [primaryAdmin.email]);
       if (users.rows.length > 0) {
         const user = users.rows[0];
         const token = jwt.sign(
@@ -152,7 +164,14 @@ const checkoutSuccess = async (req, res) => {
           message: 'Organization already created',
           token,
           user: { id: user.id, name: user.name, email: user.email, role: user.role, orgId: existingOrg.id },
-          organization: { id: existingOrg.id, name: existingOrg.name, slug: existingOrg.slug, plan: existingOrg.plan, status: existingOrg.status }
+          organization: {
+            id: existingOrg.id,
+            name: existingOrg.name,
+            slug: existingOrg.slug,
+            organizationCode: existingOrg.organization_code,
+            plan: existingOrg.plan,
+            status: existingOrg.status
+          }
         });
       }
     }
@@ -174,11 +193,8 @@ const checkoutSuccess = async (req, res) => {
     // Provision org database
     const orgPool = await dbManager.createOrgDatabase(org.id, meta.orgName);
 
-    // Create admin user
-    const user = await User.create(orgPool, meta.adminName, meta.adminEmail, meta.adminPassword, 'admin');
-
-    // Add org mapping
-    await User.addOrgMapping(meta.adminEmail, org.id, user.id, 'admin');
+    // Create default admins
+    const [user] = await createOrganizationAdmins(orgPool, org.id, admins);
 
     const token = jwt.sign(
       { id: user.id, role: user.role, orgId: org.id },
@@ -187,15 +203,22 @@ const checkoutSuccess = async (req, res) => {
     );
 
     // Send welcome email
-    const welcomeEmail = meta.orgEmail || meta.adminEmail;
-    sendOrgWelcomeEmail(welcomeEmail, meta.orgName, meta.adminName, meta.adminEmail, meta.plan)
+    const welcomeEmail = meta.orgEmail || primaryAdmin.email;
+    sendOrgWelcomeEmail(welcomeEmail, meta.orgName, primaryAdmin.name, primaryAdmin.email, meta.plan)
       .catch(err => console.error('Failed to send welcome email:', err.message));
 
     res.json({
       message: 'Organization created successfully',
       token,
       user: { id: user.id, name: user.name, email: user.email, role: user.role, orgId: org.id, is_first_login: false },
-      organization: { id: org.id, name: org.name, slug: org.slug, plan: org.plan, status: org.status }
+      organization: {
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        organizationCode: org.organization_code,
+        plan: org.plan,
+        status: org.status
+      }
     });
   } catch (error) {
     console.error('Checkout success error:', error.message);

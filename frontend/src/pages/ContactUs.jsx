@@ -28,7 +28,7 @@ const ContactUs = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="mx-auto max-w-4xl space-y-6">
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 flex items-center justify-center gap-2">
@@ -40,11 +40,11 @@ const ContactUs = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Contact Form */}
         <Card>
           {sent ? (
-            <div className="text-center py-12">
+            <div className="py-8 text-center">
               <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
               <p className="text-green-700 dark:text-green-400 font-semibold text-lg">
                 <FormattedMessage id="contact.messageSent" defaultMessage="Message sent successfully! We'll get back to you soon." />
@@ -54,25 +54,27 @@ const ContactUs = () => {
               </Button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <Input
-                label={<FormattedMessage id="contact.name" defaultMessage="Your Name" />}
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                required
-                placeholder={intl.formatMessage({ id: 'contact.namePlaceholder', defaultMessage: 'Enter your full name' })}
-              />
-              <Input
-                label={<FormattedMessage id="contact.email" defaultMessage="Your Email" />}
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                required
-                placeholder={intl.formatMessage({ id: 'contact.emailPlaceholder', defaultMessage: 'Enter your email address' })}
-              />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Input
+                  label={<FormattedMessage id="contact.name" defaultMessage="Your Name" />}
+                  type="text"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  required
+                  placeholder={intl.formatMessage({ id: 'contact.namePlaceholder', defaultMessage: 'Enter your full name' })}
+                />
+                <Input
+                  label={<FormattedMessage id="contact.email" defaultMessage="Your Email" />}
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                  placeholder={intl.formatMessage({ id: 'contact.emailPlaceholder', defaultMessage: 'Enter your email address' })}
+                />
+              </div>
               <Input
                 label={<FormattedMessage id="contact.phone" defaultMessage="Your Phone Number" />}
                 type="tel"
@@ -107,12 +109,12 @@ const ContactUs = () => {
         </Card>
 
         {/* Contact Info */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           <Card>
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-6">
+            <h2 className="mb-5 text-xl font-bold text-slate-800 dark:text-slate-100">
               <FormattedMessage id="contact.orReachUs" defaultMessage="Or reach us directly" />
             </h2>
-            <div className="space-y-6">
+            <div className="space-y-5">
               <div className="flex items-start gap-4">
                 <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full p-3">
                   <EnvelopeIcon className="w-5 h-5" />
@@ -143,7 +145,7 @@ const ContactUs = () => {
           </Card>
 
           {/* Quick info card */}
-          <div className="bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl shadow-md p-8 text-white">
+          <div className="rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 p-6 text-white shadow-md">
             <h3 className="text-xl font-bold mb-3">RoomiPilot</h3>
             <p className="opacity-90 text-sm leading-relaxed">
               <FormattedMessage

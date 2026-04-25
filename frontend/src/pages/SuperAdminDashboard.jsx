@@ -19,6 +19,9 @@ const SuperAdminDashboard = () => {
   const [inactiveDays, setInactiveDays] = useState(30);
   const [loadingInactive, setLoadingInactive] = useState(false);
   const [actionLoading, setActionLoading] = useState({});
+  const [subscriberFilter, setSubscriberFilter] = useState('all');
+  const [emailForm, setEmailForm] = useState({ category: 'paid', subject: '', message: '' });
+  const [sendingCampaign, setSendingCampaign] = useState(false);
   const intl = useIntl();
 
   useEffect(() => {
@@ -32,12 +35,14 @@ const SuperAdminDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsRes, orgsRes] = await Promise.all([
+      const [statsRes, orgsRes, subsRes] = await Promise.all([
         api.get('/super-admin/stats'),
         api.get('/super-admin/organizations'),
+        api.get('/super-admin/subscriptions'),
       ]);
       setStats(statsRes.data);
       setOrganizations(orgsRes.data);
+      setSubscriptions(subsRes.data?.subscribers || []);
     } catch (error) {
       console.error('Error fetching super admin data:', error);
     } finally {
@@ -125,20 +130,41 @@ const SuperAdminDashboard = () => {
     }
   };
 
+  const handleSendSubscriberEmail = async () => {
+    if (!emailForm.subject || !emailForm.message) {
+      alert('Please enter both subject and message.');
+      return;
+    }
+    setSendingCampaign(true);
+    try {
+      const res = await api.post('/super-admin/subscriber-emails/send', emailForm);
+      alert(res.data.message);
+      setEmailForm((prev) => ({ ...prev, subject: '', message: '' }));
+    } catch (error) {
+      alert(error.response?.data?.message || 'Error sending subscriber email');
+    } finally {
+      setSendingCampaign(false);
+    }
+  };
+
+  const filteredSubscriptions = subscriptions.filter((subscription) => (
+    subscriberFilter === 'all' || subscription.subscriber_category === subscriberFilter
+  ));
+
   if (loading) {
     return <div className="flex justify-center items-center h-64"><Spinner size="xl" /></div>;
   }
 
   return (
-    <div className="space-y-8">
-      <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-4xl font-bold text-slate-800 dark:text-slate-100 mb-2"><FormattedMessage id="superAdmin.title" defaultMessage="Platform Administration" /></h1>
+    <div className="space-y-6">
+      <div className="text-center">
+        <h1 className="mb-2 text-2xl font-bold text-slate-800 dark:text-slate-100 sm:text-3xl"><FormattedMessage id="superAdmin.title" defaultMessage="Platform Administration" /></h1>
         <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base"><FormattedMessage id="superAdmin.platformOverview" defaultMessage="Manage all organizations and platform settings" /></p>
       </div>
 
       {/* Platform Stats */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <Card accent="brand">
             <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase"><FormattedMessage id="superAdmin.organizations" defaultMessage="Organizations" /></h3>
             <p className="text-3xl font-bold text-brand-500 mt-1">{stats.total_organizations || 0}</p>
@@ -175,8 +201,8 @@ const SuperAdminDashboard = () => {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b dark:border-slate-700">
-        {['overview', 'organizations', 'inactive-users'].map((tab) => (
+      <div className="flex flex-wrap gap-2 border-b pb-2 dark:border-slate-700">
+        {['overview', 'organizations', 'subscribers', 'inactive-users'].map((tab) => (
           <button
             key={tab}
             onClick={() => {
@@ -185,14 +211,16 @@ const SuperAdminDashboard = () => {
                 fetchInactiveUsers(inactiveDays);
               }
             }}
-            className={`px-6 py-3 font-semibold capitalize transition-colors ${
+            className={`rounded-xl px-4 py-2.5 text-sm font-semibold capitalize transition-colors ${
               activeTab === tab
-                ? 'border-b-2 border-brand-500 text-brand-500'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                ? 'bg-brand-50 text-brand-600 dark:bg-brand-900/20 dark:text-brand-300'
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200'
             }`}
           >
             {tab === 'inactive-users'
               ? intl.formatMessage({ id: 'superAdmin.inactiveUsers', defaultMessage: 'Inactive Users' })
+              : tab === 'subscribers'
+                ? 'Subscribers'
               : tab}
           </button>
         ))}
@@ -263,7 +291,9 @@ const SuperAdminDashboard = () => {
       {/* Overview - recent activity placeholder */}
       {activeTab === 'overview' && (
         <Card>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">Recent Organizations</h2>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">
+            <FormattedMessage id="superAdmin.recentOrganizations" defaultMessage="Recent Organizations" />
+          </h2>
           {organizations.slice(0, 5).map((org) => (
             <div key={org.id} className="flex items-center justify-between py-3 border-b dark:border-slate-700 last:border-0">
               <div>
@@ -274,6 +304,155 @@ const SuperAdminDashboard = () => {
             </div>
           ))}
         </Card>
+      )}
+
+      {activeTab === 'subscribers' && (
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card accent="green">
+              <h3 className="text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">
+                <FormattedMessage id="superAdmin.paidSubscribers" defaultMessage="Paid Subscribers" />
+              </h3>
+              <p className="mt-1 text-3xl font-bold text-green-500">{subscriptions.filter((item) => item.subscriber_category === 'paid').length}</p>
+            </Card>
+            <Card accent="amber">
+              <h3 className="text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">
+                <FormattedMessage id="superAdmin.nonPaidSubscribers" defaultMessage="Non-paid Subscribers" />
+              </h3>
+              <p className="mt-1 text-3xl font-bold text-amber-500">{subscriptions.filter((item) => item.subscriber_category === 'non_paid').length}</p>
+            </Card>
+            <Card accent="brand">
+              <h3 className="text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">
+                <FormattedMessage id="superAdmin.totalSubscribers" defaultMessage="Total Subscribers" />
+              </h3>
+              <p className="mt-1 text-3xl font-bold text-brand-500">{subscriptions.length}</p>
+            </Card>
+          </div>
+
+          <Card>
+            <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end">
+              <div className="lg:w-48">
+                <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  <FormattedMessage id="superAdmin.sendTo" defaultMessage="Send To" />
+                </label>
+                <select
+                  value={emailForm.category}
+                  onChange={(e) => setEmailForm((prev) => ({ ...prev, category: e.target.value }))}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-slate-900 shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                >
+                  <option value="paid">{intl.formatMessage({ id: 'superAdmin.paidOption', defaultMessage: 'Paid subscribers' })}</option>
+                  <option value="non_paid">{intl.formatMessage({ id: 'superAdmin.nonPaidOption', defaultMessage: 'Non-paid subscribers' })}</option>
+                  <option value="all">{intl.formatMessage({ id: 'superAdmin.allOption', defaultMessage: 'All subscribers' })}</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  <FormattedMessage id="superAdmin.campaignSubject" defaultMessage="Subject" />
+                </label>
+                <input
+                  type="text"
+                  value={emailForm.subject}
+                  onChange={(e) => setEmailForm((prev) => ({ ...prev, subject: e.target.value }))}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-slate-900 shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                  placeholder={intl.formatMessage({ id: 'superAdmin.campaignSubjectPlaceholder', defaultMessage: 'Campaign subject' })}
+                />
+              </div>
+            </div>
+            <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+              <FormattedMessage id="superAdmin.campaignMessage" defaultMessage="Message" />
+            </label>
+            <textarea
+              value={emailForm.message}
+              onChange={(e) => setEmailForm((prev) => ({ ...prev, message: e.target.value }))}
+              className="min-h-[120px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-slate-900 shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+              placeholder={intl.formatMessage({ id: 'superAdmin.campaignMessagePlaceholder', defaultMessage: 'Write the message for your subscriber campaign...' })}
+            />
+            <div className="mt-4 flex justify-end">
+              <Button variant="primary" loading={sendingCampaign} onClick={handleSendSubscriberEmail}>
+                <FormattedMessage id="superAdmin.sendCampaign" defaultMessage="Send Campaign" />
+              </Button>
+            </div>
+          </Card>
+
+          <Card padding={false}>
+            <div className="flex flex-col gap-3 border-b border-slate-200 px-6 py-4 dark:border-slate-700 md:flex-row md:items-center md:justify-between">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+                <FormattedMessage id="superAdmin.subscriberCategories" defaultMessage="Subscriber Categories" />
+              </h2>
+              <div className="flex gap-2">
+                {[
+                  ['all', intl.formatMessage({ id: 'superAdmin.filterAll', defaultMessage: 'All' })],
+                  ['paid', intl.formatMessage({ id: 'superAdmin.filterPaid', defaultMessage: 'Paid' })],
+                  ['non_paid', intl.formatMessage({ id: 'superAdmin.filterNonPaid', defaultMessage: 'Non-paid' })],
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    onClick={() => setSubscriberFilter(value)}
+                    className={`rounded-xl px-3 py-2 text-sm font-semibold ${
+                      subscriberFilter === value
+                        ? 'bg-brand-50 text-brand-600 dark:bg-brand-900/20 dark:text-brand-300'
+                        : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              {filteredSubscriptions.length > 0 ? (
+                <table className="w-full">
+                  <thead className="bg-slate-100 dark:bg-slate-700/50 border-b dark:border-slate-600">
+                    <tr>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">
+                        <FormattedMessage id="superAdmin.organization" defaultMessage="Organization" />
+                      </th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">
+                        <FormattedMessage id="superAdmin.subscriberEmail" defaultMessage="Email" />
+                      </th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">
+                        <FormattedMessage id="superAdmin.plan" defaultMessage="Plan" />
+                      </th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">
+                        <FormattedMessage id="superAdmin.amount" defaultMessage="Amount" />
+                      </th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">
+                        <FormattedMessage id="superAdmin.status" defaultMessage="Status" />
+                      </th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">
+                        <FormattedMessage id="superAdmin.category" defaultMessage="Category" />
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredSubscriptions.map((subscription) => (
+                      <tr key={subscription.id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                        <td className="px-6 py-3 font-medium text-slate-800 dark:text-slate-200">{subscription.org_name}</td>
+                        <td className="px-6 py-3 text-sm text-slate-500 dark:text-slate-400">{subscription.org_email}</td>
+                        <td className="px-6 py-3"><Badge variant="info">{subscription.plan}</Badge></td>
+                        <td className="px-6 py-3 text-slate-700 dark:text-slate-300">{currencySymbol}{subscription.amount || 0}</td>
+                        <td className="px-6 py-3">
+                          <Badge variant={subscription.status === 'active' ? 'success' : 'warning'}>{subscription.status}</Badge>
+                        </td>
+                        <td className="px-6 py-3">
+                          <Badge variant={subscription.subscriber_category === 'paid' ? 'success' : 'warning'}>
+                            {subscription.subscriber_category === 'paid'
+                              ? <FormattedMessage id="superAdmin.filterPaid" defaultMessage="Paid" />
+                              : <FormattedMessage id="superAdmin.filterNonPaid" defaultMessage="Non-paid" />}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="p-6 text-center text-slate-500 dark:text-slate-400">
+                  <FormattedMessage id="superAdmin.noSubscribers" defaultMessage="No subscribers found for this category." />
+                </p>
+              )}
+            </div>
+          </Card>
+        </div>
       )}
 
       {/* Inactive Users Tab */}

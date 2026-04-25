@@ -14,6 +14,7 @@ const PropertyManagement = () => {
   const [loading, setLoading] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [activeSection, setActiveSection] = useState('buildings');
 
   // Buildings state
   const [showBuildingForm, setShowBuildingForm] = useState(false);
@@ -282,7 +283,7 @@ const PropertyManagement = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Toast Notification */}
       {toast && (
         <Toast
@@ -293,9 +294,9 @@ const PropertyManagement = () => {
         />
       )}
 
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-2 flex items-center justify-center gap-3">
-          <Cog6ToothIcon className="h-10 w-10 text-brand-500" />
+      <div className="text-center">
+        <h1 className="mb-2 flex items-center justify-center gap-3 text-3xl font-bold text-slate-800 dark:text-slate-100">
+          <Cog6ToothIcon className="h-8 w-8 text-brand-500" />
           <FormattedMessage id="property.propertyManagement" defaultMessage="Property Management" />
         </h1>
         <p className="text-slate-600 dark:text-slate-400"><FormattedMessage id="property.manageBuildings" defaultMessage="Manage buildings, rooms, and beds" /></p>
@@ -305,7 +306,7 @@ const PropertyManagement = () => {
       {loading && <div className="flex justify-center py-4"><Spinner size="lg" /></div>}
       
       {/* Controls */}
-      <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center justify-between bg-slate-100 dark:bg-slate-800 p-4 rounded-xl">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center justify-between rounded-xl bg-slate-100 p-3.5 dark:bg-slate-800">
         <Button variant="secondary" onClick={() => navigate('/admin')} iconLeft={<span>←</span>}>
           <FormattedMessage id="property.backToDashboard" defaultMessage="Back to Admin Dashboard" />
         </Button>
@@ -330,7 +331,30 @@ const PropertyManagement = () => {
         </div>
       </div>
 
+      <div className="grid gap-2 sm:grid-cols-3">
+        {[
+          { id: 'buildings', label: 'Buildings', icon: BuildingOffice2Icon, active: 'bg-blue-500 text-white shadow-md shadow-blue-500/20', idle: 'bg-white text-slate-700 hover:bg-blue-50 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-blue-900/20' },
+          { id: 'rooms', label: 'Rooms', icon: HomeIcon, active: 'bg-purple-500 text-white shadow-md shadow-purple-500/20', idle: 'bg-white text-slate-700 hover:bg-purple-50 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-purple-900/20' },
+          { id: 'beds', label: 'Beds', icon: HomeIcon, active: 'bg-green-500 text-white shadow-md shadow-green-500/20', idle: 'bg-white text-slate-700 hover:bg-green-50 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-green-900/20' },
+        ].map(({ id, label, icon: Icon, active, idle }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setActiveSection(id)}
+            className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
+              activeSection === id
+                ? `border-transparent ${active}`
+                : `border-slate-200 dark:border-slate-700 ${idle}`
+            }`}
+          >
+            <Icon className="h-4 w-4" />
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* Buildings Table */}
+      {activeSection === 'buildings' && (
       <Card padding={false}>
         <div className="px-4 sm:px-6 py-4 bg-blue-50 dark:bg-blue-900/20 border-b-2 border-blue-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -419,8 +443,10 @@ const PropertyManagement = () => {
           )}
         </div>
       </Card>
+      )}
 
       {/* Rooms Table */}
+      {activeSection === 'rooms' && (
       <Card padding={false}>
         <div className="px-4 sm:px-6 py-4 bg-purple-50 dark:bg-purple-900/20 border-b-2 border-purple-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -526,8 +552,10 @@ const PropertyManagement = () => {
           )}
         </div>
       </Card>
+      )}
 
       {/* Beds Table */}
+      {activeSection === 'beds' && (
       <Card padding={false}>
         <div className="px-4 sm:px-6 py-4 bg-green-50 dark:bg-green-900/20 border-b-2 border-green-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -656,6 +684,7 @@ const PropertyManagement = () => {
           )}
         </div>
       </Card>
+      )}
     </div>
   );
 };

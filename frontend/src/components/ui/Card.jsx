@@ -13,7 +13,7 @@ const Card = ({
   children,
   accent,
   className = '',
-  padding = 'p-6',
+  padding = 'p-5',
   hover = false,
   ...props
 }) => {
@@ -36,7 +36,7 @@ const Card = ({
 export const CardHeader = ({ children, className = '' }) => (
   <div
     className={[
-      'px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-dark-800 rounded-t-xl -mx-6 -mt-6 mb-6',
+      'px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-dark-800 rounded-t-xl -mx-5 -mt-5 mb-5',
       className,
     ].filter(Boolean).join(' ')}
   >

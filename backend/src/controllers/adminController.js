@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Bed = require('../models/Bed');
 const Organization = require('../models/Organization');
 const { sendTenantCredentials, sendPaymentReminder, sendRentReceipt, sendDeactivationEmail } = require('../services/emailService');
+const { logRequestAudit } = require('../services/auditService');
 
 const getTenants = async (req, res) => {
   try {
@@ -27,10 +28,13 @@ const createTenant = async (req, res) => {
     // Start transaction
     await client.query('BEGIN');
 
+    // Only block duplicates within the SAME organization. Tenants may legitimately
+    // exist across multiple orgs (e.g. a person who moved between PGs); we surface
+    // the prior org info to admins via a separate lookup endpoint.
     const existingUser = await client.query('SELECT * FROM users WHERE email = $1', [email]);
     if (existingUser.rows.length > 0) {
       await client.query('ROLLBACK');
-      return res.status(400).json({ message: 'Already this mail id is used' });
+      return res.status(400).json({ message: 'A tenant with this email already exists in your organization.' });
     }
 
     // Verify bed exists in this org database
@@ -103,6 +107,12 @@ const createTenant = async (req, res) => {
       credentials: { email, password },
       emailSent
     });
+    await logRequestAudit(req, {
+      action: 'TENANT_CREATED',
+      entityType: 'tenant',
+      entityId: tenant.id,
+      details: { name, email, bedId, rent },
+    });
   } catch (error) {
     await client.query('ROLLBACK').catch(e => console.error('Rollback error:', e));
     console.error('❌ Error creating tenant:', error.message, error.detail);
@@ -117,6 +127,12 @@ const updateTenant = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
     const tenant = await Tenant.update(req.pool, id, updates);
+    await logRequestAudit(req, {
+      action: 'TENANT_UPDATED',
+      entityType: 'tenant',
+      entityId: Number(id),
+      details: updates,
+    });
     res.json(tenant);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -148,6 +164,12 @@ const deleteTenant = async (req, res) => {
       console.warn('Warning: Could not remove org mapping:', e.message);
     }
 
+    await logRequestAudit(req, {
+      action: 'TENANT_DELETED',
+      entityType: 'tenant',
+      entityId: Number(id),
+      details: { email: tenant.email, userId: tenant.user_id, bedId: tenant.bed_id },
+    });
     res.json({ message: 'Tenant and associated records deleted successfully' });
   } catch (error) {
     console.error('Error deleting tenant:', error);
@@ -254,6 +276,12 @@ const createBuilding = async (req, res) => {
     
     const Building = require('../models/Building');
     const building = await Building.create(req.pool, name, location);
+    await logRequestAudit(req, {
+      action: 'BUILDING_CREATED',
+      entityType: 'building',
+      entityId: building.id,
+      details: { name, location },
+    });
     res.status(201).json(building);
   } catch (error) {
     console.error('Error creating building:', error);
@@ -271,6 +299,12 @@ const updateBuilding = async (req, res) => {
     
     const Building = require('../models/Building');
     const building = await Building.update(req.pool, id, name, location);
+    await logRequestAudit(req, {
+      action: 'BUILDING_UPDATED',
+      entityType: 'building',
+      entityId: Number(id),
+      details: { name, location },
+    });
     res.json(building);
   } catch (error) {
     console.error('Error updating building:', error);
@@ -292,6 +326,12 @@ const deleteBuilding = async (req, res) => {
 
     const Building = require('../models/Building');
     const building = await Building.delete(req.pool, id);
+    await logRequestAudit(req, {
+      action: 'BUILDING_DELETED',
+      entityType: 'building',
+      entityId: Number(id),
+      details: { name: building?.name || null },
+    });
     res.json({ message: 'Building deleted successfully', building });
   } catch (error) {
     console.error('Error deleting building:', error);
@@ -331,6 +371,12 @@ const createRoom = async (req, res) => {
     
     const Room = require('../models/Room');
     const room = await Room.create(req.pool, buildingId, roomNumber, capacity);
+    await logRequestAudit(req, {
+      action: 'ROOM_CREATED',
+      entityType: 'room',
+      entityId: room.id,
+      details: { buildingId, roomNumber, capacity },
+    });
     res.status(201).json(room);
   } catch (error) {
     console.error('Error creating room:', error.message, error.detail);
@@ -357,6 +403,12 @@ const updateRoom = async (req, res) => {
     
     const Room = require('../models/Room');
     const room = await Room.update(req.pool, id, buildingId, roomNumber, capacity);
+    await logRequestAudit(req, {
+      action: 'ROOM_UPDATED',
+      entityType: 'room',
+      entityId: Number(id),
+      details: { buildingId, roomNumber, capacity },
+    });
     res.json(room);
   } catch (error) {
     console.error('Error updating room:', error);
@@ -386,6 +438,12 @@ const deleteRoom = async (req, res) => {
 
     const Room = require('../models/Room');
     const room = await Room.delete(req.pool, id);
+    await logRequestAudit(req, {
+      action: 'ROOM_DELETED',
+      entityType: 'room',
+      entityId: Number(id),
+      details: { roomNumber: room?.room_number || null, buildingId: room?.building_id || null },
+    });
     res.json({ message: 'Room deleted successfully', room });
   } catch (error) {
     console.error('Error deleting room:', error);
@@ -439,6 +497,12 @@ const createBed = async (req, res) => {
     
     const BedModel = require('../models/Bed');
     const bed = await BedModel.create(req.pool, roomId, bedIdentifier, status || 'vacant');
+    await logRequestAudit(req, {
+      action: 'BED_CREATED',
+      entityType: 'bed',
+      entityId: bed.id,
+      details: { roomId, bedIdentifier, status: status || 'vacant' },
+    });
     res.status(201).json(bed);
   } catch (error) {
     console.error('Error creating bed:', error);
@@ -488,6 +552,12 @@ const updateBed = async (req, res) => {
     
     const BedModel = require('../models/Bed');
     const bed = await BedModel.update(req.pool, id, roomId, bedIdentifier, status);
+    await logRequestAudit(req, {
+      action: 'BED_UPDATED',
+      entityType: 'bed',
+      entityId: Number(id),
+      details: { roomId, bedIdentifier, status },
+    });
     res.json(bed);
   } catch (error) {
     console.error('Error updating bed:', error);
@@ -509,6 +579,12 @@ const deleteBed = async (req, res) => {
 
     const BedModel = require('../models/Bed');
     const bed = await BedModel.delete(req.pool, id);
+    await logRequestAudit(req, {
+      action: 'BED_DELETED',
+      entityType: 'bed',
+      entityId: Number(id),
+      details: { bedIdentifier: bed?.bed_identifier || null, roomId: bed?.room_id || null },
+    });
     res.json({ message: 'Bed deleted successfully', bed });
   } catch (error) {
     console.error('Error deleting bed:', error);
@@ -640,6 +716,12 @@ const sendPaymentReminderEmail = async (req, res) => {
     }
 
     // Default: email - respond immediately, send in background
+    await logRequestAudit(req, {
+      action: 'PAYMENT_REMINDER_SENT',
+      entityType: 'tenant',
+      entityId: Number(tenantId),
+      details: { method, email: tenant.email, month: prevMonthName },
+    });
     res.json({ message: `Payment reminder being sent to ${tenant.email}` });
     sendPaymentReminder(tenant.email, tenant.name, tenant.rent, bedInfo, prevMonthName, req.orgName)
       .then(sent => console.log(sent ? `✅ Reminder sent to ${tenant.email}` : `⚠️ Reminder failed for ${tenant.email}`))
@@ -719,6 +801,12 @@ const markOfflinePay = async (req, res) => {
     res.json({ 
       message: `Offline payment marked for ${monthName}`,
       emailSent
+    });
+    await logRequestAudit(req, {
+      action: 'OFFLINE_PAYMENT_MARKED',
+      entityType: 'tenant',
+      entityId: Number(tenantId),
+      details: { month: monthName, amount: tenant.rent, emailSent },
     });
   } catch (error) {
     console.error('Error marking offline payment:', error);
@@ -929,6 +1017,12 @@ const deactivateUser = async (req, res) => {
 
     // Respond immediately
     res.json({ message: 'User deactivated successfully' });
+    await logRequestAudit(req, {
+      action: 'USER_DEACTIVATED',
+      entityType: 'user',
+      entityId: Number(userId),
+      details: { email: user.email, role: user.role, bedInfo },
+    });
 
     // Send farewell email in background
     try {
@@ -946,6 +1040,40 @@ const deactivateUser = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   } finally {
     client.release();
+  }
+};
+
+// Look up an email across all organizations to surface prior tenancy info to admins.
+// This intentionally only returns minimal cross-org context (org name + slug + role)
+// to help an admin avoid creating an unintended duplicate tenant.
+const lookupTenantByEmail = async (req, res) => {
+  try {
+    const rawEmail = (req.query.email || '').trim().toLowerCase();
+    if (!rawEmail) {
+      return res.status(400).json({ message: 'Email is required.' });
+    }
+
+    const [mappings, currentOrgUser] = await Promise.all([
+      User.findOrgsByEmail(rawEmail),
+      req.pool.query('SELECT id FROM users WHERE email = $1', [rawEmail]),
+    ]);
+
+    const otherOrgs = (mappings || []).filter((m) => m.org_id !== req.orgId);
+
+    res.json({
+      email: rawEmail,
+      existsInCurrentOrg: currentOrgUser.rows.length > 0,
+      otherOrganizations: otherOrgs.map((m) => ({
+        id: m.org_id,
+        name: m.org_name,
+        slug: m.org_slug,
+        organizationCode: m.organization_code,
+        role: m.role,
+      })),
+    });
+  } catch (error) {
+    console.error('Error looking up tenant by email:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -1100,10 +1228,15 @@ const sendGroupMessage = async (req, res) => {
       failCount,
       totalTenants: tenants.length
     });
+    await logRequestAudit(req, {
+      action: 'GROUP_MESSAGE_SENT',
+      entityType: 'message',
+      details: { groupType, groupId, subject, successCount, failCount, totalTenants: tenants.length },
+    });
   } catch (error) {
     console.error('Error sending group message:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-module.exports = { getTenants, createTenant, updateTenant, deleteTenant, processCheckouts, getOccupancy, getAvailableBeds, getFloorLayout, getFloorLayoutWithBeds, getBuildings, createBuilding, updateBuilding, deleteBuilding, getRooms, createRoom, updateRoom, deleteRoom, getBeds, createBed, updateBed, deleteBed, getPaymentInfo, sendPaymentReminderEmail, markOfflinePay, searchTenants, getTenantPaymentHistory, deactivateUser, getMessengerGroups, sendGroupMessage };
+module.exports = { getTenants, createTenant, updateTenant, deleteTenant, processCheckouts, getOccupancy, getAvailableBeds, getFloorLayout, getFloorLayoutWithBeds, getBuildings, createBuilding, updateBuilding, deleteBuilding, getRooms, createRoom, updateRoom, deleteRoom, getBeds, createBed, updateBed, deleteBed, getPaymentInfo, sendPaymentReminderEmail, markOfflinePay, searchTenants, getTenantPaymentHistory, deactivateUser, getMessengerGroups, sendGroupMessage, lookupTenantByEmail };

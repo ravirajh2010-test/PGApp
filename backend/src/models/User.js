@@ -111,13 +111,27 @@ class User {
    */
   static async findOrgsByEmail(email) {
     const result = await masterPool.query(
-      `SELECT uom.org_id, uom.user_id, uom.role, o.name as org_name, o.slug as org_slug 
+      `SELECT uom.org_id, uom.user_id, uom.role, o.name as org_name, o.slug as org_slug, o.organization_code
        FROM user_org_map uom 
        JOIN organizations o ON uom.org_id = o.id 
        WHERE uom.email = $1 AND o.status = 'active'`,
       [email]
     );
     return result.rows;
+  }
+
+  /**
+   * Backward compatibility for pre-migration users stored in master users table.
+   */
+  static async findLegacyOrgUserByEmail(email) {
+    const result = await masterPool.query(
+      `SELECT id, name, email, password, role, is_first_login, org_id
+       FROM users
+       WHERE email = $1 AND role != 'super_admin' AND org_id IS NOT NULL
+       LIMIT 1`,
+      [email]
+    );
+    return result.rows[0];
   }
 }
 

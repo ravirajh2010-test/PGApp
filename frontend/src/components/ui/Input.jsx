@@ -17,7 +17,7 @@ const Input = forwardRef(({
   const inputId = id || (typeof label === 'string' ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
 
   return (
-    <div className={['flex flex-col gap-1', className].join(' ')}>
+    <div className={['flex flex-col gap-0.5', className].join(' ')}>
       {label && (
         <label
           htmlFor={inputId}
@@ -40,16 +40,16 @@ const Input = forwardRef(({
           disabled={disabled}
           required={required}
           className={[
-            'w-full rounded-xl border bg-white dark:bg-dark-700 text-slate-900 dark:text-slate-100',
+            'w-full rounded-2xl border bg-white/95 dark:bg-dark-700/95 text-slate-900 dark:text-slate-100 shadow-sm',
             'placeholder:text-slate-400 dark:placeholder:text-slate-500',
-            'transition-colors duration-150',
-            'focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500',
+            'transition-all duration-200',
+            'focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500',
             error
               ? 'border-red-400 focus:ring-red-400 focus:border-red-400'
-              : 'border-slate-300 dark:border-slate-600',
+              : 'border-slate-200 hover:border-slate-300 dark:border-slate-600 dark:hover:border-slate-500',
             iconLeft ? 'pl-10' : 'px-4',
             iconRight ? 'pr-10' : 'px-4',
-            'py-2.5',
+            Tag === 'textarea' ? 'py-2.5 min-h-[80px]' : 'py-2.5',
             disabled ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-dark-800' : '',
             inputClassName,
           ].filter(Boolean).join(' ')}

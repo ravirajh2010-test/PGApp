@@ -154,8 +154,8 @@ const PaymentInfo = () => {
   const monthYearOptions = generateMonthYearOptions();
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100">
             <CurrencyDollarIcon className="w-8 h-8 text-brand-500" />
@@ -190,7 +190,7 @@ const PaymentInfo = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Card accent="blue">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase"><FormattedMessage id="dashboard.tenantsSection" defaultMessage="Total Tenants" /></h3>
           <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">{tenants.length}</p>
