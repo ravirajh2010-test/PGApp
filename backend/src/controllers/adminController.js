@@ -2,7 +2,7 @@ const Tenant = require('../models/Tenant');
 const User = require('../models/User');
 const Bed = require('../models/Bed');
 const Organization = require('../models/Organization');
-const { sendTenantCredentials, sendPaymentReminder, sendRentReceipt, sendDeactivationEmail } = require('../services/emailService');
+const { sendTenantCredentials, sendPaymentReminder, sendRentReceipt, sendDeactivationEmail, sendPasswordResetByAdmin } = require('../services/emailService');
 const { logRequestAudit } = require('../services/auditService');
 
 const getTenants = async (req, res) => {
@@ -1239,4 +1239,43 @@ const sendGroupMessage = async (req, res) => {
   }
 };
 
-module.exports = { getTenants, createTenant, updateTenant, deleteTenant, processCheckouts, getOccupancy, getAvailableBeds, getFloorLayout, getFloorLayoutWithBeds, getBuildings, createBuilding, updateBuilding, deleteBuilding, getRooms, createRoom, updateRoom, deleteRoom, getBeds, createBed, updateBed, deleteBed, getPaymentInfo, sendPaymentReminderEmail, markOfflinePay, searchTenants, getTenantPaymentHistory, deactivateUser, getMessengerGroups, sendGroupMessage, lookupTenantByEmail };
+const generateTempPassword = () => {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+};
+
+const sendPasswordReset = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const bcrypt = require('bcryptjs');
+
+    const userResult = await req.pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const user = userResult.rows[0];
+
+    const tempPassword = generateTempPassword();
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    await req.pool.query(
+      'UPDATE users SET password = $1, is_first_login = TRUE WHERE id = $2',
+      [hashedPassword, userId]
+    );
+
+    const emailSent = await sendPasswordResetByAdmin(user.email, user.name, tempPassword, req.orgName);
+    await logRequestAudit(req, {
+      action: 'PASSWORD_RESET_BY_ADMIN',
+      entityType: 'user',
+      entityId: Number(userId),
+      details: { email: user.email },
+    });
+
+    res.json({ message: `Password reset and email sent to ${user.email}`, emailSent });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+module.exports = { getTenants, createTenant, updateTenant, deleteTenant, processCheckouts, getOccupancy, getAvailableBeds, getFloorLayout, getFloorLayoutWithBeds, getBuildings, createBuilding, updateBuilding, deleteBuilding, getRooms, createRoom, updateRoom, deleteRoom, getBeds, createBed, updateBed, deleteBed, getPaymentInfo, sendPaymentReminderEmail, markOfflinePay, searchTenants, getTenantPaymentHistory, deactivateUser, getMessengerGroups, sendGroupMessage, lookupTenantByEmail, sendPasswordReset };

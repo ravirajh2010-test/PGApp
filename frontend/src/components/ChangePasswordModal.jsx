@@ -121,9 +121,7 @@ const ChangePasswordModal = ({ user, onClose, onSuccess }) => {
           <Button variant="primary" fullWidth onClick={handleSendOtp} loading={loading}>
             Send OTP
           </Button>
-          {!isFirstLogin && (
-            <Button variant="outline" fullWidth onClick={onClose}>Cancel</Button>
-          )}
+          <Button variant="outline" fullWidth onClick={onClose}>Cancel</Button>
         </div>
       )}
 

@@ -142,6 +142,26 @@ const OrgSettings = () => {
     }
   };
 
+  const [sendingReset, setSendingReset] = useState(null);
+  const handleSendPasswordResetEmail = async (userId, userName, userEmail) => {
+    if (!window.confirm(`Reset password for "${userName}" and send a new temporary password to ${userEmail}?`)) return;
+    setSendingReset(userId);
+    try {
+      const res = await api.post(`/admin/send-password-reset/${userId}`);
+      setToast({
+        message: res.data?.emailSent === false
+          ? `Password reset but email could not be sent to ${userEmail}.`
+          : `✅ Temporary password sent to ${userEmail}`,
+        type: res.data?.emailSent === false ? 'error' : 'success',
+        key: Date.now(),
+      });
+    } catch (error) {
+      setToast({ message: error.response?.data?.message || 'Failed to reset password', type: 'error', key: Date.now() });
+    } finally {
+      setSendingReset(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -476,11 +496,22 @@ const OrgSettings = () => {
                         </td>
                         <td className="px-6 py-3 text-center">
                           <div className="flex flex-wrap gap-2 justify-center">
-                            {u.role === 'admin' && u.id === user.id && (
+                            {u.id === user.id ? (
+                              /* Own account: self-service OTP reset */
                               <Button
                                 size="sm"
                                 variant="secondary"
                                 onClick={() => setResetPasswordUser({ id: u.id, email: u.email, name: u.name, is_first_login: false })}
+                              >
+                                <FormattedMessage id="orgSettings.resetPassword" defaultMessage="Reset Password" />
+                              </Button>
+                            ) : (
+                              /* Other users: admin-triggered temp password + email */
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                loading={sendingReset === u.id}
+                                onClick={() => handleSendPasswordResetEmail(u.id, u.name, u.email)}
                               >
                                 <FormattedMessage id="orgSettings.resetPassword" defaultMessage="Reset Password" />
                               </Button>

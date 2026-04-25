@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormattedMessage, useIntl } from 'react-intl';
-import { ArrowPathIcon, EnvelopeIcon, NoSymbolIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, EnvelopeIcon, NoSymbolIcon, TrashIcon, KeyIcon } from '@heroicons/react/24/outline';
 import api, { getUser } from '../services/api';
 import { useCurrency } from '../context/LanguageContext';
 import { Button, Card, Badge, Spinner } from '../components/ui';
@@ -127,6 +127,21 @@ const SuperAdminDashboard = () => {
       alert('Error sending reminder');
     } finally {
       setActionLoading(prev => ({ ...prev, [`remind-${orgId}-${userId}`]: false }));
+    }
+  };
+
+  const handleResetPasswordSA = async (orgId, userId, userName, userEmail) => {
+    if (!window.confirm(`Reset password for ${userName} (${userEmail}) and send them a new temporary password by email?`)) return;
+    setActionLoading(prev => ({ ...prev, [`reset-${orgId}-${userId}`]: true }));
+    try {
+      const res = await api.post(`/super-admin/organizations/${orgId}/users/${userId}/send-password-reset`);
+      alert(res.data?.emailSent === false
+        ? `Password reset but email could not be sent.`
+        : `✅ New temporary password sent to ${userEmail}`);
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to reset password');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`reset-${orgId}-${userId}`]: false }));
     }
   };
 
@@ -536,6 +551,14 @@ const SuperAdminDashboard = () => {
                             onClick={() => handleSendReminder(user.org_id, user.id)}
                             iconLeft={<EnvelopeIcon className="w-3.5 h-3.5" />}
                             title={intl.formatMessage({ id: 'superAdmin.sendReminder', defaultMessage: 'Send Reminder' })}
+                          />
+                          <Button
+                            variant="secondary"
+                            size="xs"
+                            loading={actionLoading[`reset-${user.org_id}-${user.id}`]}
+                            onClick={() => handleResetPasswordSA(user.org_id, user.id, user.name, user.email)}
+                            iconLeft={<KeyIcon className="w-3.5 h-3.5" />}
+                            title="Reset Password & Send Email"
                           />
                           <Button
                             variant="warning"

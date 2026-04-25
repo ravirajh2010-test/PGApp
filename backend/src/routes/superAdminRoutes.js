@@ -7,7 +7,7 @@ const {
   getPlanLimits, updatePlanLimits,
   getAuditLogs,
   getInactiveUsers, disableInactiveUser, deleteInactiveUser, sendInactiveUserReminder,
-  sendSubscriberEmail
+  sendSubscriberEmail, sendPasswordResetSuperAdmin
 } = require('../controllers/superAdminController');
 const { authenticateToken } = require('../middleware/auth');
 const { superAdminOnly } = require('../middleware/tenantIsolation');
@@ -46,5 +46,8 @@ router.get('/inactive-users', getInactiveUsers);
 router.post('/inactive-users/:orgId/:userId/disable', disableInactiveUser);
 router.delete('/inactive-users/:orgId/:userId', deleteInactiveUser);
 router.post('/inactive-users/:orgId/:userId/remind', sendInactiveUserReminder);
+
+// Password reset for any org user
+router.post('/organizations/:orgId/users/:userId/send-password-reset', sendPasswordResetSuperAdmin);
 
 module.exports = router;

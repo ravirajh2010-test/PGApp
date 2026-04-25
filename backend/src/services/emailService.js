@@ -94,6 +94,8 @@ const sendEmail = async (to, subject, html) => {
   return sendViaSMTP(to, subject, html);
 };
 
+const APP_URL = 'https://www.roomipilot.com';
+
 const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo, orgName) => {
   try {
     const htmlContent = `
@@ -112,7 +114,7 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo,
             .important { background: #ffe6e6; border-left: 4px solid #d32f2f; padding: 15px; margin: 20px 0; border-radius: 4px; }
             .important strong { color: #d32f2f; }
             .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
-            .button { display: inline-block; background: #ff6b35; color: white; padding: 12px 30px; border-radius: 4px; text-decoration: none; margin: 20px 0; }
+            .btn { display: inline-block; background: #ff6b35; color: white !important; padding: 14px 36px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 16px; margin: 20px 0; }
           </style>
         </head>
         <body>
@@ -130,20 +132,28 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo,
               <div class="credentials-box">
                 <h3 style="margin-top: 0; color: #ff6b35;">Your Login Credentials</h3>
                 <div class="credential">
+                  <label>Portal:</label><br/>
+                  <value><a href="${APP_URL}" style="color:#ff6b35;">${APP_URL}</a></value>
+                </div>
+                <div class="credential" style="margin-top: 12px;">
                   <label>Email:</label><br/>
                   <value>${tenantEmail}</value>
                 </div>
-                <div class="credential" style="margin-top: 15px;">
-                  <label>Password:</label><br/>
+                <div class="credential" style="margin-top: 12px;">
+                  <label>Temporary Password:</label><br/>
                   <value>${password}</value>
                 </div>
+              </div>
+
+              <div style="text-align: center;">
+                <a href="${APP_URL}" class="btn">🔑 Login to Portal</a>
               </div>
               
               <div class="important">
                 <strong>⚠️ Important Information:</strong>
                 <ul>
-                  <li>Use the above credentials to login to your account</li>
-                  <li>On your first login, you will be prompted to change your password for security</li>
+                  <li>Use the above credentials to login at <a href="${APP_URL}">${APP_URL}</a></li>
+                  <li>On your first login you will be asked to <strong>set a new permanent password</strong> — please do this immediately</li>
                   <li>Keep your password safe and do not share it with anyone</li>
                   <li>Bed Information: <strong>${bedInfo}</strong></li>
                 </ul>
@@ -151,9 +161,9 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo,
               
               <p><strong>Next Steps:</strong></p>
               <ol>
-                <li>Visit our portal and login with the credentials above</li>
-                <li>Change your password on first login (email verification required)</li>
-                <li>Update your profile information if needed</li>
+                <li>Click the "Login to Portal" button above (or visit <a href="${APP_URL}">${APP_URL}</a>)</li>
+                <li>Sign in with the credentials above</li>
+                <li>Change your password on first login (email OTP verification required)</li>
                 <li>Review your stay details and payment schedule</li>
               </ol>
               
@@ -172,7 +182,7 @@ const sendTenantCredentials = async (tenantEmail, tenantName, password, bedInfo,
       </html>
     `;
 
-    const subject = `🎉 Welcome to ${orgName || 'RoomiPilot'} - Your Login Credentials`;
+    const subject = `🎉 Welcome to ${orgName || 'RoomiPilot'} — Your Login Credentials`;
     const result = await sendEmail(tenantEmail, subject, htmlContent);
     if (result) console.log(`✅ Tenant credentials email sent to ${tenantEmail}`);
     return result;
@@ -447,6 +457,9 @@ const sendOrgWelcomeEmail = async (orgEmail, orgName, adminName, adminEmail, pla
             .detail-label { font-weight: bold; color: #ff6b35; }
             .plan-badge { display: inline-block; background: #ff6b35; color: white; padding: 4px 12px; border-radius: 12px; font-size: 14px; text-transform: capitalize; }
             .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+            .btn { display: inline-block; background: #ff6b35; color: white !important; padding: 14px 36px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 16px; margin: 20px 0; }
+            .credentials-box { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px; }
+            .cred-value { font-family: 'Courier New', monospace; background: #fff; padding: 6px 10px; border-radius: 4px; display: inline-block; }
           </style>
         </head>
         <body>
@@ -465,6 +478,17 @@ const sendOrgWelcomeEmail = async (orgEmail, orgName, adminName, adminEmail, pla
               </div>
               
               <p>We are excited to have you onboard. Your organization is now set up and ready to manage your PG operations seamlessly.</p>
+
+              <div class="credentials-box">
+                <h3 style="margin-top: 0; color: #d97706;">🔑 Your Admin Login Details</h3>
+                <div style="margin: 8px 0;"><strong>Portal:</strong> <a href="${APP_URL}" style="color:#ff6b35;">${APP_URL}</a></div>
+                <div style="margin: 8px 0;"><strong>Admin Email:</strong> <span class="cred-value">${adminEmail}</span></div>
+                <div style="margin: 8px 0; font-size: 13px; color: #666;">Use the password you set during registration. You can change it after logging in.</div>
+              </div>
+
+              <div style="text-align: center;">
+                <a href="${APP_URL}" class="btn">🚀 Go to Admin Dashboard</a>
+              </div>
               
               <div class="details-box">
                 <h3 style="margin-top: 0; color: #ff6b35;">Registration Details</h3>
@@ -484,7 +508,8 @@ const sendOrgWelcomeEmail = async (orgEmail, orgName, adminName, adminEmail, pla
               
               <p><strong>What's Next?</strong></p>
               <ol>
-                <li>Log in to your admin dashboard using your admin credentials</li>
+                <li>Click the button above to visit <a href="${APP_URL}">${APP_URL}</a></li>
+                <li>Log in with your admin email and the password you set during registration</li>
                 <li>Set up your buildings, rooms, and beds</li>
                 <li>Start adding your tenants</li>
                 <li>Manage payments and track occupancy</li>
@@ -505,7 +530,7 @@ const sendOrgWelcomeEmail = async (orgEmail, orgName, adminName, adminEmail, pla
       </html>
     `;
 
-    const subject = '🎉 Welcome to RoomiPilot - Your PG is Registered!';
+    const subject = '🎉 Welcome to RoomiPilot — Your PG is Registered!';
     const result = await sendEmail(orgEmail, subject, htmlContent);
     if (result) console.log(`✅ Organization welcome email sent to ${orgEmail}`);
     return result;
@@ -668,4 +693,75 @@ const sendStayExtensionReminder = async (tenantEmail, tenantName, bedInfo, endDa
   }
 };
 
-module.exports = { sendEmail, sendTenantCredentials, sendThankYouEmail, sendPaymentReminder, sendRentReceipt, sendOrgWelcomeEmail, sendDeactivationEmail, sendStayExtensionReminder };
+const sendPasswordResetByAdmin = async (userEmail, userName, tempPassword, orgName) => {
+  try {
+    const htmlContent = `
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; border-radius: 8px; }
+            .header { background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; }
+            .content { background: white; padding: 30px; border-radius: 0 0 8px 8px; }
+            .cred-box { background: #f0f7ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0; border-radius: 4px; }
+            .cred-value { font-family: 'Courier New', monospace; background: #fff; padding: 8px 12px; border-radius: 4px; display: inline-block; font-size: 15px; }
+            .warning { background: #ffe6e6; border-left: 4px solid #d32f2f; padding: 15px; margin: 20px 0; border-radius: 4px; }
+            .warning strong { color: #d32f2f; }
+            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+            .btn { display: inline-block; background: #2563eb; color: white !important; padding: 14px 36px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 16px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔐 Password Reset — ${orgName || 'RoomiPilot'}</h1>
+            </div>
+            <div class="content">
+              <p>Hello <strong>${userName}</strong>,</p>
+              <p>Your password has been reset by the administrator of <strong>${orgName || 'RoomiPilot'}</strong>. Use the temporary credentials below to log in.</p>
+
+              <div class="cred-box">
+                <h3 style="margin-top:0; color:#2563eb;">Your Temporary Login Details</h3>
+                <div style="margin: 10px 0;"><strong>Portal:</strong> <a href="${APP_URL}" style="color:#2563eb;">${APP_URL}</a></div>
+                <div style="margin: 10px 0;"><strong>Email:</strong> <span class="cred-value">${userEmail}</span></div>
+                <div style="margin: 10px 0;"><strong>Temporary Password:</strong> <span class="cred-value">${tempPassword}</span></div>
+              </div>
+
+              <div style="text-align:center;">
+                <a href="${APP_URL}" class="btn">🔑 Login &amp; Set New Password</a>
+              </div>
+
+              <div class="warning">
+                <strong>⚠️ Action Required:</strong>
+                <ul>
+                  <li>Log in with the temporary password above</li>
+                  <li>You will be prompted to set a new permanent password immediately</li>
+                  <li>Do not share this email with anyone</li>
+                  <li>This temporary password will expire once you log in and change it</li>
+                </ul>
+              </div>
+
+              <p>If you did not expect this email, please contact your administrator immediately.</p>
+              <p>Best regards,<br/><strong>${orgName || 'RoomiPilot'} Team</strong></p>
+            </div>
+            <div class="footer">
+              <p>&copy; ${new Date().getFullYear()} ${orgName || 'RoomiPilot'}. All rights reserved.</p>
+              <p>This is an automated email. Please do not reply directly.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const subject = `🔐 Password Reset — ${orgName || 'RoomiPilot'}`;
+    const result = await sendEmail(userEmail, subject, htmlContent);
+    if (result) console.log(`✅ Password reset email sent to ${userEmail}`);
+    return result;
+  } catch (error) {
+    console.error('❌ Error sending password reset email:', error.message);
+    return false;
+  }
+};
+
+module.exports = { sendEmail, sendTenantCredentials, sendThankYouEmail, sendPaymentReminder, sendRentReceipt, sendOrgWelcomeEmail, sendDeactivationEmail, sendStayExtensionReminder, sendPasswordResetByAdmin };

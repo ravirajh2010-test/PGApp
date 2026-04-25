@@ -5,7 +5,7 @@ const AuditLog = require('../models/AuditLog');
 const User = require('../models/User');
 const pool = require('../config/database');
 const dbManager = require('../services/DatabaseManager');
-const { sendEmail } = require('../services/emailService');
+const { sendEmail, sendPasswordResetByAdmin } = require('../services/emailService');
 
 // Organization management
 const getOrganizations = async (req, res) => {
@@ -487,6 +487,42 @@ const sendInactiveUserReminder = async (req, res) => {
   }
 };
 
+const generateTempPasswordSA = () => {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+};
+
+const sendPasswordResetSuperAdmin = async (req, res) => {
+  try {
+    const { orgId, userId } = req.params;
+    const bcrypt = require('bcryptjs');
+
+    const org = await Organization.findById(orgId);
+    if (!org) return res.status(404).json({ message: 'Organization not found' });
+
+    const orgPool = await dbManager.getOrgPool(orgId);
+    const userResult = await orgPool.query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found in this organization' });
+    }
+    const user = userResult.rows[0];
+
+    const tempPassword = generateTempPasswordSA();
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    await orgPool.query(
+      'UPDATE users SET password = $1, is_first_login = TRUE WHERE id = $2',
+      [hashedPassword, userId]
+    );
+
+    const emailSent = await sendPasswordResetByAdmin(user.email, user.name, tempPassword, org.name);
+    res.json({ message: `Password reset and email sent to ${user.email}`, emailSent });
+  } catch (error) {
+    console.error('Error resetting password (super admin):', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 module.exports = {
   getOrganizations, getOrganizationById, updateOrganization,
   suspendOrganization, activateOrganization, deleteOrganization,
@@ -495,5 +531,5 @@ module.exports = {
   getPlanLimits, updatePlanLimits,
   getAuditLogs,
   getInactiveUsers, disableInactiveUser, deleteInactiveUser, sendInactiveUserReminder,
-  sendSubscriberEmail
+  sendSubscriberEmail, sendPasswordResetSuperAdmin
 };

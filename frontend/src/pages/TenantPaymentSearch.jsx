@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormattedMessage, useIntl } from 'react-intl';
-import { MagnifyingGlassIcon, EnvelopeIcon, PhoneIcon, HomeIcon, CurrencyDollarIcon, CalendarIcon, XMarkIcon, CheckCircleIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, EnvelopeIcon, PhoneIcon, HomeIcon, CurrencyDollarIcon, CalendarIcon, XMarkIcon, CheckCircleIcon, DocumentTextIcon, KeyIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import { useCurrency } from '../context/LanguageContext';
 import { Button, Card, Badge, Spinner } from '../components/ui';
@@ -74,6 +74,23 @@ const TenantPaymentSearch = () => {
 
   const paidCount = months.filter(m => m.status === 'Paid').length;
   const unpaidCount = months.filter(m => m.status === 'Bill Generated').length;
+
+  const [resettingPassword, setResettingPassword] = useState(false);
+
+  const handleResetPassword = async () => {
+    if (!window.confirm(`Reset password for ${selectedTenant.name} and send them a new temporary password by email?`)) return;
+    setResettingPassword(true);
+    try {
+      const res = await api.post(`/admin/send-password-reset/${selectedTenant.id}`);
+      alert(res.data?.emailSent === false
+        ? `Password reset but email could not be sent. Please inform tenant manually.`
+        : `✅ New temporary password sent to ${selectedTenant.email}`);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to reset password');
+    } finally {
+      setResettingPassword(false);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -167,12 +184,24 @@ const TenantPaymentSearch = () => {
                   {selectedTenant.end_date && <span className="flex items-center gap-1"><CalendarIcon className="w-4 h-4" />{intl.formatMessage({ id: 'tenantSearch.until', defaultMessage: 'Until {date}' }, { date: new Date(selectedTenant.end_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) })}</span>}
                 </div>
               </div>
-              <button
-                onClick={() => { setSelectedTenant(null); setMonths([]); }}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  loading={resettingPassword}
+                  onClick={handleResetPassword}
+                  iconLeft={<KeyIcon className="w-4 h-4" />}
+                  title="Reset password and send email to tenant"
+                >
+                  Reset Password
+                </Button>
+                <button
+                  onClick={() => { setSelectedTenant(null); setMonths([]); }}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </Card>
 

@@ -7,7 +7,8 @@ const {
   getBeds, createBed, updateBed, deleteBed,
   getPaymentInfo, sendPaymentReminderEmail, markOfflinePay,
   searchTenants, getTenantPaymentHistory, deactivateUser,
-  getMessengerGroups, sendGroupMessage, lookupTenantByEmail
+  getMessengerGroups, sendGroupMessage, lookupTenantByEmail,
+  sendPasswordReset
 } = require('../controllers/adminController');
 const { checkTenantsDatabaseConsistency } = require('../controllers/debugController');
 const { authenticateToken, authorizeRole } = require('../middleware/auth');
@@ -60,6 +61,7 @@ router.get('/tenant-payment-history/:tenantId', getTenantPaymentHistory);
 
 // User management routes
 router.post('/deactivate-user/:userId', deactivateUser);
+router.post('/send-password-reset/:userId', sendPasswordReset);
 
 // Messenger routes
 router.get('/messenger/groups', getMessengerGroups);
