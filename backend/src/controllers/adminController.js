@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Bed = require('../models/Bed');
 const Organization = require('../models/Organization');
 const { sendTenantCredentials, sendPaymentReminder, sendRentReceipt, sendDeactivationEmail, sendPasswordResetByAdmin } = require('../services/emailService');
+const whatsapp = require('../services/whatsappService');
 const { logRequestAudit } = require('../services/auditService');
 
 const getTenants = async (req, res) => {
@@ -82,8 +83,9 @@ const createTenant = async (req, res) => {
       console.warn('Warning: Could not add org mapping:', e.message);
     }
 
-    // Send welcome email before responding
+    // Send welcome email + build WhatsApp link before responding
     let emailSent = false;
+    let bedInfo = 'Bed assigned';
     try {
       const bedQuery = `
         SELECT b.id, r.room_number, bl.name as building_name 
@@ -93,19 +95,32 @@ const createTenant = async (req, res) => {
         WHERE b.id = $1
       `;
       const bedResult = await req.pool.query(bedQuery, [bedId]);
-      const bedInfo = bedResult.rows[0] 
-        ? `${bedResult.rows[0].building_name} - Room ${bedResult.rows[0].room_number}`
-        : 'Bed assigned';
+      if (bedResult.rows[0]) {
+        bedInfo = `${bedResult.rows[0].building_name} - Room ${bedResult.rows[0].room_number}`;
+      }
       emailSent = await sendTenantCredentials(email, name, password, bedInfo, req.orgName);
     } catch (emailErr) {
       console.error('❌ Email error:', emailErr.message);
     }
 
+    const whatsappWelcome = phone
+      ? whatsapp.buildWelcome({
+          phone,
+          tenantName: name,
+          tenantEmail: email,
+          password,
+          bedInfo,
+          orgName: req.orgName,
+        })
+      : null;
+
     res.status(201).json({ 
       message: 'Tenant created successfully',
-      tenant: { id: tenant.id, name, email, bedId, startDate, endDate, rent },
+      tenant: { id: tenant.id, name, email, bedId, startDate, endDate, rent, phone },
       credentials: { email, password },
-      emailSent
+      bedInfo,
+      emailSent,
+      whatsappUrl: whatsappWelcome ? whatsappWelcome.whatsappUrl : null,
     });
     await logRequestAudit(req, {
       action: 'TENANT_CREATED',
@@ -707,12 +722,24 @@ const sendPaymentReminderEmail = async (req, res) => {
       if (!tenant.phone) {
         return res.status(400).json({ message: 'Tenant does not have a phone number. Please add one first.' });
       }
-      // Strip non-digits, ensure country code
-      let phone = tenant.phone.replace(/[^0-9]/g, '');
-      if (phone.length === 10) phone = '91' + phone; // Default India country code
-      const message = `Hi ${tenant.name}, this is a friendly reminder that your rent of ₹${tenant.rent} for ${prevMonthName} is pending. Your accommodation: ${bedInfo}. Please make the payment at your earliest convenience. Thank you!`;
-      const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-      return res.json({ message: 'WhatsApp link generated', whatsappUrl });
+      const built = whatsapp.buildPaymentReminder({
+        phone: tenant.phone,
+        tenantName: tenant.name,
+        rent: tenant.rent,
+        bedInfo,
+        monthName: prevMonthName,
+        orgName: req.orgName,
+      });
+      if (!built.whatsappUrl) {
+        return res.status(400).json({ message: 'Could not build WhatsApp link for this phone number.' });
+      }
+      await logRequestAudit(req, {
+        action: 'PAYMENT_REMINDER_WHATSAPP_PREPARED',
+        entityType: 'tenant',
+        entityId: Number(tenantId),
+        details: { phone: tenant.phone, month: prevMonthName },
+      });
+      return res.json({ message: 'WhatsApp link generated', whatsappUrl: built.whatsappUrl });
     }
 
     // Default: email - respond immediately, send in background
@@ -749,9 +776,12 @@ const markOfflinePay = async (req, res) => {
     // DB stores 1-based months (1=Jan, 2=Feb, ..., 12=Dec)
     const dbMonth = payMonth + 1;
 
-    // Check for existing payment for this tenant+month+year
+    // Check for an existing rent payment for this tenant+month+year.
+    // (Electricity payments live in the same table but with payment_type='electricity'.)
     const existingPayment = await req.pool.query(
-      `SELECT id FROM payments WHERE tenant_id = $1 AND payment_month = $2 AND payment_year = $3 AND status = 'completed'`,
+      `SELECT id FROM payments
+       WHERE tenant_id = $1 AND payment_month = $2 AND payment_year = $3 AND status = 'completed'
+         AND COALESCE(payment_type, 'rent') = 'rent'`,
       [tenantId, dbMonth, payYear]
     );
     if (existingPayment.rows.length > 0) {
@@ -780,8 +810,8 @@ const markOfflinePay = async (req, res) => {
     const tenantEmail = tenant.email || tenant.user_email;
 
     await req.pool.query(
-      `INSERT INTO payments (tenant_id, tenant_name, email, phone, amount, status, payment_month, payment_year, razorpay_payment_id)
-       VALUES ($1, $2, $3, $4, $5, 'completed', $6, $7, $8)`,
+      `INSERT INTO payments (tenant_id, tenant_name, email, phone, amount, status, payment_month, payment_year, razorpay_payment_id, payment_type)
+       VALUES ($1, $2, $3, $4, $5, 'completed', $6, $7, $8, 'rent')`,
       [tenantId, tenant.name, tenantEmail, tenant.phone || null, tenant.rent, dbMonth, payYear, 'OFFLINE_' + Date.now()]
     );
 
@@ -798,9 +828,23 @@ const markOfflinePay = async (req, res) => {
       console.warn(`⚠️ No email found for tenant ${tenantId}, skipping receipt`);
     }
 
+    // Build a WhatsApp click-to-send URL for the receipt if the tenant has a phone.
+    const whatsappReceipt = tenant.phone
+      ? whatsapp.buildRentReceipt({
+          phone: tenant.phone,
+          tenantName: tenant.name,
+          rent: tenant.rent,
+          bedInfo,
+          monthName,
+          paymentDate: new Date(),
+          orgName: req.orgName,
+        })
+      : null;
+
     res.json({ 
       message: `Offline payment marked for ${monthName}`,
-      emailSent
+      emailSent,
+      whatsappUrl: whatsappReceipt ? whatsappReceipt.whatsappUrl : null,
     });
     await logRequestAudit(req, {
       action: 'OFFLINE_PAYMENT_MARKED',
@@ -1110,13 +1154,20 @@ const getMessengerGroups = async (req, res) => {
   }
 };
 
-// Send message to tenant group via email
+// Send message to tenant group via email/whatsapp
 const sendGroupMessage = async (req, res) => {
   try {
-    const { groupType, groupId, subject, message } = req.body;
-    
-    if (!subject || !message) {
-      return res.status(400).json({ message: 'Subject and message are required' });
+    const { groupType, groupId, subject, message, channel = 'email' } = req.body;
+    const deliveryChannel = String(channel || 'email').toLowerCase();
+
+    if (!message) {
+      return res.status(400).json({ message: 'Message is required' });
+    }
+    if (deliveryChannel === 'email' && !subject) {
+      return res.status(400).json({ message: 'Subject is required for email' });
+    }
+    if (!['email', 'whatsapp'].includes(deliveryChannel)) {
+      return res.status(400).json({ message: 'Invalid channel. Use email or whatsapp.' });
     }
     
     let tenantsQuery;
@@ -1125,42 +1176,41 @@ const sendGroupMessage = async (req, res) => {
     switch (groupType) {
       case 'all':
         tenantsQuery = `
-          SELECT DISTINCT u.name, u.email
+          SELECT DISTINCT u.name, u.email, t.phone
           FROM tenants t
           JOIN users u ON t.user_id = u.id
-          WHERE u.email IS NOT NULL
         `;
         break;
       case 'building':
         tenantsQuery = `
-          SELECT DISTINCT u.name, u.email
+          SELECT DISTINCT u.name, u.email, t.phone
           FROM tenants t
           JOIN users u ON t.user_id = u.id
           JOIN beds b ON t.bed_id = b.id
           JOIN rooms r ON b.room_id = r.id
-          WHERE r.building_id = $1 AND u.email IS NOT NULL
+          WHERE r.building_id = $1
         `;
         queryParams = [groupId];
         break;
       case 'floor':
         const [buildingId, floorNumber] = groupId.split('-');
         tenantsQuery = `
-          SELECT DISTINCT u.name, u.email
+          SELECT DISTINCT u.name, u.email, t.phone
           FROM tenants t
           JOIN users u ON t.user_id = u.id
           JOIN beds b ON t.bed_id = b.id
           JOIN rooms r ON b.room_id = r.id
-          WHERE r.building_id = $1 AND r.floor_number = $2 AND u.email IS NOT NULL
+          WHERE r.building_id = $1 AND r.floor_number = $2
         `;
         queryParams = [buildingId, floorNumber];
         break;
       case 'room':
         tenantsQuery = `
-          SELECT DISTINCT u.name, u.email
+          SELECT DISTINCT u.name, u.email, t.phone
           FROM tenants t
           JOIN users u ON t.user_id = u.id
           JOIN beds b ON t.bed_id = b.id
-          WHERE b.room_id = $1 AND u.email IS NOT NULL
+          WHERE b.room_id = $1
         `;
         queryParams = [groupId];
         break;
@@ -1175,63 +1225,93 @@ const sendGroupMessage = async (req, res) => {
       return res.status(404).json({ message: 'No tenants found in the selected group' });
     }
     
-    // Get org name for email branding
+    // Get org name for branding/message content
     const orgName = req.orgName || 'PG Stay';
-    
-    // Import sendEmail
-    const { sendEmail } = require('../services/emailService');
-    
+
     let successCount = 0;
     let failCount = 0;
-    
-    for (const tenant of tenants) {
-      const htmlContent = `
-        <html>
-          <head>
-            <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; border-radius: 8px; }
-              .header { background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
-              .header h1 { margin: 0; font-size: 24px; }
-              .content { background: white; padding: 30px; border-radius: 0 0 8px 8px; }
-              .message-box { background: #f8f9fa; border-left: 4px solid #ff6b35; padding: 20px; margin: 20px 0; border-radius: 4px; white-space: pre-wrap; }
-              .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <h1>\uD83C\uDFE2 ${orgName}</h1>
-                <p>Communication from Management</p>
+    const whatsappLinks = [];
+
+    if (deliveryChannel === 'email') {
+      // Import sendEmail only for email flow.
+      const { sendEmail } = require('../services/emailService');
+
+      for (const tenant of tenants) {
+        if (!tenant.email) {
+          failCount++;
+          continue;
+        }
+        const htmlContent = `
+          <html>
+            <head>
+              <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; border-radius: 8px; }
+                .header { background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+                .header h1 { margin: 0; font-size: 24px; }
+                .content { background: white; padding: 30px; border-radius: 0 0 8px 8px; }
+                .message-box { background: #f8f9fa; border-left: 4px solid #ff6b35; padding: 20px; margin: 20px 0; border-radius: 4px; white-space: pre-wrap; }
+                .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>\uD83C\uDFE2 ${orgName}</h1>
+                  <p>Communication from Management</p>
+                </div>
+                <div class="content">
+                  <p>Dear <strong>${tenant.name}</strong>,</p>
+                  <div class="message-box">${message.replace(/\n/g, '<br/>')}</div>
+                  <p style="margin-top: 20px; color: #666; font-size: 14px;">If you have any questions, please contact the management.</p>
+                </div>
+                <div class="footer">
+                  <p>This message was sent by ${orgName} management.</p>
+                </div>
               </div>
-              <div class="content">
-                <p>Dear <strong>${tenant.name}</strong>,</p>
-                <div class="message-box">${message.replace(/\n/g, '<br/>')}</div>
-                <p style="margin-top: 20px; color: #666; font-size: 14px;">If you have any questions, please contact the management.</p>
-              </div>
-              <div class="footer">
-                <p>This message was sent by ${orgName} management.</p>
-              </div>
-            </div>
-          </body>
-        </html>
-      `;
-      
-      const sent = await sendEmail(tenant.email, subject, htmlContent);
-      if (sent) successCount++;
-      else failCount++;
+            </body>
+          </html>
+        `;
+        const sent = await sendEmail(tenant.email, subject, htmlContent);
+        if (sent) successCount++;
+        else failCount++;
+      }
+    } else {
+      // WhatsApp link generation flow (click-to-send; no API send).
+      const messageText = subject
+        ? `*${subject}*\n\n${message}\n\n— ${orgName}`
+        : `${message}\n\n— ${orgName}`;
+
+      for (const tenant of tenants) {
+        const builtUrl = whatsapp.buildUrl(tenant.phone, messageText);
+        if (builtUrl) {
+          successCount++;
+          whatsappLinks.push({
+            tenantName: tenant.name,
+            phone: tenant.phone,
+            whatsappUrl: builtUrl,
+          });
+        } else {
+          failCount++;
+        }
+      }
     }
     
     res.json({
-      message: `Message sent to ${successCount} tenant(s)${failCount > 0 ? `, ${failCount} failed` : ''}`,
+      message:
+        deliveryChannel === 'whatsapp'
+          ? `WhatsApp links generated for ${successCount} tenant(s)${failCount > 0 ? `, ${failCount} missing phone` : ''}`
+          : `Message sent to ${successCount} tenant(s)${failCount > 0 ? `, ${failCount} failed` : ''}`,
+      channel: deliveryChannel,
       successCount,
       failCount,
-      totalTenants: tenants.length
+      totalTenants: tenants.length,
+      whatsappLinks,
     });
     await logRequestAudit(req, {
-      action: 'GROUP_MESSAGE_SENT',
+      action: deliveryChannel === 'whatsapp' ? 'GROUP_WHATSAPP_PREPARED' : 'GROUP_MESSAGE_SENT',
       entityType: 'message',
-      details: { groupType, groupId, subject, successCount, failCount, totalTenants: tenants.length },
+      details: { groupType, groupId, subject, channel: deliveryChannel, successCount, failCount, totalTenants: tenants.length },
     });
   } catch (error) {
     console.error('Error sending group message:', error);
@@ -1278,4 +1358,58 @@ const sendPasswordReset = async (req, res) => {
   }
 };
 
-module.exports = { getTenants, createTenant, updateTenant, deleteTenant, processCheckouts, getOccupancy, getAvailableBeds, getFloorLayout, getFloorLayoutWithBeds, getBuildings, createBuilding, updateBuilding, deleteBuilding, getRooms, createRoom, updateRoom, deleteRoom, getBeds, createBed, updateBed, deleteBed, getPaymentInfo, sendPaymentReminderEmail, markOfflinePay, searchTenants, getTenantPaymentHistory, deactivateUser, getMessengerGroups, sendGroupMessage, lookupTenantByEmail, sendPasswordReset };
+// Build a click-to-send WhatsApp URL for the "stay ending soon" notice.
+// Mirrors the wording of the email reminder triggered by the daily cron.
+const sendStayExtensionWhatsapp = async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    const query = `
+      SELECT t.id, t.email, t.end_date, t.phone, u.name,
+             b.bed_identifier, r.room_number, bl.name as building_name
+      FROM tenants t
+      JOIN users u ON t.user_id = u.id
+      JOIN beds b ON t.bed_id = b.id
+      JOIN rooms r ON b.room_id = r.id
+      JOIN buildings bl ON r.building_id = bl.id
+      WHERE t.id = $1
+    `;
+    const result = await req.pool.query(query, [tenantId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Tenant not found' });
+    }
+    const tenant = result.rows[0];
+    if (!tenant.phone) {
+      return res.status(400).json({ message: 'Tenant does not have a phone number. Please add one first.' });
+    }
+    if (!tenant.end_date) {
+      return res.status(400).json({ message: 'Tenant has no end date set.' });
+    }
+
+    const bedInfo = `${tenant.building_name} - Room ${tenant.room_number} - Bed ${tenant.bed_identifier || ''}`.trim();
+    const built = whatsapp.buildStayExtension({
+      phone: tenant.phone,
+      tenantName: tenant.name,
+      bedInfo,
+      endDate: tenant.end_date,
+      orgName: req.orgName,
+    });
+
+    if (!built.whatsappUrl) {
+      return res.status(400).json({ message: 'Could not build WhatsApp link for this phone number.' });
+    }
+
+    await logRequestAudit(req, {
+      action: 'STAY_EXTENSION_WHATSAPP_PREPARED',
+      entityType: 'tenant',
+      entityId: Number(tenantId),
+      details: { phone: tenant.phone, endDate: tenant.end_date },
+    });
+
+    res.json({ message: 'WhatsApp link generated', whatsappUrl: built.whatsappUrl });
+  } catch (error) {
+    console.error('Error preparing stay-extension WhatsApp:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getTenants, createTenant, updateTenant, deleteTenant, processCheckouts, getOccupancy, getAvailableBeds, getFloorLayout, getFloorLayoutWithBeds, getBuildings, createBuilding, updateBuilding, deleteBuilding, getRooms, createRoom, updateRoom, deleteRoom, getBeds, createBed, updateBed, deleteBed, getPaymentInfo, sendPaymentReminderEmail, markOfflinePay, searchTenants, getTenantPaymentHistory, deactivateUser, getMessengerGroups, sendGroupMessage, lookupTenantByEmail, sendPasswordReset, sendStayExtensionWhatsapp };

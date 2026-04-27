@@ -66,6 +66,18 @@ const TenantCredentialsModal = ({ credentials, onClose }) => {
           </p>
         )}
 
+        {credentials.whatsappUrl && (
+          <a
+            href={credentials.whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 rounded font-semibold text-sm transition mb-2"
+          >
+            <span aria-hidden>💬</span>
+            Send credentials on WhatsApp
+          </a>
+        )}
+
         {/* Buttons */}
         <div className="flex gap-2">
           <button onClick={onClose} className="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded font-semibold text-sm transition">

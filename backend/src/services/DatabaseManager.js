@@ -354,6 +354,60 @@ class DatabaseManager {
         ip_address VARCHAR(50),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS electricity_readings (
+        id SERIAL PRIMARY KEY,
+        room_id INTEGER REFERENCES rooms(id) ON DELETE CASCADE,
+        previous_reading DECIMAL(12,2) NOT NULL,
+        current_reading DECIMAL(12,2) NOT NULL,
+        units_consumed DECIMAL(12,2) NOT NULL,
+        rate_per_unit DECIMAL(10,2) NOT NULL,
+        total_amount DECIMAL(12,2) NOT NULL,
+        sharing_count INTEGER NOT NULL,
+        per_person_amount DECIMAL(12,2) NOT NULL,
+        billing_month INTEGER NOT NULL,
+        billing_year INTEGER NOT NULL,
+        billed BOOLEAN DEFAULT FALSE,
+        billed_at TIMESTAMP,
+        recorded_by INTEGER,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(room_id, billing_month, billing_year)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_electricity_room
+        ON electricity_readings(room_id, billing_year, billing_month);
+    `);
+
+    // Migrate payments table to also support electricity bills.
+    // Adds payment_type ('rent' | 'electricity') and reading_id linkage,
+    // and replaces the (tenant_id, month, year) unique with a type-aware one.
+    await pool.query(`
+      DO $$ BEGIN
+        ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_type VARCHAR(20) DEFAULT 'rent';
+      EXCEPTION WHEN duplicate_column THEN NULL;
+      END $$;
+    `);
+    await pool.query(`
+      DO $$ BEGIN
+        ALTER TABLE payments ADD COLUMN IF NOT EXISTS reading_id INTEGER;
+      EXCEPTION WHEN duplicate_column THEN NULL;
+      END $$;
+    `);
+    await pool.query(`
+      DO $$ BEGIN
+        ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_tenant_id_payment_month_payment_year_key;
+      EXCEPTION WHEN undefined_object THEN NULL;
+      END $$;
+    `);
+    await pool.query(`
+      DO $$ BEGIN
+        ALTER TABLE payments
+          ADD CONSTRAINT payments_tenant_month_year_type_unique
+          UNIQUE (tenant_id, payment_month, payment_year, payment_type);
+      EXCEPTION WHEN duplicate_object THEN NULL;
+            WHEN duplicate_table THEN NULL;
+      END $$;
     `);
   }
 

@@ -16,8 +16,8 @@ const normalizeOnboardingAdmins = (source) => {
     },
   ].map((admin) => ({
     ...admin,
-    name: admin.name.trim(),
-    email: admin.email.trim().toLowerCase(),
+    name: (admin.name || '').trim(),
+    email: (admin.email || '').trim().toLowerCase(),
     password: admin.password,
   }));
 

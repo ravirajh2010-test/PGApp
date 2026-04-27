@@ -8,8 +8,9 @@ const {
   getPaymentInfo, sendPaymentReminderEmail, markOfflinePay,
   searchTenants, getTenantPaymentHistory, deactivateUser,
   getMessengerGroups, sendGroupMessage, lookupTenantByEmail,
-  sendPasswordReset
+  sendPasswordReset, sendStayExtensionWhatsapp
 } = require('../controllers/adminController');
+const energyController = require('../controllers/energyController');
 const { checkTenantsDatabaseConsistency } = require('../controllers/debugController');
 const { authenticateToken, authorizeRole } = require('../middleware/auth');
 const { tenantIsolation, checkPlanLimits } = require('../middleware/tenantIsolation');
@@ -63,9 +64,18 @@ router.get('/tenant-payment-history/:tenantId', getTenantPaymentHistory);
 router.post('/deactivate-user/:userId', deactivateUser);
 router.post('/send-password-reset/:userId', sendPasswordReset);
 
+// WhatsApp helpers (admin clicks the returned wa.me link)
+router.post('/stay-extension-whatsapp/:tenantId', sendStayExtensionWhatsapp);
+
 // Messenger routes
 router.get('/messenger/groups', getMessengerGroups);
 router.post('/messenger/send', sendGroupMessage);
+
+// Energy / electricity routes
+router.get('/energy/rooms', energyController.getRoomsForEnergy);
+router.get('/energy/readings/:roomId', energyController.getRoomReadings);
+router.post('/energy/readings', energyController.saveReading);
+router.post('/energy/bill-tenants/:readingId', energyController.billTenants);
 
 // Debug/Verification routes
 router.get('/debug/tenants-consistency', checkTenantsDatabaseConsistency);

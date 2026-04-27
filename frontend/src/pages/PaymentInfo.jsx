@@ -84,7 +84,13 @@ const PaymentInfo = () => {
       });
       const msg = res.data.message || 'Marked as paid!';
       const emailInfo = res.data.emailSent ? '\n📧 Receipt email sent!' : '\n⚠️ Receipt email could not be sent.';
-      alert(msg + emailInfo);
+      const whatsappUrl = res.data.whatsappUrl;
+
+      if (whatsappUrl && window.confirm(`${msg}${emailInfo}\n\nAlso send the receipt to ${tenantName} on WhatsApp?`)) {
+        window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        alert(msg + emailInfo);
+      }
       await fetchPaymentInfo(selectedMonth, selectedYear);
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to mark payment');

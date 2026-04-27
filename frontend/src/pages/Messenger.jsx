@@ -63,6 +63,7 @@ const Messenger = () => {
   const [groups, setGroups] = useState({ buildings: [], rooms: [], floors: [] });
   const [groupType, setGroupType] = useState('all');
   const [groupId, setGroupId] = useState('');
+  const [channel, setChannel] = useState('email');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -97,7 +98,11 @@ const Messenger = () => {
   };
 
   const handleSend = async () => {
-    if (!subject.trim() || !message.trim()) {
+    if (!message.trim()) {
+      setError(intl.formatMessage({ id: 'messenger.fillMessageRequired', defaultMessage: 'Please enter a message' }));
+      return;
+    }
+    if (channel === 'email' && !subject.trim()) {
       setError(intl.formatMessage({ id: 'messenger.fillRequired', defaultMessage: 'Please fill in both subject and message' }));
       return;
     }
@@ -114,10 +119,18 @@ const Messenger = () => {
       const res = await api.post('/admin/messenger/send', {
         groupType,
         groupId: groupType === 'all' ? null : groupId,
+        channel,
         subject: subject.trim(),
         message: message.trim()
       });
       setResult(res.data);
+      if (channel === 'whatsapp' && Array.isArray(res.data?.whatsappLinks) && res.data.whatsappLinks.length > 0) {
+        res.data.whatsappLinks.forEach((entry) => {
+          if (entry.whatsappUrl) {
+            window.open(entry.whatsappUrl, '_blank', 'noopener,noreferrer');
+          }
+        });
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send message');
     } finally {
@@ -128,6 +141,7 @@ const Messenger = () => {
   const handleCancel = () => {
     setSubject('');
     setMessage('');
+    setChannel('email');
     setGroupType('all');
     setGroupId('');
     setSelectedBuilding('');
@@ -313,13 +327,56 @@ const Messenger = () => {
           </div>
         )}
 
+        {/* Delivery channel */}
+        <div className="mb-4">
+          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+            <FormattedMessage id="messenger.channel" defaultMessage="Delivery Channel" />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setChannel('email')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                channel === 'email'
+                  ? 'bg-brand-500 text-white shadow-md'
+                  : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+              }`}
+            >
+              <FormattedMessage id="messenger.channelEmail" defaultMessage="Email" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setChannel('whatsapp')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                channel === 'whatsapp'
+                  ? 'bg-emerald-500 text-white shadow-md'
+                  : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+              }`}
+            >
+              <FormattedMessage id="messenger.channelWhatsapp" defaultMessage="WhatsApp" />
+            </button>
+          </div>
+          {channel === 'whatsapp' && (
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              <FormattedMessage
+                id="messenger.whatsappHint"
+                defaultMessage="WhatsApp links will open for tenants with valid phone numbers. Messages are not auto-sent by server."
+              />
+            </p>
+          )}
+        </div>
+
         {/* Subject */}
         <div className="mb-4">
           <Input
             label={intl.formatMessage({ id: 'messenger.subject', defaultMessage: 'Subject' })}
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            placeholder={intl.formatMessage({ id: 'messenger.subjectPlaceholder', defaultMessage: 'Enter email subject...' })}
+            placeholder={
+              channel === 'whatsapp'
+                ? intl.formatMessage({ id: 'messenger.subjectOptionalPlaceholder', defaultMessage: 'Optional title for WhatsApp message...' })
+                : intl.formatMessage({ id: 'messenger.subjectPlaceholder', defaultMessage: 'Enter email subject...' })
+            }
           />
         </div>
 

@@ -21,7 +21,7 @@ const OrgSettings = () => {
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('general');
-  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', address: '' });
+  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', address: '', default_electricity_rate: '8' });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [toast, setToast] = useState(null);
@@ -61,6 +61,10 @@ const OrgSettings = () => {
         email: orgRes.data.email || '',
         phone: orgRes.data.phone || '',
         address: orgRes.data.address || '',
+        default_electricity_rate:
+          orgRes.data.default_electricity_rate !== undefined && orgRes.data.default_electricity_rate !== null
+            ? String(orgRes.data.default_electricity_rate)
+            : '8',
       });
     } catch (error) {
       console.error('Error fetching org data:', error);
@@ -274,6 +278,25 @@ const OrgSettings = () => {
               value={editForm.address}
               onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
             />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label={<FormattedMessage id="orgSettings.defaultElectricityRate" defaultMessage="Default Electricity Rate (per unit)" />}
+                type="number"
+                step="0.01"
+                min="0"
+                value={editForm.default_electricity_rate ?? ''}
+                onChange={(e) => setEditForm({ ...editForm, default_electricity_rate: e.target.value })}
+                placeholder="8.00"
+              />
+              <p className="text-xs text-slate-500 dark:text-slate-400 self-end pb-2">
+                <FormattedMessage
+                  id="orgSettings.defaultElectricityRateHelp"
+                  defaultMessage="Used in the Energy Calc tab when no rate is entered."
+                />
+              </p>
+            </div>
+
             <Button type="submit" variant="primary" loading={saving}>
               <FormattedMessage id="orgSettings.saveChanges" defaultMessage="Save Changes" />
             </Button>

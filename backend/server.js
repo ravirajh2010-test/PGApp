@@ -112,6 +112,7 @@ const initDatabase = async () => {
       DO $$ BEGIN
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS organization_code VARCHAR(20);
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS database_name VARCHAR(255);
+        ALTER TABLE organizations ADD COLUMN IF NOT EXISTS default_electricity_rate DECIMAL(10,2) DEFAULT 8.00;
       EXCEPTION WHEN duplicate_column THEN NULL;
       END $$;
     `);
@@ -202,6 +203,11 @@ const initDatabase = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // Legacy org-linked rows may live in master users; onboarding validation queries org_id.
+    await pool.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS org_id INTEGER REFERENCES organizations(id) ON DELETE SET NULL
+    `).catch((e) => console.warn('[DB] users.org_id migration:', e.message));
 
     // User-org mapping table (for cross-org login resolution)
     await pool.query(`

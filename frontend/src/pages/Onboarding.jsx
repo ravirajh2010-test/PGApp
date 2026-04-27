@@ -114,7 +114,7 @@ const Onboarding = () => {
     }
   };
 
-  const selectedPlan = plans.find((plan) => plan.id === form.plan);
+  const selectedPlan = plans.find((plan) => plan.id === form.plan) || plans[0];
   const stepLabels = [
     { id: 1, title: 'Choose a plan', icon: SparklesIcon },
     { id: 2, title: 'Business details', icon: BuildingOffice2Icon },

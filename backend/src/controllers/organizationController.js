@@ -23,15 +23,23 @@ const getMyOrganization = async (req, res) => {
 
 const updateMyOrganization = async (req, res) => {
   try {
-    const { name, email, phone, address } = req.body;
-    const org = await Organization.update(req.orgId, { name, email, phone, address });
+    const { name, email, phone, address, default_electricity_rate } = req.body;
+    const updates = { name, email, phone, address };
+    if (default_electricity_rate !== undefined && default_electricity_rate !== null && default_electricity_rate !== '') {
+      const parsedRate = Number(default_electricity_rate);
+      if (Number.isNaN(parsedRate) || parsedRate < 0) {
+        return res.status(400).json({ message: 'Default electricity rate must be a non-negative number.' });
+      }
+      updates.default_electricity_rate = parsedRate;
+    }
+    const org = await Organization.update(req.orgId, updates);
     await AuditLog.create(
       req.pool,
       req.user.id,
       'ORGANIZATION_UPDATED',
       'organization',
       req.orgId,
-      { name, email, phone, address },
+      updates,
       getRequestIp(req)
     );
     res.json(org);

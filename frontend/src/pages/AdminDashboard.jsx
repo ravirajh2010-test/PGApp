@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormattedMessage } from 'react-intl';
-import { PlusIcon, ArrowPathIcon, Cog6ToothIcon, ChatBubbleLeftRightIcon, UsersIcon, BuildingOffice2Icon, HomeIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, ArrowPathIcon, Cog6ToothIcon, ChatBubbleLeftRightIcon, UsersIcon, BuildingOffice2Icon, HomeIcon, XMarkIcon, CheckIcon, BoltIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import FloorOccupancyVisual from '../components/FloorOccupancyVisual';
 import TenantCredentialsModal from '../components/TenantCredentialsModal';
+import EnergyCalcSection from '../components/EnergyCalcSection';
 import { useCurrency } from '../context/LanguageContext';
 import { Button, Card, Badge, Spinner, Input, DonutChart } from '../components/ui';
 
@@ -238,6 +239,7 @@ const AdminDashboard = () => {
       });
 
       const emailSent = response.data?.emailSent;
+      const whatsappUrl = response.data?.whatsappUrl || null;
 
       // Clear form and hide it
       setFormData({
@@ -257,7 +259,8 @@ const AdminDashboard = () => {
       // Show modal immediately
       setCreatedCredentials({
         ...savedCredentials,
-        emailSent
+        emailSent,
+        whatsappUrl,
       });
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.message || 'Error creating tenant';
@@ -288,6 +291,23 @@ const AdminDashboard = () => {
       } catch (error) {
         alert('Error deleting tenant');
       }
+    }
+  };
+
+  const handleStayExtensionWhatsapp = async (tenant) => {
+    try {
+      if (!tenant?.phone) {
+        alert(`${tenant?.name || 'This tenant'} does not have a phone number on file.`);
+        return;
+      }
+      const res = await api.post(`/admin/stay-extension-whatsapp/${tenant.id}`);
+      if (res.data?.whatsappUrl) {
+        window.open(res.data.whatsappUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        alert(res.data?.message || 'Could not generate WhatsApp link.');
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to generate WhatsApp link');
     }
   };
 
@@ -431,11 +451,12 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { id: 'tenants', label: 'Tenants', icon: UsersIcon },
           { id: 'layout', label: 'Layout', icon: HomeIcon },
           { id: 'inventory', label: 'Inventory', icon: BuildingOffice2Icon },
+          { id: 'energy', label: 'Energy Calc', icon: BoltIcon },
         ].map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -681,16 +702,35 @@ const AdminDashboard = () => {
                           </Button>
                         </div>
                       ) : (
-                        <span
-                          onClick={() => {
-                            setEditingCheckout(tenant.id);
-                            setEditCheckoutDate(tenant.end_date ? new Date(tenant.end_date).toISOString().split('T')[0] : '');
-                          }}
-                          className="cursor-pointer hover:text-brand-600 underline decoration-dashed text-slate-700 dark:text-slate-300"
-                          title="Click to edit checkout date"
-                        >
-                          {tenant.end_date ? new Date(tenant.end_date).toLocaleDateString() : '—'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span
+                            onClick={() => {
+                              setEditingCheckout(tenant.id);
+                              setEditCheckoutDate(tenant.end_date ? new Date(tenant.end_date).toISOString().split('T')[0] : '');
+                            }}
+                            className="cursor-pointer hover:text-brand-600 underline decoration-dashed text-slate-700 dark:text-slate-300"
+                            title="Click to edit checkout date"
+                          >
+                            {tenant.end_date ? new Date(tenant.end_date).toLocaleDateString() : '—'}
+                          </span>
+                          {(() => {
+                            if (!tenant.end_date) return null;
+                            const ms = new Date(tenant.end_date).getTime() - Date.now();
+                            const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
+                            if (days < 0 || days > 5) return null;
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => handleStayExtensionWhatsapp(tenant)}
+                                className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+                                title={`Send a WhatsApp reminder — ends in ${days} day${days === 1 ? '' : 's'}`}
+                              >
+                                <ChatBubbleLeftRightIcon className="h-3 w-3" />
+                                {days <= 0 ? 'Today' : `${days}d`}
+                              </button>
+                            );
+                          })()}
+                        </div>
                       )}
                     </td>
                     <td className="px-6 py-3 text-center">
@@ -943,6 +983,10 @@ const AdminDashboard = () => {
           )}
         </div>
       </Card>
+      )}
+
+      {activeSection === 'energy' && (
+        <EnergyCalcSection currencySymbol={currencySymbol} />
       )}
     </div>
   );
