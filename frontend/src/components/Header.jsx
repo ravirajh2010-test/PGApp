@@ -1,4 +1,4 @@
-﻿import { Link } from 'react-router-dom';
+﻿import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { FormattedMessage } from 'react-intl';
 import { Bars3Icon, XMarkIcon, SunIcon, MoonIcon } from '@heroicons/react/24/outline';
@@ -6,9 +6,17 @@ import AvailabilityModal from './AvailabilityModal';
 import LanguageSwitcher from './LanguageSwitcher';
 import { clearAuthData, getUser, getOrganization } from '../services/api';
 
+/** Routes where we always show public nav (no welcome / logout), e.g. stale session from localStorage after DB reset */
+const AUTH_FLOW_PATHS = ['/login', '/register', '/onboarding', '/onboarding/success'];
+
 const Header = () => {
+  const location = useLocation();
   const user = getUser();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const org = getOrganization();
+  const hasValidSession = !!(user && token);
+  const hideSessionChrome = AUTH_FLOW_PATHS.includes(location.pathname);
+  const showSessionNav = hasValidSession && !hideSessionChrome;
   const [showAvailability, setShowAvailability] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
@@ -60,7 +68,7 @@ const Header = () => {
               {org ? org.name : <span>Roomi<span className="text-brand-300">Pilot</span></span>}
             </span>
             <span className="hidden truncate text-[10px] uppercase tracking-[0.18em] text-white/55 sm:block">
-              {user ? 'Multi-tenant operations workspace' : 'Property operations platform'}
+              {showSessionNav ? 'Multi-tenant operations workspace' : 'Property operations platform'}
             </span>
           </div>
         </Link>
@@ -68,7 +76,7 @@ const Header = () => {
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-2">
           <nav className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 px-1.5 py-1 shadow-inner">
-            {!user ? (
+            {!showSessionNav ? (
               <>
                 <Link to="/contact" className={navLinkClass}>
                   <FormattedMessage id="header.contactUs" defaultMessage="Contact Us" />
@@ -163,7 +171,7 @@ const Header = () => {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-white/10 bg-slate-950/95 backdrop-blur-sm">
           <nav className="flex flex-col px-4 py-3 space-y-1">
-            {!user ? (
+            {!showSessionNav ? (
               <>
                 <Link to="/contact" className={`${navLinkClass} py-3`} onClick={closeMobileMenu}>
                   <FormattedMessage id="header.contactUs" defaultMessage="Contact Us" />
