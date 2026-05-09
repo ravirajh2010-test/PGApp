@@ -113,6 +113,9 @@ const initDatabase = async () => {
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS organization_code VARCHAR(20);
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS database_name VARCHAR(255);
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS default_electricity_rate DECIMAL(10,2) DEFAULT 8.00;
+        ALTER TABLE organizations ADD COLUMN IF NOT EXISTS rent_payment_mode VARCHAR(32) DEFAULT 'both';
+        ALTER TABLE organizations ADD COLUMN IF NOT EXISTS razorpay_key_id VARCHAR(255);
+        ALTER TABLE organizations ADD COLUMN IF NOT EXISTS razorpay_key_secret VARCHAR(500);
       EXCEPTION WHEN duplicate_column THEN NULL;
       END $$;
     `);

@@ -4,8 +4,8 @@
  */
 class Payment {
   static async create(pool, { tenantId, tenantName, email, phone, amount, status, paymentMonth, paymentYear, razorpayPaymentId }) {
-    const query = `INSERT INTO payments (tenant_id, tenant_name, email, phone, amount, status, payment_month, payment_year, razorpay_payment_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`;
+    const query = `INSERT INTO payments (tenant_id, tenant_name, email, phone, amount, status, payment_month, payment_year, razorpay_payment_id, payment_type)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'rent') RETURNING *`;
     const result = await pool.query(query, [tenantId, tenantName, email, phone, amount, status, paymentMonth, paymentYear, razorpayPaymentId]);
     return result.rows[0];
   }
@@ -22,7 +22,8 @@ class Payment {
 
   static async findExisting(pool, tenantId, month, year) {
     const result = await pool.query(
-      `SELECT id FROM payments WHERE tenant_id = $1 AND payment_month = $2 AND payment_year = $3 AND status = 'completed'`,
+      `SELECT id FROM payments WHERE tenant_id = $1 AND payment_month = $2 AND payment_year = $3 AND status = 'completed'
+       AND COALESCE(payment_type, 'rent') = 'rent'`,
       [tenantId, month, year]
     );
     return result.rows[0] || null;

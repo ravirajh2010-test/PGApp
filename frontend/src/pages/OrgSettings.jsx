@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FormattedMessage } from 'react-intl';
+import { FormattedMessage, useIntl } from 'react-intl';
 import api, { getUser, getOrganization } from '../services/api';
 import Toast from '../components/Toast';
 import ChangePasswordModal from '../components/ChangePasswordModal';
@@ -12,6 +12,7 @@ import Badge from '../components/ui/Badge';
 import Spinner from '../components/ui/Spinner';
 
 const OrgSettings = () => {
+  const intl = useIntl();
   const navigate = useNavigate();
   const user = getUser();
   const { currencySymbol } = useCurrency();
@@ -21,7 +22,17 @@ const OrgSettings = () => {
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('general');
-  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', address: '', default_electricity_rate: '8' });
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    default_electricity_rate: '8',
+    rent_payment_mode: 'both',
+    razorpay_key_id: '',
+    razorpay_key_secret: '',
+    clear_razorpay_credentials: false,
+  });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [toast, setToast] = useState(null);
@@ -65,6 +76,10 @@ const OrgSettings = () => {
           orgRes.data.default_electricity_rate !== undefined && orgRes.data.default_electricity_rate !== null
             ? String(orgRes.data.default_electricity_rate)
             : '8',
+        rent_payment_mode: orgRes.data.rent_payment_mode || 'both',
+        razorpay_key_id: orgRes.data.razorpay_key_id || '',
+        razorpay_key_secret: '',
+        clear_razorpay_credentials: false,
       });
     } catch (error) {
       console.error('Error fetching org data:', error);
@@ -78,13 +93,31 @@ const OrgSettings = () => {
     setSaving(true);
     setMessage('');
     try {
-      await api.put('/organization/me', editForm);
+      const payload = {
+        name: editForm.name,
+        email: editForm.email,
+        phone: editForm.phone,
+        address: editForm.address,
+        default_electricity_rate: editForm.default_electricity_rate,
+        rent_payment_mode: editForm.rent_payment_mode,
+        razorpay_key_id: editForm.razorpay_key_id,
+        clear_razorpay_credentials: editForm.clear_razorpay_credentials,
+      };
+      if (editForm.razorpay_key_secret && editForm.razorpay_key_secret.trim()) {
+        payload.razorpay_key_secret = editForm.razorpay_key_secret.trim();
+      }
+      await api.put('/organization/me', payload);
       setMessage('Organization updated successfully!');
       // Update localStorage
       const storedOrg = getOrganization();
       if (storedOrg) {
         localStorage.setItem('organization', JSON.stringify({ ...storedOrg, name: editForm.name }));
       }
+      setEditForm((prev) => ({
+        ...prev,
+        razorpay_key_secret: '',
+        clear_razorpay_credentials: false,
+      }));
       fetchOrgData();
     } catch (error) {
       setMessage('Error updating organization.');
@@ -295,6 +328,84 @@ const OrgSettings = () => {
                   defaultMessage="Used in the Energy Calc tab when no rate is entered."
                 />
               </p>
+            </div>
+
+            <div className="rounded-2xl border border-violet-200 bg-violet-50/50 p-4 dark:border-violet-500/25 dark:bg-violet-950/20">
+              <h3 className="mb-3 text-lg font-bold text-slate-800 dark:text-slate-100">
+                <FormattedMessage id="orgSettings.rentPaymentsTitle" defaultMessage="Rent payments (Razorpay)" />
+              </h3>
+              <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+                <FormattedMessage
+                  id="orgSettings.rentPaymentsHelp"
+                  defaultMessage="Tenants see online pay only when mode allows it and both Key ID and Secret are set (Test or Live from your Razorpay dashboard). Secret is stored on the server and never shown again after save."
+                />
+              </p>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <FormattedMessage id="orgSettings.rentPaymentMode" defaultMessage="Payment options for tenants" />
+                  </label>
+                  <select
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-800 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                    value={editForm.rent_payment_mode}
+                    onChange={(e) => setEditForm({ ...editForm, rent_payment_mode: e.target.value })}
+                  >
+                    <option value="both">
+                      {intl.formatMessage({ id: 'orgSettings.modeBoth', defaultMessage: 'Online and offline' })}
+                    </option>
+                    <option value="online_only">
+                      {intl.formatMessage({ id: 'orgSettings.modeOnlineOnly', defaultMessage: 'Online only (Razorpay)' })}
+                    </option>
+                    <option value="offline_only">
+                      {intl.formatMessage({ id: 'orgSettings.modeOfflineOnly', defaultMessage: 'Offline only' })}
+                    </option>
+                  </select>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 self-end pb-1 md:col-span-1">
+                  {org?.razorpay_secret_configured ? (
+                    <span className="font-medium text-green-600 dark:text-green-400">
+                      <FormattedMessage id="orgSettings.razorpayConfigured" defaultMessage="Razorpay secret is saved." />
+                    </span>
+                  ) : (
+                    <FormattedMessage id="orgSettings.razorpayNotConfigured" defaultMessage="Add Key ID and Secret to enable online rent." />
+                  )}
+                </p>
+              </div>
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Input
+                  label={<FormattedMessage id="orgSettings.razorpayKeyId" defaultMessage="Razorpay Key ID" />}
+                  type="text"
+                  autoComplete="off"
+                  value={editForm.razorpay_key_id}
+                  onChange={(e) => setEditForm({ ...editForm, razorpay_key_id: e.target.value })}
+                  placeholder="rzp_test_... or rzp_live_..."
+                />
+                <Input
+                  label={<FormattedMessage id="orgSettings.razorpayKeySecret" defaultMessage="Razorpay Key Secret" />}
+                  type="password"
+                  autoComplete="new-password"
+                  value={editForm.razorpay_key_secret}
+                  onChange={(e) => setEditForm({ ...editForm, razorpay_key_secret: e.target.value })}
+                  placeholder=""
+                  helper={
+                    <FormattedMessage
+                      id="orgSettings.razorpaySecretPlaceholder"
+                      defaultMessage="Leave blank to keep the current secret."
+                    />
+                  }
+                />
+              </div>
+              <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                  checked={editForm.clear_razorpay_credentials}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, clear_razorpay_credentials: e.target.checked })
+                  }
+                />
+                <FormattedMessage id="orgSettings.clearRazorpay" defaultMessage="Remove saved Razorpay keys" />
+              </label>
             </div>
 
             <Button type="submit" variant="primary" loading={saving}>

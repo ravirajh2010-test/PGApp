@@ -16,6 +16,9 @@ CREATE TABLE organizations (
   max_properties INTEGER DEFAULT 1,
   max_beds INTEGER DEFAULT 10,
   max_users INTEGER DEFAULT 5,
+  rent_payment_mode VARCHAR(32) DEFAULT 'both' CHECK (rent_payment_mode IN ('offline_only', 'online_only', 'both')),
+  razorpay_key_id VARCHAR(255),
+  razorpay_key_secret VARCHAR(500),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

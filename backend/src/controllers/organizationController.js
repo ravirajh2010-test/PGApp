@@ -10,20 +10,37 @@ const getMyOrganization = async (req, res) => {
   try {
     const org = await Organization.findById(req.orgId);
     if (!org) return res.status(404).json({ message: 'Organization not found' });
-    
+
     const stats = await Organization.getStats(req.orgId);
     const subscription = await Subscription.findByOrgId(req.orgId);
     const limits = await Organization.getPlanLimits(org.plan);
-    
-    res.json({ ...org, stats, subscription, limits });
+
+    res.json({
+      ...Organization.sanitizeForClient(org),
+      stats,
+      subscription,
+      limits,
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
 };
 
+const RENT_PAYMENT_MODES = ['offline_only', 'online_only', 'both'];
+
 const updateMyOrganization = async (req, res) => {
   try {
-    const { name, email, phone, address, default_electricity_rate } = req.body;
+    const {
+      name,
+      email,
+      phone,
+      address,
+      default_electricity_rate,
+      rent_payment_mode,
+      razorpay_key_id,
+      razorpay_key_secret,
+      clear_razorpay_credentials,
+    } = req.body;
     const updates = { name, email, phone, address };
     if (default_electricity_rate !== undefined && default_electricity_rate !== null && default_electricity_rate !== '') {
       const parsedRate = Number(default_electricity_rate);
@@ -32,17 +49,46 @@ const updateMyOrganization = async (req, res) => {
       }
       updates.default_electricity_rate = parsedRate;
     }
+
+    if (rent_payment_mode !== undefined && rent_payment_mode !== null && rent_payment_mode !== '') {
+      if (!RENT_PAYMENT_MODES.includes(rent_payment_mode)) {
+        return res.status(400).json({ message: 'Rent payment mode must be offline_only, online_only, or both.' });
+      }
+      updates.rent_payment_mode = rent_payment_mode;
+    }
+
+    if (clear_razorpay_credentials === true) {
+      updates.razorpay_key_id = null;
+      updates.razorpay_key_secret = null;
+    } else {
+      if (razorpay_key_id !== undefined) {
+        updates.razorpay_key_id =
+          razorpay_key_id === '' || razorpay_key_id === null ? null : String(razorpay_key_id).trim();
+      }
+      if (
+        razorpay_key_secret !== undefined &&
+        razorpay_key_secret !== null &&
+        String(razorpay_key_secret).trim() !== ''
+      ) {
+        updates.razorpay_key_secret = String(razorpay_key_secret).trim();
+      }
+    }
+
     const org = await Organization.update(req.orgId, updates);
+    const auditPayload = { ...updates };
+    if (auditPayload.razorpay_key_secret) {
+      auditPayload.razorpay_key_secret = '[redacted]';
+    }
     await AuditLog.create(
       req.pool,
       req.user.id,
       'ORGANIZATION_UPDATED',
       'organization',
       req.orgId,
-      updates,
+      auditPayload,
       getRequestIp(req)
     );
-    res.json(org);
+    res.json(Organization.sanitizeForClient(org));
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }

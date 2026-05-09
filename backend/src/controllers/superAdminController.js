@@ -14,8 +14,9 @@ const getOrganizations = async (req, res) => {
     // Get stats for each org
     const orgsWithStats = await Promise.all(orgs.map(async (org) => {
       const stats = await Organization.getStats(org.id);
+      const safe = Organization.sanitizeForClient(org);
       return {
-        ...org,
+        ...safe,
         stats,
         building_count: stats.buildings,
         bed_count: stats.totalBeds,
@@ -43,7 +44,7 @@ const getOrganizationById = async (req, res) => {
     const stats = await Organization.getStats(id);
     const subscription = await Subscription.findByOrgId(id);
     
-    res.json({ ...org, stats, subscription });
+    res.json({ ...Organization.sanitizeForClient(org), stats, subscription });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -54,7 +55,7 @@ const updateOrganization = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
     const org = await Organization.update(id, updates);
-    res.json(org);
+    res.json(Organization.sanitizeForClient(org));
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }

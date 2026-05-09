@@ -25,6 +25,16 @@ class Organization {
     return result.rows[0];
   }
 
+  /** Strip Razorpay secret before sending organization JSON to clients. */
+  static sanitizeForClient(org) {
+    if (!org) return null;
+    const { razorpay_key_secret: _secret, ...rest } = org;
+    return {
+      ...rest,
+      razorpay_secret_configured: !!(_secret && String(_secret).trim()),
+    };
+  }
+
   static async findBySlug(slug) {
     const result = await pool.query('SELECT * FROM organizations WHERE slug = $1', [slug]);
     return result.rows[0];

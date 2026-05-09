@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FormattedMessage } from 'react-intl';
+import { FormattedMessage, useIntl } from 'react-intl';
 import { UserIcon, LockClosedIcon, PhoneIcon, CreditCardIcon } from '@heroicons/react/24/outline';
 import api, { getOrganization } from '../services/api';
 import ChangePasswordModal from '../components/ChangePasswordModal';
@@ -10,6 +10,7 @@ import Badge from '../components/ui/Badge';
 import Spinner from '../components/ui/Spinner';
 
 const TenantDashboard = () => {
+  const intl = useIntl();
   const { currencySymbol } = useCurrency();
   const [profile, setProfile] = useState({});
   const [stay, setStay] = useState({});
@@ -20,6 +21,39 @@ const TenantDashboard = () => {
   const [adminContact, setAdminContact] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
   const [organization, setOrganization] = useState(null);
+  const [rentPaymentSettings, setRentPaymentSettings] = useState(null);
+  const [paymentBusy, setPaymentBusy] = useState(false);
+
+  function loadRazorpayScript() {
+    return new Promise((resolve, reject) => {
+      if (typeof window !== 'undefined' && window.Razorpay) {
+        resolve(window.Razorpay);
+        return;
+      }
+      const existing = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(window.Razorpay));
+        existing.addEventListener('error', reject);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(window.Razorpay);
+      script.onerror = reject;
+      document.body.appendChild(script);
+    });
+  }
+
+  const fetchRentPaymentSettings = async () => {
+    try {
+      const res = await api.get('/tenant/rent-payment-settings');
+      setRentPaymentSettings(res.data || null);
+    } catch (error) {
+      console.error('Error fetching rent payment settings');
+      setRentPaymentSettings(null);
+    }
+  };
 
   useEffect(() => {
     // Get user from localStorage
@@ -38,6 +72,7 @@ const TenantDashboard = () => {
     fetchPayments();
     fetchAdminContact();
     fetchAuditLogs();
+    fetchRentPaymentSettings();
   }, []);
 
   const fetchProfile = async () => {
@@ -87,12 +122,66 @@ const TenantDashboard = () => {
     }
   };
 
-  const handlePay = async () => {
+  const handlePayOnline = async () => {
+    if (!rentPaymentSettings?.onlinePaymentAvailable || !rentPaymentSettings?.razorpayKeyId) {
+      alert(intl.formatMessage({ id: 'tenant.onlineNotConfigured', defaultMessage: 'Online payment is not available for your organization.' }));
+      return;
+    }
+    setPaymentBusy(true);
     try {
-      const res = await api.post('/tenant/pay');
-      alert('Payment initiated! Please complete the payment.');
+      const orderRes = await api.post('/tenant/pay');
+      const order = orderRes.data;
+      const keyId = order.key_id || rentPaymentSettings.razorpayKeyId;
+      const RazorpayConstructor = await loadRazorpayScript();
+
+      const options = {
+        key: keyId,
+        amount: order.amount,
+        currency: order.currency || 'INR',
+        order_id: order.id,
+        name: organization?.name || intl.formatMessage({ id: 'tenant.payRent', defaultMessage: 'Pay Rent' }),
+        description: intl.formatMessage({ id: 'tenant.rentPaymentDesc', defaultMessage: 'Monthly rent' }),
+        handler: async (response) => {
+          try {
+            await api.post('/tenant/verify-payment', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            await fetchPayments();
+            await fetchRentPaymentSettings();
+            alert(intl.formatMessage({ id: 'tenant.paymentSuccess', defaultMessage: 'Payment recorded successfully.' }));
+          } catch (err) {
+            console.error(err);
+            alert(
+              err.response?.data?.message ||
+                intl.formatMessage({ id: 'tenant.paymentVerifyFailed', defaultMessage: 'Payment succeeded but verification failed. Contact your admin with your payment ID.' })
+            );
+          } finally {
+            setPaymentBusy(false);
+          }
+        },
+        prefill: {
+          email: profile.email || undefined,
+          contact: stay.phone || undefined,
+        },
+        modal: {
+          ondismiss: () => {
+            setPaymentBusy(false);
+          },
+        },
+      };
+
+      const rzp = new RazorpayConstructor(options);
+      rzp.on('payment.failed', () => {
+        setPaymentBusy(false);
+      });
+      rzp.open();
+      setPaymentBusy(false);
     } catch (error) {
-      alert('Error initiating payment');
+      console.error(error);
+      alert(error.response?.data?.message || intl.formatMessage({ id: 'tenant.paymentInitFailed', defaultMessage: 'Could not start payment. Try again or pay offline.' }));
+      setPaymentBusy(false);
     }
   };
 
@@ -195,11 +284,62 @@ const TenantDashboard = () => {
 
       {/* Payments Section */}
       <Card accent="purple">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100"><FormattedMessage id="tenant.paymentHistory" defaultMessage="Payment History" /></h2>
-          <Button variant="primary" onClick={handlePay} iconLeft={<CreditCardIcon />}>
-            <FormattedMessage id="tenant.payRent" defaultMessage="Pay Rent" />
-          </Button>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-4">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100">
+              <FormattedMessage id="tenant.paymentHistory" defaultMessage="Payment History" />
+            </h2>
+            {rentPaymentSettings && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {rentPaymentSettings.offlinePaymentAvailable && (
+                  <Badge variant="info">
+                    <FormattedMessage id="tenant.offlineOptionOn" defaultMessage="Offline payment allowed" />
+                  </Badge>
+                )}
+                {rentPaymentSettings.onlinePaymentAvailable && (
+                  <Badge variant="success">
+                    <FormattedMessage id="tenant.onlineOptionOn" defaultMessage="Razorpay enabled" />
+                  </Badge>
+                )}
+                {!rentPaymentSettings.onlinePaymentAvailable &&
+                  (rentPaymentSettings.rentPaymentMode === 'online_only' ||
+                    rentPaymentSettings.rentPaymentMode === 'both') && (
+                  <Badge variant="warning">
+                    <FormattedMessage id="tenant.onlinePendingAdmin" defaultMessage="Online pay pending admin setup" />
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col gap-2 sm:items-end">
+            {rentPaymentSettings?.onlinePaymentAvailable && (
+              <Button
+                variant="primary"
+                onClick={handlePayOnline}
+                loading={paymentBusy}
+                disabled={paymentBusy}
+                iconLeft={<CreditCardIcon />}
+              >
+                <FormattedMessage id="tenant.payOnlineRazorpay" defaultMessage="Pay with Razorpay" />
+              </Button>
+            )}
+            {rentPaymentSettings?.offlinePaymentAvailable && (
+              <p className="max-w-md text-right text-sm text-slate-600 dark:text-slate-400">
+                <FormattedMessage
+                  id="tenant.payOfflineHint"
+                  defaultMessage="You can also pay cash or transfer offline — contact your manager below for UPI or bank details."
+                />
+              </p>
+            )}
+            {rentPaymentSettings?.rentPaymentMode === 'offline_only' && (
+              <p className="max-w-md text-right text-sm text-slate-600 dark:text-slate-400">
+                <FormattedMessage
+                  id="tenant.offlineOnlyMessage"
+                  defaultMessage="This PG collects rent offline only. Please contact your manager to pay."
+                />
+              </p>
+            )}
+          </div>
         </div>
         <div className="overflow-x-auto">
           {payments.length > 0 ? (

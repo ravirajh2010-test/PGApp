@@ -1,15 +1,51 @@
+const crypto = require('crypto');
 const Tenant = require('../models/Tenant');
 const Payment = require('../models/Payment');
 const Organization = require('../models/Organization');
 const Razorpay = require('razorpay');
 const { logRequestAudit } = require('../services/auditService');
 
-let razorpay = null;
-if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
-  razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
+const RENT_MODES = ['offline_only', 'online_only', 'both'];
+
+function getOrgRazorpayCredentials(org) {
+  const keyId = (org.razorpay_key_id && String(org.razorpay_key_id).trim()) || process.env.RAZORPAY_KEY_ID;
+  const keySecret =
+    (org.razorpay_key_secret && String(org.razorpay_key_secret).trim()) || process.env.RAZORPAY_KEY_SECRET;
+  return { keyId, keySecret };
+}
+
+function createRazorpayInstance(org) {
+  const { keyId, keySecret } = getOrgRazorpayCredentials(org);
+  if (!keyId || !keySecret) return null;
+  return new Razorpay({
+    key_id: keyId,
+    key_secret: keySecret,
   });
+}
+
+function rentPaymentMode(org) {
+  const mode = org.rent_payment_mode || 'both';
+  return RENT_MODES.includes(mode) ? mode : 'both';
+}
+
+/** Online rent payment allowed by org policy + credentials present */
+function rentOnlineConfigured(org) {
+  const mode = rentPaymentMode(org);
+  if (mode === 'offline_only') return false;
+  const { keyId, keySecret } = getOrgRazorpayCredentials(org);
+  return !!(keyId && keySecret);
+}
+
+function rentOfflineShown(org) {
+  const mode = rentPaymentMode(org);
+  if (mode === 'online_only') return false;
+  return true;
+}
+
+function verifyRazorpaySignature(orderId, paymentId, signature, keySecret) {
+  const body = `${orderId}|${paymentId}`;
+  const expected = crypto.createHmac('sha256', keySecret).update(body).digest('hex');
+  return expected === signature;
 }
 
 const getProfile = async (req, res) => {
@@ -41,38 +77,124 @@ const getPayments = async (req, res) => {
   }
 };
 
+/**
+ * What tenants see for rent: mode + whether online checkout can open (org keys + policy).
+ */
+const getRentPaymentSettings = async (req, res) => {
+  try {
+    const org = await Organization.findById(req.orgId);
+    if (!org) return res.status(404).json({ message: 'Organization not found' });
+
+    const mode = rentPaymentMode(org);
+    const onlineConfigured = rentOnlineConfigured(org);
+    const offlineShown = rentOfflineShown(org);
+
+    let onlinePaymentAvailable = false;
+    if (mode === 'online_only' || mode === 'both') {
+      onlinePaymentAvailable = onlineConfigured;
+    }
+
+    let offlinePaymentAvailable = false;
+    if (mode === 'offline_only' || mode === 'both') {
+      offlinePaymentAvailable = offlineShown;
+    }
+
+    const { keyId } = getOrgRazorpayCredentials(org);
+
+    res.json({
+      rentPaymentMode: mode,
+      onlinePaymentAvailable,
+      offlinePaymentAvailable,
+      razorpayKeyId: onlinePaymentAvailable ? keyId : null,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 const createPaymentOrder = async (req, res) => {
   try {
-    if (!razorpay) return res.status(503).json({ message: 'Payment gateway not configured for this plan' });
+    const org = await Organization.findById(req.orgId);
+    if (!org) return res.status(404).json({ message: 'Organization not found' });
+
+    if (!rentOnlineConfigured(org)) {
+      return res.status(503).json({
+        message:
+          'Online rent payment is not available. Your organization may require offline payment only, or Razorpay is not configured yet.',
+      });
+    }
+
+    const rp = createRazorpayInstance(org);
+    if (!rp) {
+      return res.status(503).json({ message: 'Payment gateway credentials are not configured.' });
+    }
+
     const tenant = await Tenant.findByUserId(req.pool, req.user.id);
-    const amount = tenant.rent * 100;
+    if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
+
+    const amountPaise = Math.round(Number(tenant.rent) * 100);
+    if (!Number.isFinite(amountPaise) || amountPaise <= 0) {
+      return res.status(400).json({ message: 'Invalid rent amount.' });
+    }
+
     const options = {
-      amount,
+      amount: amountPaise,
       currency: 'INR',
-      receipt: `receipt_${tenant.id}`,
+      receipt: `rent_${tenant.id}_${Date.now()}`,
     };
-    const order = await razorpay.orders.create(options);
-    res.json(order);
+
+    const order = await rp.orders.create(options);
+    const { keyId } = getOrgRazorpayCredentials(org);
+
+    res.json({
+      ...order,
+      key_id: keyId,
+    });
   } catch (error) {
+    console.error('[tenant/pay]', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
 const verifyPayment = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {};
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({ message: 'Missing payment verification fields.' });
+    }
+
+    const org = await Organization.findById(req.orgId);
+    if (!org) return res.status(404).json({ message: 'Organization not found' });
+
+    const { keySecret } = getOrgRazorpayCredentials(org);
+    if (!keySecret) {
+      return res.status(503).json({ message: 'Payment gateway not configured.' });
+    }
+
+    if (!verifyRazorpaySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature, keySecret)) {
+      return res.status(400).json({ message: 'Invalid payment signature.' });
+    }
+
     const tenant = await Tenant.findByUserId(req.pool, req.user.id);
+    if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
+
     const user = await require('../models/User').findById(req.pool, req.user.id);
-    
-    // Payment is for the previous month by default
+
     const now = new Date();
     let payMonth = now.getMonth() - 1;
     let payYear = now.getFullYear();
-    if (payMonth < 0) { payMonth = 11; payYear -= 1; }
-    
-    // DB stores 1-based months (1=Jan, 2=Feb, ..., 12=Dec)
+    if (payMonth < 0) {
+      payMonth = 11;
+      payYear -= 1;
+    }
+
     const dbMonth = payMonth + 1;
-    
+
+    const existing = await Payment.findExisting(req.pool, tenant.id, dbMonth, payYear);
+    if (existing) {
+      return res.status(409).json({ message: 'Rent for this period is already recorded.' });
+    }
+
     const payment = await Payment.create(req.pool, {
       tenantId: tenant.id,
       tenantName: user.name,
@@ -82,8 +204,9 @@ const verifyPayment = async (req, res) => {
       status: 'completed',
       paymentMonth: dbMonth,
       paymentYear: payYear,
-      razorpayPaymentId: razorpay_payment_id
+      razorpayPaymentId: razorpay_payment_id,
     });
+
     await logRequestAudit(req, {
       action: 'PAYMENT_COMPLETED',
       entityType: 'payment',
@@ -97,6 +220,10 @@ const verifyPayment = async (req, res) => {
     });
     res.json({ message: 'Payment verified', payment });
   } catch (error) {
+    console.error('[tenant/verify-payment]', error);
+    if (error.code === '23505') {
+      return res.status(409).json({ message: 'Rent for this period is already recorded.' });
+    }
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -120,18 +247,16 @@ const getAuditLogs = async (req, res) => {
 
 const getAdminContact = async (req, res) => {
   try {
-    // Get admin user(s) from org database
     const adminResult = await req.pool.query(
       "SELECT name, email FROM users WHERE role = 'admin' ORDER BY created_at ASC LIMIT 1"
     );
     const admin = adminResult.rows[0] || null;
 
-    // Get org info (email, phone) from master DB
     const org = await Organization.findById(req.orgId);
 
     res.json({
       adminName: admin ? admin.name : 'N/A',
-      adminEmail: admin ? admin.email : (org ? org.email : 'N/A'),
+      adminEmail: admin ? admin.email : org ? org.email : 'N/A',
       orgPhone: org ? org.phone : 'N/A',
       orgName: org ? org.name : 'N/A',
     });
@@ -141,4 +266,13 @@ const getAdminContact = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, getStayDetails, getPayments, createPaymentOrder, verifyPayment, getAdminContact, getAuditLogs };
+module.exports = {
+  getProfile,
+  getStayDetails,
+  getPayments,
+  getRentPaymentSettings,
+  createPaymentOrder,
+  verifyPayment,
+  getAdminContact,
+  getAuditLogs,
+};
