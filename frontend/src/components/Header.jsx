@@ -1,4 +1,4 @@
-﻿import { Link, useLocation } from 'react-router-dom';
+﻿import { Link, useLocation, matchPath } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { FormattedMessage } from 'react-intl';
 import { Bars3Icon, XMarkIcon, SunIcon, MoonIcon } from '@heroicons/react/24/outline';
@@ -6,8 +6,15 @@ import AvailabilityModal from './AvailabilityModal';
 import LanguageSwitcher from './LanguageSwitcher';
 import { clearAuthData, getUser, getOrganization } from '../services/api';
 
-/** Routes where we always show public nav (no welcome / logout), e.g. stale session from localStorage after DB reset */
-const AUTH_FLOW_PATHS = ['/login', '/register', '/onboarding', '/onboarding/success'];
+/** Login/register/onboarding: show public nav only (hide logout / welcome even when token exists). */
+function isPublicAuthPath(pathname) {
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') || '/' : pathname;
+  return [
+    { path: '/login', end: true },
+    { path: '/register', end: true },
+    { path: '/onboarding', end: false },
+  ].some((pattern) => matchPath(pattern, path));
+}
 
 const Header = () => {
   const location = useLocation();
@@ -15,7 +22,7 @@ const Header = () => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const org = getOrganization();
   const hasValidSession = !!(user && token);
-  const hideSessionChrome = AUTH_FLOW_PATHS.includes(location.pathname);
+  const hideSessionChrome = isPublicAuthPath(location.pathname);
   const showSessionNav = hasValidSession && !hideSessionChrome;
   const [showAvailability, setShowAvailability] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
