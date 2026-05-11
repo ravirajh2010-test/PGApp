@@ -103,7 +103,7 @@ const PaymentInfo = () => {
     setExporting(true);
     try {
       const paidCount = tenants.filter(t => t.payment_status === 'Paid').length;
-      const unpaidCount = tenants.filter(t => t.payment_status === 'Bill Generated').length;
+      const unpaidCount = tenants.filter(t => t.payment_status === 'Bill Generated' || t.payment_status === 'Pending').length;
       const naCount = tenants.filter(t => t.payment_status === 'NA').length;
 
       const summaryStats = {
@@ -132,7 +132,7 @@ const PaymentInfo = () => {
   }
 
   const paidCount = tenants.filter(t => t.payment_status === 'Paid').length;
-  const unpaidCount = tenants.filter(t => t.payment_status === 'Bill Generated').length;
+  const unpaidCount = tenants.filter(t => t.payment_status === 'Bill Generated' || t.payment_status === 'Pending').length;
   const naCount = tenants.filter(t => t.payment_status === 'NA').length;
 
   // Get unique room numbers for the filter dropdown
@@ -204,7 +204,7 @@ const PaymentInfo = () => {
           .filter(t => t.payment_status === 'Paid')
           .reduce((sum, t) => sum + parseFloat(t.billAmount || 0), 0);
         const yetToRecover = tenants
-          .filter(t => t.payment_status === 'Bill Generated')
+          .filter(t => t.payment_status === 'Bill Generated' || t.payment_status === 'Pending')
           .reduce((sum, t) => sum + parseFloat(t.billAmount || 0), 0);
         const pct = totalReceivable > 0 ? Math.round((received / totalReceivable) * 100) : 0;
         const fmt = (n) => n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
@@ -325,6 +325,11 @@ const PaymentInfo = () => {
                           ({tenant.daysStayed}/{tenant.daysInMonth} days × {currencySymbol}{tenant.rent})
                         </span>
                       )}
+                      {tenant.billDescription && (
+                        <span className="block text-xs text-amber-700 dark:text-amber-300 font-normal mt-0.5">
+                          {tenant.billDescription}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-3 text-slate-700 dark:text-slate-300">{monthName}</td>
                     <td className="px-6 py-3 text-center">
@@ -332,6 +337,10 @@ const PaymentInfo = () => {
                         <Badge variant="success" dot><FormattedMessage id="payment.paidStatus" defaultMessage="Paid" /></Badge>
                       ) : tenant.payment_status === 'NA' ? (
                         <Badge variant="neutral"><FormattedMessage id="payment.naLabel" defaultMessage="NA" /></Badge>
+                      ) : tenant.payment_status === 'Pending' ? (
+                        <Badge variant="warning" dot title={tenant.billDescription || ''}>
+                          <FormattedMessage id="payment.pendingBill" defaultMessage="Pending (incl. EB)" />
+                        </Badge>
                       ) : (
                         <Badge variant="info" dot title={`Bill Generated: ${currencySymbol}${tenant.billAmount} due`}>
                           <FormattedMessage id="payment.billGenerated" defaultMessage="Bill Generated" />
@@ -339,7 +348,7 @@ const PaymentInfo = () => {
                       )}
                     </td>
                     <td className="px-6 py-3 text-center">
-                      {tenant.payment_status === 'Bill Generated' && (
+                      {(tenant.payment_status === 'Bill Generated' || tenant.payment_status === 'Pending') && (
                         <div className="relative inline-block">
                           {sendingReminder[tenant.id] ? (
                             <Button variant="secondary" size="sm" loading disabled>
@@ -458,10 +467,17 @@ const PaymentInfo = () => {
                     <td className="px-6 py-3 text-slate-700 dark:text-slate-300">{idx + 1}</td>
                     <td className="px-6 py-3 font-medium text-slate-800 dark:text-slate-200">{tenant.name}</td>
                     <td className="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">{tenant.bed_info}</td>
-                    <td className="px-6 py-3 font-semibold text-slate-800 dark:text-slate-200">{currencySymbol}{tenant.rent}</td>
+                    <td className="px-6 py-3 font-semibold text-slate-800 dark:text-slate-200">
+                      {currencySymbol}{tenant.billAmount}
+                      {tenant.billDescription && (
+                        <span className="block text-xs text-amber-700 dark:text-amber-300 font-normal">{tenant.billDescription}</span>
+                      )}
+                    </td>
                     <td className="px-6 py-3 text-center">
                       {tenant.payment_status === 'Paid' ? (
                         <Badge variant="success" dot><FormattedMessage id="payment.paidStatus" defaultMessage="Paid" /></Badge>
+                      ) : tenant.payment_status === 'Pending' ? (
+                        <Badge variant="warning" dot><FormattedMessage id="payment.pendingBill" defaultMessage="Pending (incl. EB)" /></Badge>
                       ) : (
                         <Badge variant="danger" dot><FormattedMessage id="payment.notPaidStatus" defaultMessage="Not Paid" /></Badge>
                       )}

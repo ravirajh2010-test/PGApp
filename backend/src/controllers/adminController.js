@@ -5,6 +5,7 @@ const Organization = require('../models/Organization');
 const { sendTenantCredentials, sendPaymentReminder, sendRentReceipt, sendDeactivationEmail, sendPasswordResetByAdmin } = require('../services/emailService');
 const whatsapp = require('../services/whatsappService');
 const { logRequestAudit } = require('../services/auditService');
+const { calculateProratedRent } = require('../services/rentProrationService');
 
 const getTenants = async (req, res) => {
   try {
@@ -641,7 +642,9 @@ const getPaymentInfo = async (req, res) => {
              u.name,
              b.bed_identifier, r.room_number, bl.name as building_name,
              p.id as payment_id, p.tenant_name as paid_tenant_name, p.amount as paid_amount,
-             p.status as pay_status, p.payment_date, p.razorpay_payment_id
+             p.status as pay_status, p.payment_date, p.razorpay_payment_id,
+             p_pend.id as pending_rent_id, p_pend.amount as pending_rent_amount,
+             p_pend.description as bill_description, p_pend.eb_amount as pending_eb_amount
       FROM tenants t
       JOIN users u ON t.user_id = u.id
       JOIN beds b ON t.bed_id = b.id
@@ -651,6 +654,12 @@ const getPaymentInfo = async (req, res) => {
         AND p.payment_month = $1
         AND p.payment_year = $2
         AND p.status = 'completed'
+        AND COALESCE(p.payment_type, 'rent') = 'rent'
+      LEFT JOIN payments p_pend ON p_pend.tenant_id = t.id
+        AND p_pend.payment_month = $1
+        AND p_pend.payment_year = $2
+        AND p_pend.status = 'pending'
+        AND COALESCE(p_pend.payment_type, 'rent') = 'rent'
       ORDER BY bl.name, r.room_number, b.bed_identifier
     `;
     const result = await req.pool.query(query, [dbMonth, year]);
@@ -674,15 +683,30 @@ const getPaymentInfo = async (req, res) => {
         daysStayed = endDate.getDate(); // days 1..N = N days (already inclusive)
       }
 
+      const pendingRent = row.pending_rent_amount != null ? Number(row.pending_rent_amount) : null;
+      let billAmount = proratedAmount;
+      if (row.payment_id && row.pay_status === 'completed' && row.paid_amount != null) {
+        billAmount = Number(row.paid_amount);
+      } else if (pendingRent != null && Number.isFinite(pendingRent)) {
+        billAmount = pendingRent;
+      }
+
+      let payment_status = billStatus;
+      if (row.payment_id) payment_status = 'Paid';
+      else if (row.pending_rent_id) payment_status = 'Pending';
+
       return {
         ...row,
-        payment_status: row.payment_id ? 'Paid' : billStatus,
+        payment_status,
         bed_info: `${row.building_name} - Room ${row.room_number} - ${row.bed_identifier || 'Bed'}`,
         month_name: monthName,
-        billAmount: proratedAmount,
+        rentPortion: proratedAmount,
+        billAmount,
         daysStayed,
         daysInMonth,
-        isProrated: proratedAmount !== row.rent
+        isProrated: proratedAmount !== Number(row.rent),
+        billDescription: row.bill_description || null,
+        ebAmount: row.pending_eb_amount != null ? Number(row.pending_eb_amount) : 0,
       };
     }).filter(t => t.billAmount > 0 || t.payment_status === 'Paid');
     res.json({ tenants, monthName, month, year, billStatus });
@@ -790,7 +814,7 @@ const markOfflinePay = async (req, res) => {
 
     // Get full tenant details for receipt
     const tenantQuery = `
-      SELECT t.id, t.email, t.rent, t.phone,
+      SELECT t.id, t.email, t.rent, t.phone, t.start_date, t.end_date,
              u.name, u.email as user_email,
              b.bed_identifier, r.room_number, bl.name as building_name
       FROM tenants t
@@ -809,18 +833,41 @@ const markOfflinePay = async (req, res) => {
     const bedInfo = `${tenant.building_name} - Room ${tenant.room_number} - ${tenant.bed_identifier || 'Bed'}`;
     const tenantEmail = tenant.email || tenant.user_email;
 
-    await req.pool.query(
-      `INSERT INTO payments (tenant_id, tenant_name, email, phone, amount, status, payment_month, payment_year, razorpay_payment_id, payment_type)
-       VALUES ($1, $2, $3, $4, $5, 'completed', $6, $7, $8, 'rent')`,
-      [tenantId, tenant.name, tenantEmail, tenant.phone || null, tenant.rent, dbMonth, payYear, 'OFFLINE_' + Date.now()]
+    const startDate = new Date(tenant.start_date);
+    const endDate = tenant.end_date ? new Date(tenant.end_date) : null;
+    const rentPortion = calculateProratedRent(payMonth, payYear, startDate, endDate, tenant.rent);
+
+    const pendingRow = await req.pool.query(
+      `SELECT id, amount, description, eb_amount FROM payments
+       WHERE tenant_id = $1 AND payment_month = $2 AND payment_year = $3
+         AND status = 'pending' AND COALESCE(payment_type, 'rent') = 'rent'`,
+      [tenantId, dbMonth, payYear]
     );
+
+    const receiptAmount =
+      pendingRow.rows.length > 0 ? Number(pendingRow.rows[0].amount) : rentPortion;
+
+    if (pendingRow.rows.length > 0) {
+      await req.pool.query(
+        `UPDATE payments SET status = 'completed', payment_date = CURRENT_TIMESTAMP,
+            razorpay_payment_id = $1
+         WHERE id = $2`,
+        ['OFFLINE_' + Date.now(), pendingRow.rows[0].id]
+      );
+    } else {
+      await req.pool.query(
+        `INSERT INTO payments (tenant_id, tenant_name, email, phone, amount, status, payment_month, payment_year, razorpay_payment_id, payment_type)
+         VALUES ($1, $2, $3, $4, $5, 'completed', $6, $7, $8, 'rent')`,
+        [tenantId, tenant.name, tenantEmail, tenant.phone || null, receiptAmount, dbMonth, payYear, 'OFFLINE_' + Date.now()]
+      );
+    }
 
     // Send rent receipt email before responding
     let emailSent = false;
     if (tenantEmail) {
       try {
         console.log(`📧 Sending rent receipt to ${tenantEmail} for ${monthName}...`);
-        emailSent = await sendRentReceipt(tenantEmail, tenant.name, tenant.rent, bedInfo, monthName, new Date(), req.orgName);
+        emailSent = await sendRentReceipt(tenantEmail, tenant.name, receiptAmount, bedInfo, monthName, new Date(), req.orgName);
       } catch (err) {
         console.error('❌ Receipt email error:', err.message);
       }
@@ -833,7 +880,7 @@ const markOfflinePay = async (req, res) => {
       ? whatsapp.buildRentReceipt({
           phone: tenant.phone,
           tenantName: tenant.name,
-          rent: tenant.rent,
+          rent: receiptAmount,
           bedInfo,
           monthName,
           paymentDate: new Date(),
@@ -850,7 +897,7 @@ const markOfflinePay = async (req, res) => {
       action: 'OFFLINE_PAYMENT_MARKED',
       entityType: 'tenant',
       entityId: Number(tenantId),
-      details: { month: monthName, amount: tenant.rent, emailSent },
+      details: { month: monthName, amount: receiptAmount, emailSent },
     });
   } catch (error) {
     console.error('Error marking offline payment:', error);
@@ -891,48 +938,6 @@ const searchTenants = async (req, res) => {
   }
 };
 
-// Helper function to calculate prorated rent for a given month
-// Rules:
-//   - Both check-in and check-out dates are inclusive
-//   - Joined on or before 1st of billing month → full rent (unless checkout mid-month)
-//   - Joined after billing month ends → ₹0 (not a tenant yet)
-//   - Joined mid-month → charge for (lastDay - joinDay + 1) days (inclusive)
-const calculateProratedRent = (monthIndex, year, startDate, endDate, monthlyRent) => {
-  const monthStart = new Date(year, monthIndex, 1);
-  const monthEnd = new Date(year, monthIndex + 1, 0); // last day of month
-  const daysInMonth = monthEnd.getDate();
-
-  // Tenant joined after this billing month → no charge
-  if (startDate > monthEnd) return 0;
-
-  // Tenant checked out before this billing month → no charge
-  if (endDate && endDate < monthStart) return 0;
-
-  // Tenant was present from the 1st (or before) → full rent
-  if (startDate <= monthStart) {
-    // But if checkout happened mid-month, prorate (inclusive of checkout day)
-    if (endDate && endDate >= monthStart && endDate < monthEnd) {
-      const daysCharged = endDate.getDate(); // days 1..N = N days (already inclusive)
-      return Math.round((daysCharged / daysInMonth) * monthlyRent);
-    }
-    return monthlyRent;
-  }
-
-  // Joined mid-month: charge from joinDay to lastDay (inclusive of both)
-  const joinDay = startDate.getDate();
-  const lastDay = (endDate && endDate < monthEnd) ? endDate.getDate() : daysInMonth;
-  const daysCharged = lastDay - joinDay + 1; // +1 for inclusive of both dates
-
-  if (daysCharged <= 0) {
-    if (!endDate || endDate >= startDate) {
-      return Math.round((1 / daysInMonth) * monthlyRent);
-    }
-    return 0;
-  }
-
-  return Math.round((daysCharged / daysInMonth) * monthlyRent);
-};
-
 const getTenantPaymentHistory = async (req, res) => {
   try {
     const { tenantId } = req.params;
@@ -958,7 +963,8 @@ const getTenantPaymentHistory = async (req, res) => {
 
     // Get all payments for this tenant
     const paymentsResult = await req.pool.query(
-      `SELECT id, payment_month, payment_year, amount, status, payment_date, razorpay_payment_id
+      `SELECT id, payment_month, payment_year, amount, status, payment_date, razorpay_payment_id,
+              COALESCE(payment_type, 'rent') AS payment_type, description, eb_amount
        FROM payments WHERE tenant_id = $1 ORDER BY payment_year, payment_month`,
       [tenantId]
     );
@@ -971,6 +977,7 @@ const getTenantPaymentHistory = async (req, res) => {
 
     const paymentMap = {};
     for (const p of paymentsResult.rows) {
+      if (p.payment_type === 'electricity') continue;
       const key = `${p.payment_year}-${p.payment_month}`;
       paymentMap[key] = p;
     }
@@ -983,16 +990,21 @@ const getTenantPaymentHistory = async (req, res) => {
       const key = `${y}-${m}`;
       const payment = paymentMap[key] || null;
 
-      // Calculate prorated amount for this month
       const proratedAmount = calculateProratedRent(current.getMonth(), y, startDate, endDate, tenant.rent);
+      const billAmount = payment ? Number(payment.amount) : proratedAmount;
+      let status = 'Bill Generated';
+      if (payment && payment.status === 'completed') status = 'Paid';
+      else if (payment && payment.status === 'pending') status = 'Pending';
 
       months.push({
         month: m,
         year: y,
         monthName: current.toLocaleString('default', { month: 'long', year: 'numeric' }),
-        status: payment && payment.status === 'completed' ? 'Paid' : 'Bill Generated',
-        billAmount: proratedAmount,
-        payment: payment || null
+        status,
+        rentPortion: proratedAmount,
+        billAmount,
+        payment: payment || null,
+        billDescription: payment?.description || null,
       });
       current.setMonth(current.getMonth() + 1);
     }

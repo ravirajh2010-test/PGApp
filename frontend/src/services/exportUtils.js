@@ -216,7 +216,7 @@ export const exportAsPDF = async (data, filename, monthName, summaryStats, curre
           if (cell === 'Paid') {
             doc.setTextColor(34, 139, 34);
             doc.setFont('helvetica', 'bold');
-          } else if (cell === 'Bill Generated') {
+          } else if (cell === 'Bill Generated' || cell === 'Pending') {
             doc.setTextColor(220, 120, 0);
             doc.setFont('helvetica', 'bold');
           } else {

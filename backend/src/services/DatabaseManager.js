@@ -409,6 +409,18 @@ class DatabaseManager {
             WHEN duplicate_table THEN NULL;
       END $$;
     `);
+    await pool.query(`
+      DO $$ BEGIN
+        ALTER TABLE payments ADD COLUMN IF NOT EXISTS description TEXT;
+      EXCEPTION WHEN duplicate_column THEN NULL;
+      END $$;
+    `);
+    await pool.query(`
+      DO $$ BEGIN
+        ALTER TABLE payments ADD COLUMN IF NOT EXISTS eb_amount DECIMAL(10,2) DEFAULT 0;
+      EXCEPTION WHEN duplicate_column THEN NULL;
+      END $$;
+    `);
   }
 
   // Keep old name as alias for backward compatibility

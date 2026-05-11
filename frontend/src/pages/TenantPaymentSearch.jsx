@@ -73,7 +73,7 @@ const TenantPaymentSearch = () => {
   };
 
   const paidCount = months.filter(m => m.status === 'Paid').length;
-  const unpaidCount = months.filter(m => m.status === 'Bill Generated').length;
+  const unpaidCount = months.filter(m => m.status === 'Bill Generated' || m.status === 'Pending').length;
 
   const [resettingPassword, setResettingPassword] = useState(false);
 
@@ -251,10 +251,17 @@ const TenantPaymentSearch = () => {
                         <tr key={key} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/30">
                           <td className="px-6 py-3 font-medium text-slate-700 dark:text-slate-300">{idx + 1}</td>
                           <td className="px-6 py-3 font-medium text-slate-800 dark:text-slate-200">{m.monthName}</td>
-                          <td className="px-6 py-3 font-semibold text-slate-800 dark:text-slate-200">{currencySymbol}{m.billAmount}</td>
+                          <td className="px-6 py-3 font-semibold text-slate-800 dark:text-slate-200">
+                            {currencySymbol}{m.billAmount}
+                            {m.billDescription && (
+                              <span className="block text-xs text-amber-700 dark:text-amber-300 font-normal mt-0.5">{m.billDescription}</span>
+                            )}
+                          </td>
                           <td className="px-6 py-3 text-center">
                             {m.status === 'Paid' ? (
                               <Badge variant="success" dot><FormattedMessage id="payment.paidStatus" defaultMessage="Paid" /></Badge>
+                            ) : m.status === 'Pending' ? (
+                              <Badge variant="warning" dot><FormattedMessage id="payment.pendingBill" defaultMessage="Pending (incl. EB)" /></Badge>
                             ) : (
                               <Badge variant="info" dot title={`Bill Generated: ${currencySymbol}${m.billAmount} due`}>
                                 <FormattedMessage id="payment.billGenerated" defaultMessage="Bill Generated" />

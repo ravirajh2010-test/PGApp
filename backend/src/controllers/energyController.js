@@ -9,14 +9,15 @@
 //      electricity_readings row for that room), the total amount, and the
 //      per-person share (default sharing count = number of currently
 //      allocated tenants in that room, admin can override).
-//   3. Admin optionally clicks "Bill tenants" which inserts one row in
-//      `payments` per tenant in that room (payment_type='electricity',
-//      reading_id=<row id>) and marks the reading as billed.
+//   3. Admin optionally clicks "Bill tenants" which adds the per-person EB
+//      share onto that month's **rent** payment (pending): amount = prorated rent
+//      for the billing month + cumulative EB, with description "Rent + EB bill".
 
 const Organization = require('../models/Organization');
 const whatsapp = require('../services/whatsappService');
 const { logRequestAudit } = require('../services/auditService');
 const dbManager = require('../services/DatabaseManager');
+const { calculateProratedRent } = require('../services/rentProrationService');
 
 const ALLOWED_BILLING_STATUS = new Set(['pending', 'completed']);
 
@@ -397,9 +398,9 @@ const saveReading = async (req, res) => {
 
 // POST /api/admin/energy/bill-tenants/:readingId
 // Body: { tenantIds?: number[], status?: 'pending' | 'completed', notify?: boolean }
-// Creates one electricity payment per tenant for that reading and marks the
-// reading as billed. If `tenantIds` is omitted, bills all currently allocated
-// tenants in that room.
+// Merges per-person EB into that month's rent payment (payment_type='rent'):
+// pending row amount = prorated rent for billing month + cumulative EB, description notes EB bill.
+// Skips tenants who already have completed rent for that month. Marks reading as billed.
 const billTenants = async (req, res) => {
   await ensureEnergyOrgSchema(req.pool);
 
@@ -429,12 +430,11 @@ const billTenants = async (req, res) => {
     }
     const reading = readingResult.rows[0];
 
-    // Resolve which tenants to bill.
     let tenants;
     if (Array.isArray(tenantIds) && tenantIds.length > 0) {
       const ids = tenantIds.map((id) => parseInt(id, 10)).filter(Number.isInteger);
       const r = await client.query(
-        `SELECT t.id, u.name, t.email, t.phone
+        `SELECT t.id, u.name, t.email, t.phone, t.start_date, t.end_date, t.rent
          FROM tenants t
          JOIN users u ON t.user_id = u.id
          JOIN beds b ON t.bed_id = b.id
@@ -444,7 +444,7 @@ const billTenants = async (req, res) => {
       tenants = r.rows;
     } else {
       const r = await client.query(
-        `SELECT t.id, u.name, t.email, t.phone
+        `SELECT t.id, u.name, t.email, t.phone, t.start_date, t.end_date, t.rent
          FROM tenants t
          JOIN users u ON t.user_id = u.id
          JOIN beds b ON t.bed_id = b.id
@@ -461,10 +461,12 @@ const billTenants = async (req, res) => {
     }
 
     const perPerson = Number(reading.per_person_amount);
-    const monthName = new Date(reading.billing_year, reading.billing_month - 1, 1).toLocaleString(
-      'default',
-      { month: 'long', year: 'numeric' }
-    );
+    const monthIdx = reading.billing_month - 1;
+    const billYear = reading.billing_year;
+    const monthName = new Date(billYear, monthIdx, 1).toLocaleString('default', {
+      month: 'long',
+      year: 'numeric',
+    });
     const bedInfo = `${reading.building_name || ''} - Room ${reading.room_number}`.trim();
 
     const inserted = [];
@@ -473,30 +475,69 @@ const billTenants = async (req, res) => {
 
     for (const t of tenants) {
       try {
-        const ins = await client.query(
-          `INSERT INTO payments
-            (tenant_id, tenant_name, email, phone, amount, status,
-             payment_month, payment_year, payment_type, reading_id, razorpay_payment_id)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'electricity',$9,$10)
-           ON CONFLICT (tenant_id, payment_month, payment_year, payment_type) DO NOTHING
-           RETURNING id`,
-          [
-            t.id,
-            t.name,
-            t.email,
-            t.phone || null,
-            perPerson,
-            billStatus,
-            reading.billing_month,
-            reading.billing_year,
-            reading.id,
-            'ELEC_' + reading.id + '_' + Date.now(),
-          ]
+        const startDate = t.start_date ? new Date(t.start_date) : null;
+        const endDate = t.end_date ? new Date(t.end_date) : null;
+        const rentBase = calculateProratedRent(monthIdx, billYear, startDate, endDate, Number(t.rent));
+
+        const done = await client.query(
+          `SELECT id FROM payments
+           WHERE tenant_id = $1 AND payment_month = $2 AND payment_year = $3
+             AND status = 'completed' AND COALESCE(payment_type, 'rent') = 'rent'`,
+          [t.id, reading.billing_month, reading.billing_year]
         );
-        if (ins.rows.length > 0) {
-          inserted.push({ tenantId: t.id, name: t.name, paymentId: ins.rows[0].id });
+        if (done.rows.length > 0) {
+          skipped.push({
+            tenantId: t.id,
+            name: t.name,
+            reason: 'Rent already paid for this month — clear or adjust manually before adding EB',
+          });
+          continue;
+        }
+
+        const pending = await client.query(
+          `SELECT id, amount, eb_amount FROM payments
+           WHERE tenant_id = $1 AND payment_month = $2 AND payment_year = $3
+             AND status = 'pending' AND COALESCE(payment_type, 'rent') = 'rent'`,
+          [t.id, reading.billing_month, reading.billing_year]
+        );
+
+        const prevEb = pending.rows.length > 0 ? Number(pending.rows[0].eb_amount || 0) : 0;
+        const newEb = Number((prevEb + perPerson).toFixed(2));
+        const newAmount = Number((rentBase + newEb).toFixed(2));
+        const descLine = `Rent (₹${rentBase}) + EB bill (₹${newEb})`;
+
+        if (pending.rows.length > 0) {
+          const pid = pending.rows[0].id;
+          await client.query(
+            `UPDATE payments
+             SET amount = $1, eb_amount = $2, description = $3, reading_id = $4, status = $5
+             WHERE id = $6`,
+            [newAmount, newEb, descLine, reading.id, billStatus, pid]
+          );
+          inserted.push({ tenantId: t.id, name: t.name, paymentId: pid, merged: true });
         } else {
-          skipped.push({ tenantId: t.id, name: t.name, reason: 'Already billed for this month' });
+          const ins = await client.query(
+            `INSERT INTO payments
+              (tenant_id, tenant_name, email, phone, amount, status,
+               payment_month, payment_year, payment_type, reading_id, razorpay_payment_id, description, eb_amount)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'rent',$9,$10,$11,$12)
+             RETURNING id`,
+            [
+              t.id,
+              t.name,
+              t.email,
+              t.phone || null,
+              newAmount,
+              billStatus,
+              reading.billing_month,
+              reading.billing_year,
+              reading.id,
+              'EB_' + reading.id + '_' + Date.now(),
+              descLine,
+              newEb,
+            ]
+          );
+          inserted.push({ tenantId: t.id, name: t.name, paymentId: ins.rows[0].id, merged: false });
         }
 
         if (notify && t.phone) {
@@ -533,15 +574,16 @@ const billTenants = async (req, res) => {
       entityId: reading.id,
       details: {
         roomId: reading.room_id,
-        billed: inserted.length,
+        applied: inserted.length,
         skipped: skipped.length,
         status: billStatus,
         month: monthName,
+        mergedIntoRent: true,
       },
     });
 
     res.json({
-      message: `Billed ${inserted.length} tenant(s) for ${monthName}`,
+      message: `Applied EB to rent for ${inserted.length} tenant(s) (${monthName})`,
       inserted,
       skipped,
       whatsappMessages,

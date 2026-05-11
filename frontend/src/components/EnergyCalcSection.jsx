@@ -210,7 +210,16 @@ const EnergyCalcSection = ({ currencySymbol = '₹' }) => {
     if (room.lastReading.billed) {
       if (!window.confirm('This reading has already been billed. Bill again only if needed.')) return;
     }
-    if (!window.confirm(`Add ${currencySymbol}${room.lastReading.perPersonAmount} to ${room.currentTenants.length} tenant(s) in Room ${room.roomNumber}?`)) {
+    if (!window.confirm(
+      intl.formatMessage(
+        {
+          id: 'energy.billTenantsConfirm',
+          defaultMessage:
+            'Add {amount} per person to this month’s rent for each tenant as an EB bill (prorated rent + EB)? Room {room}.',
+        },
+        { amount: `${currencySymbol}${room.lastReading.perPersonAmount}`, room: room.roomNumber }
+      )
+    )) {
       return;
     }
     updateDraft(room.roomId, { savingState: 'billing' });
